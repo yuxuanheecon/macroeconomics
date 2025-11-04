@@ -4,68 +4,74 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>地球宏观经济八卦 · 文档库</title>
+
   <style>
+    /* ====== 页面整体样式 ====== */
     body {
+      /* 页面主字体，前者为中文衬线体，后者为系统兜底字体 */
       font-family: "Noto Serif SC", "Microsoft YaHei", serif;
-      background-color: #fafafa;
-      color: #222;
+      background-color: #fafafa; /* 背景色，可换成浅灰 #f4f4f4 或米色 #fdfbf7 */
+      color: #222; /* 主文字颜色 */
       margin: 0;
       padding: 0;
-      line-height: 1.7;
+      line-height: 1.7; /* 行距，让文字更易读 */
     }
+
+    /* ====== 页眉（顶部封面） ====== */
     header {
+      /* 渐变色背景，可替换为纯色，如 background:#2a5298; */
       background: linear-gradient(135deg, #1e3c72, #2a5298);
       color: white;
       text-align: center;
-      padding: 80px 20px 60px;
+      padding: 80px 20px 60px; /* 上左右下的内边距 */
     }
     header h1 {
-      font-size: 2.2em;
+      font-size: 2.2em; /* 标题字号 */
       margin-bottom: 0.3em;
     }
     header p {
       font-size: 1.1em;
-      opacity: 0.9;
+      opacity: 0.9; /* 半透明效果，可改成1去掉 */
     }
+
+    /* ====== 主内容区 ====== */
     main {
-      max-width: 800px;
-      margin: 40px auto;
+      max-width: 800px; /* 页面宽度限制，可调 */
+      margin: 40px auto; /* 居中显示 */
       padding: 0 20px;
     }
-    section {
-      margin-bottom: 40px;
-    }
-    h2 {
-      border-left: 4px solid #2a5298;
-      padding-left: 10px;
-      color: #2a5298;
-      font-size: 1.4em;
-    }
+
+    /* ====== 列表样式（每篇文章） ====== */
     ul {
-      list-style: none;
+      list-style: none; /* 去掉默认圆点 */
       padding-left: 0;
     }
+
     li {
-      background: white;
+      background: white; /* 每项背景色，可换浅灰或淡米色 */
       margin: 10px 0;
       padding: 15px 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      border-radius: 10px; /* 圆角 */
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* 阴影 */
       display: flex;
-      justify-content: space-between;
+      justify-content: space-between; /* 标题和按钮两端对齐 */
       align-items: center;
-      transition: transform 0.1s ease-in-out;
+      transition: transform 0.1s ease-in-out; /* 鼠标悬停动画 */
     }
     li:hover {
-      transform: scale(1.02);
+      transform: scale(1.02); /* 鼠标悬停时微微放大，可改为0.98缩小 */
     }
+
+    /* ====== 超链接样式 ====== */
     a {
       text-decoration: none;
-      color: #2a5298;
+      color: #2a5298; /* 链接颜色，可改成红/绿/灰 */
       font-weight: bold;
     }
+
+    /* ====== 阅读按钮样式 ====== */
     .btn {
-      background: #2a5298;
+      background: #2a5298; /* 按钮背景色，可换主题色 */
       color: white;
       padding: 6px 14px;
       border-radius: 6px;
@@ -74,11 +80,13 @@
       transition: background 0.2s;
     }
     .btn:hover {
-      background: #1e3c72;
+      background: #1e3c72; /* 鼠标悬停时颜色，可改浅一点 */
     }
+
+    /* ====== 页脚样式 ====== */
     footer {
       text-align: center;
-      color: #888;
+      color: #888; /* 字体颜色，可调亮或暗 */
       font-size: 0.9em;
       padding: 40px 0;
     }
@@ -86,65 +94,39 @@
 </head>
 
 <body>
+  <!-- ====== 页面头部（封面标题区） ====== -->
   <header>
+    <!-- 主标题，可换成你网站名或LOGO -->
     <h1>地球宏观经济八卦</h1>
+    <!-- 副标题或简介，可自由改为口号、格言等 -->
     <p>宏观视角、结构洞察、长期逻辑。<br>以研究笔记的方式解读世界经济。</p>
   </header>
-  
- <section>
-      <h2>研究框架</h2>
-      <ul>
-        <li>
-          <span>宏观经济研究体系讲义</span>
-          <a href="macrostudyintro.pdf" class="btn" target="_blank">阅读</a>
-        </li>
-        <li>
-          <span>大类资产投研讲义</span>
-          <a href="commodityinvestment.pdf" class="btn" target="_blank">阅读</a>
-        </li>
-      </ul>
-    </section>
 
-    <section>
-      <h2>通胀与货币机制</h2>
-      <ul>
-        <li>
-          <span>为什么世界各国都钟爱 2% 通胀目标？</span>
-          <a href="inflationtargetmechanism.pdf" class="btn" target="_blank">阅读</a>
-        </li>
-        <li>
-          <span>央行购金潮：货币信任的另一面</span>
-          <a href="centralbankgold.pdf" class="btn" target="_blank">阅读</a>
-        </li>
-      </ul>
-    </section>
+  <!-- ====== 主体内容区：文章列表 ====== -->
+  <main>
+    <ul>
+      <!-- 每篇文章一项：标题 + 阅读按钮 -->
+      <li>
+        <span>宏观经济研究体系讲义</span>
+        <!-- target="_blank" 表示新窗口打开 -->
+        <a href="macrostudyintro.pdf" class="btn" target="_blank">阅读</a>
+      </li>
 
-    <section>
-      <h2>中国宏观观察</h2>
-      <ul>
-        <li>
-          <span>中国房地产与财政联动机制</span>
-          <a href="china_realestate_cycle.pdf" class="btn" target="_blank">阅读</a>
-        </li>
-        <li>
-          <span>产业结构调整与价格传导路径</span>
-          <a href="price_transmission.pdf" class="btn" target="_blank">阅读</a>
-        </li>
-      </ul>
-    </section>
+      <li>
+        <span>大类资产投研讲义</span>
+        <a href="commodityinvestment.pdf" class="btn" target="_blank">阅读</a>
+      </li>
 
-    <section>
-      <h2>制度与增长</h2>
-      <ul>
-        <li>
-          <span>制度、产权与长期增长的逻辑</span>
-          <a href="institutions_growth.pdf" class="btn" target="_blank">阅读</a>
-        </li>
-      </ul>
-    </section>
+      <li>
+        <span>为什么世界各国都钟爱 2% 通胀目标？</span>
+        <a href="inflationtargetmechanism.pdf" class="btn" target="_blank">阅读</a>
+      </li>
+    </ul>
   </main>
 
+  <!-- ====== 页脚信息 ====== -->
   <footer>
+    <!-- 你可以加日期、邮箱或公众号链接 -->
     <p>© 2025 地球宏观经济八卦 | 由 GitHub Pages 提供支持</p>
   </footer>
 </body>
