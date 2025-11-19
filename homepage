@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Earth Macro | 链接未来智能</title>
+  
+  <!-- 引入 Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  
+  <!-- 引入字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&family=Noto+Serif+SC:wght@700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ====== 1. 视觉变量系统 (Cyberpunk Palette) ====== */
+    :root {
+      --bg-space: #000000;
+      --neon-purple: #bd34fe;
+      --neon-cyan: #00f2ff;
+      --neon-pink: #ff2a6d;
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --glass-blur: 12px;
+      --text-white: #ffffff;
+      --text-gray: #a1a1aa;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background-color: var(--bg-space);
+      color: var(--text-white);
+      overflow-x: hidden;
+    }
+
+    a { text-decoration: none; color: inherit; }
+
+    /* ====== 2. Three.js 画布 ====== */
+    #canvas-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
+      pointer-events: none;
+      /* 只有背景是黑的，让Three.js星星在上面闪烁 */
+      background: radial-gradient(circle at 50% 50%, #1a1025 0%, #000000 100%);
+    }
+
+    /* ====== 3. 导航栏 (Navbar) ====== */
+    nav {
+      position: fixed;
+      top: 0; width: 100%;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      background: rgba(0,0,0,0.2);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .nav-brand {
+      font-family: "JetBrains Mono";
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--text-white);
+      letter-spacing: -1px;
+    }
+    .nav-brand span { color: var(--neon-cyan); }
+
+    .nav-links {
+      display: flex;
+      gap: 40px;
+    }
+
+    .nav-links a {
+      font-size: 0.9rem;
+      color: var(--text-gray);
+      transition: color 0.3s;
+      position: relative;
+    }
+
+    .nav-links a:hover { color: var(--text-white); }
+    
+    .nav-links a.active::after {
+      content: ''; position: absolute;
+      bottom: -5px; left: 50%; transform: translateX(-50%);
+      width: 4px; height: 4px; background: var(--neon-purple);
+      border-radius: 50%; box-shadow: 0 0 10px var(--neon-purple);
+    }
+
+    .nav-btn {
+      padding: 8px 20px;
+      border: 1px solid var(--neon-cyan);
+      border-radius: 50px;
+      color: var(--neon-cyan);
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: rgba(0, 242, 255, 0.1);
+      transition: all 0.3s;
+      cursor: pointer;
+      font-family: "JetBrains Mono";
+    }
+
+    .nav-btn:hover {
+      background: var(--neon-cyan);
+      color: #000;
+      box-shadow: 0 0 20px var(--neon-cyan);
+    }
+
+    /* ====== 4. Hero Section (首屏) ====== */
+    .hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      padding: 0 20px;
+    }
+
+    .system-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border: 1px solid rgba(189, 52, 254, 0.5);
+      background: rgba(189, 52, 254, 0.1);
+      color: var(--neon-purple);
+      border-radius: 50px;
+      font-family: "JetBrains Mono";
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+      box-shadow: 0 0 15px rgba(189, 52, 254, 0.2);
+    }
+
+    .hero h1 {
+      font-size: 4.5rem;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      font-weight: 800;
+      letter-spacing: -2px;
+    }
+
+    /* 渐变文字效果 */
+    .gradient-text-1 {
+      background: linear-gradient(90deg, #fff, var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gradient-text-2 {
+      background: linear-gradient(90deg, var(--neon-purple), var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      color: var(--text-gray);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+
+    .hero-btns {
+      display: flex;
+      gap: 20px;
+    }
+
+    .btn-primary {
+      padding: 12px 32px;
+      background: var(--text-white);
+      color: #000;
+      font-weight: 700;
+      border-radius: 8px;
+      transition: transform 0.2s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-primary:hover { transform: translateY(-2px); }
+    
+    .btn-glass {
+      padding: 12px 32px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--glass-border);
+      color: var(--text-white);
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+      transition: background 0.2s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-glass:hover { background: rgba(255,255,255,0.1); }
+
+    /* ====== 5. 核心价值 (Core Values) ====== */
+    .section { padding: 100px 20px; max-width: 1200px; margin: 0 auto; }
+    
+    .section-header {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-bottom: 60px; border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 20px;
+    }
+    .section-title {
+      font-size: 2.5rem; font-weight: 700;
+    }
+    .section-number {
+      font-family: "JetBrains Mono"; color: var(--neon-purple);
+      font-size: 1.5rem; margin-right: 10px;
+    }
+    .view-more {
+      color: var(--neon-cyan); font-size: 0.9rem; font-family: "JetBrains Mono";
+      display: flex; align-items: center; gap: 5px; transition: gap 0.2s;
+    }
+    .view-more:hover { gap: 10px; }
+
+    .value-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;
+    }
+    .value-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      padding: 30px; border-radius: 16px;
+      backdrop-filter: blur(var(--glass-blur));
+      transition: all 0.3s;
+    }
+    .value-card:hover {
+      border-color: var(--neon-purple);
+      box-shadow: 0 0 30px rgba(189, 52, 254, 0.15);
+      transform: translateY(-5px);
+    }
+    .value-icon { font-size: 2rem; margin-bottom: 20px; color: var(--neon-cyan); }
+
+    /* ====== 6. 精选内容 (Selected Content) ====== */
+    .content-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px;
+    }
+
+    .content-card {
+      background: #0a0a0a;
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.3s;
+      group: cursor-pointer;
+    }
+    
+    .content-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      border-color: var(--neon-pink);
+    }
+
+    .card-image {
+      height: 200px;
+      background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+      position: relative;
+      overflow: hidden;
+      display: flex; justify-content: center; align-items: center;
+    }
+    
+    /* 模拟 3D 封面效果 (CSS only placeholder) */
+    .card-image::after {
+      content: ''; width: 80px; height: 80px;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+      border-radius: 12px; transform: rotate(15deg);
+      box-shadow: 0 0 30px rgba(0, 242, 255, 0.4);
+      opacity: 0.8;
+    }
+
+    .card-tag {
+      position: absolute; top: 15px; left: 15px;
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 0.7rem; font-weight: 700;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .tag-pink { color: var(--neon-pink); border-color: var(--neon-pink); }
+    .tag-cyan { color: var(--neon-cyan); border-color: var(--neon-cyan); }
+
+    .card-body { padding: 20px; }
+    .card-date { font-size: 0.8rem; color: var(--text-gray); font-family: "JetBrains Mono"; margin-bottom: 10px; }
+    .card-title { font-size: 1.1rem; margin-bottom: 15px; line-height: 1.4; font-weight: 600; }
+
+    /* ====== 7. 关于社区 (About/Community) ====== */
+    .about-container {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0) 100%);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 60px;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .about-text h2 { font-size: 2.5rem; margin-bottom: 20px; }
+    .about-text p { color: var(--text-gray); margin-bottom: 30px; }
+    
+    .feature-list li {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 15px; color: var(--text-white);
+    }
+    .check-icon {
+      color: var(--bg-space); background: var(--neon-cyan);
+      width: 20px; height: 20px; border-radius: 50%;
+      display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold;
+    }
+
+    .qr-box {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--neon-cyan);
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      position: relative;
+    }
+    /* 二维码扫描框特效 */
+    .qr-box::before, .qr-box::after {
+      content: ''; position: absolute; width: 20px; height: 20px;
+      border: 2px solid var(--neon-cyan);
+      transition: all 0.3s;
+    }
+    .qr-box::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+    .qr-box::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+    .qr-code {
+      width: 150px; height: 150px; background: white; margin: 0 auto 20px;
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.8rem; }
+      .content-grid { grid-template-columns: 1fr; }
+      .about-container { grid-template-columns: 1fr; padding: 30px; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D 背景容器 -->
+  <div id="canvas-container"></div>
+
+  <!-- 导航 -->
+  <nav>
+    <div class="nav-brand">EARTH<span>MACRO</span></div>
+    <div class="nav-links">
+      <a href="#" class="active">首页</a>
+      <a href="#core-values">核心价值</a>
+      <a href="#content">精选内容</a>
+      <a href="#about">关于社群</a>
+    </div>
+    <button class="nav-btn">SUBSCRIBE</button>
+  </nav>
+
+  <!-- 首屏 Hero -->
+  <section class="hero">
+    <span class="system-badge">SYSTEM ONLINE // VERSION 2.0</span>
+    <h1>
+      <span class="gradient-text-1">填补认知鸿沟</span><br>
+      <span class="gradient-text-2">链接宏观未来</span>
+    </h1>
+    <p>以数据驱动的视角，穿透市场噪音。<br>Earth Macro 带你探索全球经济的前沿边界...</p>
+    <div class="hero-btns">
+      <a href="#content" class="btn-primary">开始探索 -></a>
+      <a href="#about" class="btn-glass">关注社群</a>
+    </div>
+  </section>
+
+  <!-- 核心价值 -->
+  <section id="core-values" class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="section-number">01.</span>核心价值</div>
+    </div>
+    <div class="value-grid">
+      <div class="value-card">
+        <div class="value-icon">◉</div>
+        <h3>宏观视角</h3>
+        <p style="color:var(--text-gray); margin-top:10px;">跳出短期博弈，建立长周期的全球视野，理解经济机器的底层运行逻辑。</p>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">◈</div>
+        <h3>结构洞察</h3>
+        <p style="color:var(--text-gray); margin-top:10px;">剖析流动性、债务周期与地缘政治的深层结构，寻找不对称的交易机会。</p>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">▣</div>
+        <h3>理性决策</h3>
+        <p style="color:var(--text-gray); margin-top:10px;">拒绝情绪化噪音，坚持数据验证与逻辑推演，构建反脆弱的投资体系。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 精选内容 (类似图片中的卡片展示) -->
+  <section id="content" class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="section-number">02.</span>精选内容</div>
+      <!-- 关键链接：跳转到文章子页面 -->
+      <a href="articles.html" class="view-more">查看更多历史研报 -></a>
+    </div>
+
+    <div class="content-grid">
+      <!-- 卡片 1 -->
+      <a href="articles.html" class="content-card">
+        <div class="card-image">
+          <span class="card-tag tag-pink">深度解析</span>
+        </div>
+        <div class="card-body">
+          <div class="card-date">2025-01-15</div>
+          <div class="card-title">2025年度展望：通缩螺旋还是再通胀？全球经济终局推演</div>
+        </div>
+      </a>
+      <!-- 卡片 2 -->
+      <a href="articles.html" class="content-card">
+        <div class="card-image">
+          <span class="card-tag tag-cyan">实战教程</span>
+        </div>
+        <div class="card-body">
+          <div class="card-date">2025-01-10</div>
+          <div class="card-title">手把手教你搭建美林时钟投资体系 (Investment Framework)</div>
+        </div>
+      </a>
+      <!-- 卡片 3 -->
+      <a href="articles.html" class="content-card">
+        <div class="card-image">
+          <span class="card-tag tag-pink">行业洞察</span>
+        </div>
+        <div class="card-body">
+          <div class="card-date">2025-01-05</div>
+          <div class="card-title">为什么世界各国央行都钟爱 2% 的通胀目标？机制全解</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- 关于社群 -->
+  <section id="about" class="section">
+    <div class="about-container">
+      <div class="about-text">
+        <h2>加入 <span style="color:var(--neon-cyan)">Earth Macro</span> 社区</h2>
+        <p>在这里，我们不制造焦虑，只提供解决方案与深度思考。</p>
+        <ul class="feature-list" style="list-style:none;">
+          <li><span class="check-icon">✓</span> 每周一期的宏观精华日报</li>
+          <li><span class="check-icon">✓</span> 独家数据图表与模型下载</li>
+          <li><span class="check-icon">✓</span> 加入高质量投资者交流社群</li>
+        </ul>
+        <button class="btn-primary" style="margin-top:30px; background:var(--neon-cyan);">复制微信号</button>
+      </div>
+      <div class="qr-box">
+        <div class="qr-code">
+           <!-- 这里使用占位图 -->
+           <img src="https://placehold.co/150x150/000/fff?text=QR+Code" style="width:100%;height:100%;">
+        </div>
+        <div style="font-family:'JetBrains Mono'; color:var(--neon-cyan); letter-spacing:2px;">SCAN ME</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Three.js 脚本：实现3D星空背景 -->
+  <script>
+    const container = document.getElementById('canvas-container');
+    
+    // 1. 场景 setup
+    const scene = new THREE.Scene();
+    // 增加一点迷雾效果
+    scene.fog = new THREE.FogExp2(0x000000, 0.001);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 50;
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
+
+    // 2. 创建粒子 (Stars)
+    const geometry = new THREE.BufferGeometry();
+    const count = 2000; // 粒子数量
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+
+    for(let i = 0; i < count * 3; i++) {
+      // 随机分布
+      positions[i] = (Math.random() - 0.5) * 200; 
+      // 颜色：在青色和紫色之间随机
+      if(i % 3 === 0) { // R
+         colors[i] = Math.random() > 0.5 ? 0.7 : 0.0; 
+      } else if (i % 3 === 1) { // G
+         colors[i] = Math.random() * 0.5;
+      } else { // B
+         colors[i] = 1.0;
+      }
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const material = new THREE.PointsMaterial({
+      size: 0.3,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
+
+    const starField = new THREE.Points(geometry, material);
+    scene.add(starField);
+
+    // 3. 鼠标交互 (视差效果)
+    let mouseX = 0;
+    let mouseY = 0;
+    let targetX = 0;
+    let targetY = 0;
+
+    const windowHalfX = window.innerWidth / 2;
+    const windowHalfY = window.innerHeight / 2;
+
+    document.addEventListener('mousemove', (event) => {
+      mouseX = (event.clientX - windowHalfX);
+      mouseY = (event.clientY - windowHalfY);
+    });
+
+    // 4. 动画循环
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const elapsedTime = clock.getElapsedTime();
+
+      // 粒子自身缓慢旋转
+      starField.rotation.y += 0.0005;
+      starField.rotation.x += 0.0002;
+
+      // 鼠标视差平滑移动
+      targetX = mouseX * 0.001;
+      targetY = mouseY * 0.001;
+
+      starField.rotation.y += 0.05 * (targetX - starField.rotation.y);
+      starField.rotation.x += 0.05 * (targetY - starField.rotation.x);
+
+      // 呼吸感波动
+      // starField.scale.x = 1 + Math.sin(elapsedTime * 0.5) * 0.05;
+      // starField.scale.y = 1 + Math.sin(elapsedTime * 0.5) * 0.05;
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // 5. 窗口大小自适应
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+
+</body>
+</html>
