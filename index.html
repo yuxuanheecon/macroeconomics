@@ -462,7 +462,7 @@
     <div class="nav-brand">EARTH<span>MACRO</span></div>
     <div class="nav-links">
       <a onclick="scrollToSection('hero')">首页</a>
-      <a onclick="scrollToSection('ai-analyst')">AI 分析师</a> <!-- 新增入口 -->
+      <a onclick="scrollToSection('ai-analyst')">AI 全能助手</a> <!-- Updated Text -->
       <a onclick="scrollToSection('core-values')">核心价值</a>
       <a onclick="scrollToSection('content')">精选内容</a>
       <a onclick="scrollToSection('about')">关于社群</a>
@@ -487,22 +487,25 @@
   <!-- NEW: AI Macro Analyst Section -->
   <section id="ai-analyst" class="section">
     <div class="section-header">
-      <div class="section-title"><span class="section-number">AI.</span>宏观概念 AI 解读器</div>
+      <!-- Updated Title -->
+      <div class="section-title"><span class="section-number">AI.</span>AI 宏观全能分析师</div>
     </div>
     <div class="ai-container">
-      <h3 style="color:white; font-size:1.5rem; margin-bottom:10px;">✨ 智能分析助手</h3>
-      <p style="color:var(--text-gray);">输入任何宏观经济术语（如“收益率曲线倒挂”、“通胀螺旋”），获取 Gemini AI 的深度极简解读。</p>
+      <!-- Updated UI Text -->
+      <h3 style="color:white; font-size:1.5rem; margin-bottom:10px;">✨ 全能宏观助手</h3>
+      <p style="color:var(--text-gray);">不仅仅是概念解读。无论是<strong>事件点评</strong>、<strong>数据查询</strong>、<strong>历史回顾</strong>还是<strong>趋势分析</strong>，AI 都能基于实时搜索为您解答。</p>
       
       <div class="ai-input-group">
-        <input type="text" class="ai-input" id="ai-prompt" placeholder="试着输入: 美联储 2025 降息预期..." onkeypress="handleEnter(event)">
+        <!-- Updated Placeholder -->
+        <input type="text" class="ai-input" id="ai-prompt" placeholder="试试问：昨晚美联储发布了什么信号？现在的黄金价格是多少？..." onkeypress="handleEnter(event)">
         <button class="ai-btn" onclick="callGemini()">
-          <span>生成解读</span>
+          <span>深度分析</span>
           <span>⚡</span>
         </button>
       </div>
 
       <div class="ai-result" id="ai-output">
-        <span style="color:var(--text-gray); opacity:0.5;">// 等待输入指令... 系统待机中...</span>
+        <span style="color:var(--text-gray); opacity:0.5;">// 智能系统就绪... 请输入您的宏观问题...</span>
       </div>
     </div>
   </section>
@@ -556,7 +559,7 @@
         <div class="card-image">
           <span class="card-tag tag-cyan">实战教程</span>
           <!-- 使用 Unsplash 真实图片: Chart/Trading -->
-          <img src="https://images.unsplash.com/photo-1611974765270-ca1258634369?auto=format&fit=crop&w=600&q=80" alt="Investment Clock">
+          <img src="https://th.wallhaven.cc/small/d6/d69eom.jpg" alt="Investment Clock">
         </div>
         <div class="card-body">
           <div class="card-date">2025-01-10</div>
@@ -568,7 +571,7 @@
         <div class="card-image">
           <span class="card-tag tag-pink">行业洞察</span>
           <!-- 使用 Unsplash 真实图片: Banking/Finance -->
-          <img src="https://images.unsplash.com/photo-1565514020176-dbf2277f260e?auto=format&fit=crop&w=600&q=80" alt="Central Bank">
+          <img src="https://th.wallhaven.cc/small/7j/7jgyre.jpg" alt="Central Bank">
         </div>
         <div class="card-body">
           <div class="card-date">2025-01-05</div>
@@ -701,7 +704,7 @@
       const btn = document.querySelector('.ai-btn');
       
       if (!promptInput.trim()) {
-        alert("请输入您想了解的宏观经济话题！");
+        alert("请输入您想了解的宏观经济问题！");
         return;
       }
 
@@ -710,12 +713,13 @@
       outputDiv.innerHTML = `
         <div class="ai-loading">
           <span class="sparkle-icon">✨</span> 
-          <span>正在连接宏观数据库，生成深度解读中...</span>
+          <span>正在连接全球宏观数据库，智能分析中...</span>
         </div>
       `;
 
       const apiKey = ""; // System will inject key
-      const systemPrompt = "你是一位顶级的全球宏观经济分析师（类似 Ray Dalio 或付鹏的风格）。你的任务是用简练、专业但易懂的中文，解读用户输入的宏观经济概念或新闻。回答要求：1. 核心逻辑：一句话总结本质。2. 关键影响：列出 3 点对市场或资产的影响。3. 风格：保持客观、理性和一点点赛博朋克的冷峻感。不要长篇大论，字数控制在 300 字以内。";
+      // Updated System Prompt: Broader scope
+      const systemPrompt = "你是一位全能型的全球宏观经济分析师。你的能力不再局限于解释概念，而是可以处理用户提出的**所有宏观经济相关问题**，包括：1. **热点事件点评**：对最新发生的财经新闻进行深度剖析。2. **数据查询与分析**：提供关键经济数据（如GDP、CPI）的历史背景或最新数值（基于搜索工具）。3. **知识科普**：解释复杂的经济学术语。4. **趋势研判**：基于逻辑推演未来的市场走向。风格要求：客观、理性、简练、带有赛博朋克的冷峻感。字数控制在 300 字以内。";
       
       const userQuery = promptInput;
 
@@ -725,7 +729,9 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] }
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            // Added tool for real-time data/events
+            tools: [{ google_search: {} }]
           })
         });
 
