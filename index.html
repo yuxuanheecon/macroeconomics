@@ -705,10 +705,16 @@
             prompt: promptInput
           })
         });
-
+        
+        // Check content type to avoid JSON parse error on 404/500 HTML pages
+        const contentType = response.headers.get("content-type");
         if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error || 'API Request Failed');
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                const errData = await response.json();
+                throw new Error(errData.error || `API Error: ${response.status}`);
+            } else {
+                throw new Error(`Server Error: ${response.status} (Check Vercel Logs)`);
+            }
         }
         
         const result = await response.json();
@@ -723,7 +729,16 @@
 
       } catch (error) {
         console.error(error);
-        outputDiv.innerHTML = `<span style="color:var(--neon-pink)">// ERROR: ${error.message} (请检查 Vercel 环境变量配置)</span>`;
+        // 更加友好的错误提示，帮助用户自查
+        let errorMsg = "连接超时或系统繁忙，请稍后重试。";
+        
+        if(error.message.includes("404")) {
+            errorMsg = "未找到后台服务 (/api/gemini 404)。请检查是否在 GitHub 根目录上传了 api 文件夹。";
+        } else if (error.message.includes("500")) {
+            errorMsg = "服务器配置错误 (500)。请检查 Vercel 的环境变量 GEMINI_API_KEY 是否已正确设置。";
+        }
+        
+        outputDiv.innerHTML = `<span style="color:var(--neon-pink)">// ERROR: ${errorMsg}</span>`;
       } finally {
         btn.disabled = false;
       }
