@@ -5,146 +5,310 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>地球宏观经济八卦 · 文档库</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
+
   <style>
-    /* ====== 页面整体样式 ====== */
+    :root {
+      --primary-color: #0f172a;   /* 深蓝黑背景 */
+      --accent-color: #c59d5f;    /* 金色点缀 */
+      --card-bg: #ffffff;         /* 卡片背景 */
+      --text-main: #1e293b;       /* 主文字 */
+      --text-sub: #64748b;        /* 次要文字 */
+      --bg-texture: radial-gradient(#e2e8f0 1px, transparent 1px); /* 背景波点 */
+    }
+
+    /* ====== 全局重置 ====== */
     body {
-      /* 页面主字体，前者为中文衬线体，后者为系统兜底字体 */
-      font-family: "Noto Serif SC", "Microsoft YaHei", serif;
-      background-color: #fdfbf7; /* 背景色，可换成浅灰 #f4f4f4 或米色 #fdfbf7 * 初始：fafafa/
-      color: #222; /* 主文字颜色 */
+      font-family: "Inter", "Microsoft YaHei", sans-serif;
+      background-color: #f8fafc;
+      /* 创建一种细腻的网格背景 */
+      background-image: var(--bg-texture);
+      background-size: 20px 20px;
+      color: var(--text-main);
       margin: 0;
       padding: 0;
-      line-height: 1.7; /* 行距，让文字更易读 */
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ====== 页眉（顶部封面） ====== */
+    /* ====== 顶部 Hero 区域 ====== */
     header {
-      /* 渐变色背景，可替换为纯色，如 background:#2a5298; */
-      background: linear-gradient(135deg, #1e3c72, #c59d5f);
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
       color: white;
+      padding: 100px 20px 80px;
       text-align: center;
-      padding: 80px 20px 60px; /* 上左右下的内边距 */
+      position: relative;
+      overflow: hidden;
     }
+    
+    /* 增加一个装饰性的背景光晕 */
+    header::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(197,157,95,0.15) 0%, transparent 60%);
+      animation: rotate 20s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
     header h1 {
-      font-size: 2.2em; /* 标题字号 */
-      margin-bottom: 0.3em;
+      font-family: "Noto Serif SC", serif;
+      font-size: 3em;
+      margin: 0 0 15px 0;
+      letter-spacing: 2px;
+      position: relative;
+      z-index: 1;
     }
+
     header p {
       font-size: 1.1em;
-      opacity: 0.9; /* 半透明效果，可改成1去掉 */
+      color: #94a3b8;
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+      font-weight: 300;
     }
 
-    /* ====== 主内容区 ====== */
+    /* ====== 主容器：网格布局 ====== */
     main {
-      max-width: 800px; /* 页面宽度限制，可调 */
-      margin: 40px auto; /* 居中显示 */
+      max-width: 1000px;
+      margin: -40px auto 60px; /* 负边距让卡片插入 Header */
       padding: 0 20px;
+      position: relative;
+      z-index: 10;
     }
 
-    /* ====== 列表样式（每篇文章） ====== */
-    ul {
-      list-style: none; /* 去掉默认圆点 */
-      padding-left: 0;
+    /* 使用 CSS Grid 实现响应式排版 */
+    .doc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
     }
 
-    li {
-      background: white; /* 每项背景色，可换浅灰或淡米色 */
-      margin: 10px 0;
-      padding: 15px 20px;
-      border-radius: 10px; /* 圆角 */
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* 阴影 */
+    /* ====== 卡片样式 ====== */
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+      transition: all 0.3s ease;
       display: flex;
-      justify-content: space-between; /* 标题和按钮两端对齐 */
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1px solid rgba(255,255,255,0.5);
+      animation: fadeUp 0.6s ease-out forwards;
+      opacity: 0; /* 初始隐藏，等待动画 */
+    }
+    
+    /* 动画延迟，制造阶梯效果 */
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
+    .card:nth-child(3) { animation-delay: 0.3s; }
+    .card:nth-child(4) { animation-delay: 0.4s; }
+    .card:nth-child(5) { animation-delay: 0.5s; }
+    .card:nth-child(6) { animation-delay: 0.6s; }
+
+    @keyframes fadeUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      border-color: var(--accent-color);
+    }
+
+    /* 卡片头部：标签 */
+    .card-meta {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .tag {
+      font-size: 0.75em;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* 不同类型的标签颜色 */
+    .tag.theory { background: #e0f2fe; color: #0369a1; }
+    .tag.market { background: #fef3c7; color: #b45309; }
+    .tag.report { background: #dcfce7; color: #15803d; }
+    .tag.book { background: #f3e8ff; color: #7e22ce; }
+
+    /* 卡片内容 */
+    .card-title {
+      font-family: "Noto Serif SC", serif;
+      font-size: 1.25em;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 0 0 10px 0;
+      line-height: 1.4;
+    }
+
+    .card-desc {
+      font-size: 0.9em;
+      color: var(--text-sub);
+      margin-bottom: 20px;
+      flex-grow: 1; /* 让描述撑满空间，保持按钮在底部 */
+    }
+
+    /* 按钮 */
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      transition: transform 0.1s ease-in-out; /* 鼠标悬停动画 */
-    }
-    li:hover {
-      transform: scale(1.02); /* 鼠标悬停时微微放大，可改为0.98缩小 */
-    }
-
-    /* ====== 超链接样式 ====== */
-    a {
-      text-decoration: none;
-      color: #2a5298; /* 链接颜色，可改成红/绿/灰 */
-      font-weight: bold;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 15px;
+      margin-top: 10px;
     }
 
-    /* ====== 阅读按钮样式 ====== */
+    .read-time {
+      font-size: 0.8em;
+      color: #94a3b8;
+    }
+
     .btn {
-      background: #2a5298; /* 按钮背景色，可换主题色 */
-      color: white;
-      padding: 6px 14px;
-      border-radius: 6px;
+      background: transparent;
+      color: var(--primary-color);
+      font-weight: 600;
       font-size: 0.9em;
       text-decoration: none;
-      transition: background 0.2s;
-    }
-    .btn:hover {
-      background: #1e3c72; /* 鼠标悬停时颜色，可改浅一点 */
+      padding: 6px 12px;
+      border: 1px solid var(--primary-color);
+      border-radius: 6px;
+      transition: all 0.2s;
     }
 
-    /* ====== 页脚样式 ====== */
+    .btn:hover {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    /* ====== 页脚 ====== */
     footer {
       text-align: center;
-      color: #888; /* 字体颜色，可调亮或暗 */
-      font-size: 0.9em;
+      color: var(--text-sub);
       padding: 40px 0;
+      font-size: 0.85em;
+    }
+    
+    footer p {
+        opacity: 0.7;
+    }
+
+    /* 移动端适配 */
+    @media (max-width: 600px) {
+      header h1 { font-size: 2em; }
+      main { margin-top: -20px; }
     }
   </style>
 </head>
 
 <body>
-  <!-- ====== 页面头部（封面标题区） ====== -->
+
   <header>
-    <!-- 主标题，可换成你网站名或LOGO -->
     <h1>地球宏观经济八卦</h1>
-    <!-- 副标题或简介，可自由改为口号、格言等 -->
-    <p>宏观视角、结构洞察、长期逻辑。<br>以研究笔记的方式解读世界经济。</p>
+    <p>洞察周期 · 理解结构 · 寻找α</p>
   </header>
 
-  <!-- ====== 主体内容区：文章列表 ====== -->
   <main>
-    <ul>
-      <!-- 每篇文章一项：标题 + 阅读按钮 -->
-      <li>
-        <span>宏观经济研究体系讲义</span>
-        <!-- target="_blank" 表示新窗口打开 -->
-        <a href="macrostudyintro2.pdf" class="btn" target="_blank">阅读</a>
-      </li>
+    <div class="doc-grid">
 
-      <li>
-        <span>大类资产投研讲义</span>
-        <a href="commodityinvestment.pdf" class="btn" target="_blank">阅读</a>
-      </li>
+      <div class="card">
+        <div class="card-meta">
+          <span class="tag theory">研究体系</span>
+        </div>
+        <h3 class="card-title">宏观经济研究体系讲义</h3>
+        <p class="card-desc">构建自上而下的分析框架，理解经济周期的核心驱动力与传导机制。</p>
+        <div class="card-footer">
+          <span class="read-time">PDF · 基础篇</span>
+          <a href="macrostudyintro2.pdf" class="btn" target="_blank">阅读文档</a>
+        </div>
+      </div>
 
-      <li>
-        <span>为什么世界各国都钟爱 2% 通胀目标？</span>
-        <a href="inflationtargetmechanism.pdf" class="btn" target="_blank">阅读</a>
-      </li>
+      <div class="card">
+        <div class="card-meta">
+          <span class="tag market">资产配置</span>
+        </div>
+        <h3 class="card-title">大类资产投研讲义</h3>
+        <p class="card-desc">美林时钟在当下的应用与失效，如何在大宗商品、债券与权益中寻找平衡。</p>
+        <div class="card-footer">
+          <span class="read-time">PDF · 实战篇</span>
+          <a href="commodityinvestment.pdf" class="btn" target="_blank">阅读文档</a>
+        </div>
+      </div>
 
-      <li>
-        <span>付鹏HSBC内部演讲（2025年经济展望）</span>
-        <a href="FupengspeechHSBC.pdf" class="btn" target="_blank">阅读</a>
-      </li>
+      <div class="card">
+        <div class="card-meta">
+          <span class="tag theory">货币政策</span>
+        </div>
+        <h3 class="card-title">为什么世界各国都钟爱 2% 通胀目标？</h3>
+        <p class="card-desc">探究 2% 这个神奇数字的起源，以及菲利普斯曲线在现代央行决策中的地位。</p>
+        <div class="card-footer">
+          <span class="read-time">PDF · 深度科普</span>
+          <a href="inflationtargetmechanism.pdf" class="btn" target="_blank">阅读文档</a>
+        </div>
+      </div>
 
-      <li>
-        <span>楔子：经济中的摩擦力</span>
-        <a href="Wedge.pdf" class="btn" target="_blank">阅读</a>
-      </li>
-      
-      <li>
-        <span>为什么国家会失败【精炼中译本】</span>
-        <a href="whynationsfail中译本.pdf" class="btn" target="_blank">阅读</a>
-      </li>
+      <div class="card" style="border-left: 4px solid var(--accent-color);">
+        <div class="card-meta">
+          <span class="tag report">年度重磅</span>
+        </div>
+        <h3 class="card-title">付鹏 HSBC 内部演讲</h3>
+        <p class="card-desc">对 2025 年全球经济的宏观展望，犀利解析存量博弈下的市场机会与风险。</p>
+        <div class="card-footer">
+          <span class="read-time">PDF · 演讲实录</span>
+          <a href="FupengspeechHSBC.pdf" class="btn" target="_blank">立即阅读</a>
+        </div>
+      </div>
 
-      
-    </ul>
+      <div class="card">
+        <div class="card-meta">
+          <span class="tag theory">楔子</span>
+        </div>
+        <h3 class="card-title">经济中的摩擦力</h3>
+        <p class="card-desc">完美模型之外的现实世界：交易成本、信息不对称与制度刚性。</p>
+        <div class="card-footer">
+          <span class="read-time">PDF · 随笔</span>
+          <a href="Wedge.pdf" class="btn" target="_blank">阅读文档</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-meta">
+          <span class="tag book">必读书目</span>
+        </div>
+        <h3 class="card-title">为什么国家会失败</h3>
+        <p class="card-desc">【精炼中译本】制度决定论的经典之作，榨取型制度与包容型制度的博弈。</p>
+        <div class="card-footer">
+          <span class="read-time">PDF · 读书笔记</span>
+          <a href="whynationsfail中译本.pdf" class="btn" target="_blank">阅读文档</a>
+        </div>
+      </div>
+
+    </div>
   </main>
 
-  <!-- ====== 页脚信息 ====== -->
   <footer>
-    <!-- 你可以加日期、邮箱或公众号链接 -->
-    <p>本站内容版权所有 © 2025 地球宏观经济八卦 </p>
+    <p>本站内容版权所有 © 2025 地球宏观经济八卦<br>Knowledge is the only currency that appreciates.</p>
   </footer>
+
 </body>
 </html>
