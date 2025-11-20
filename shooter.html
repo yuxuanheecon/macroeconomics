@@ -3,16 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Macro Defender 3.0 | Earth Macro</title>
+  <title>Macro Defender 4.1 | Earth Macro</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     /* ====== 基础样式 ====== */
     body {
       margin: 0; overflow: hidden; background: #050505; color: white; font-family: 'JetBrains Mono', monospace;
-      user-select: none; cursor: crosshair; /* 瞄准准星 */
+      user-select: none; cursor: crosshair;
     }
     
-    /* 扫描线特效 */
     .scanlines {
       position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 50;
       background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
@@ -28,104 +27,155 @@
 
     /* 顶部 HUD */
     .hud-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .hud-left { display: flex; gap: 15px; }
+    .hud-right { display: flex; gap: 10px; pointer-events: auto; } /* 允许点击按钮 */
+
     .stat-box { text-shadow: 0 0 10px currentColor; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 4px; border: 1px solid #333; }
     .label { font-size: 0.7rem; color: #888; display: block; letter-spacing: 1px; margin-bottom: 2px; }
     .value { font-family: 'Share Tech Mono'; font-size: 1.5rem; font-weight: bold; }
-    
     #score-val { color: #00ff9d; }
     #health-val { color: #00f3ff; }
     #cycle-val { color: #ffee00; }
 
-    /* 底部技能栏 HUD */
-    .hud-bottom { display: flex; justify-content: center; align-items: flex-end; gap: 20px; position: relative; pointer-events: auto; }
+    .hud-btn {
+      background: rgba(0,0,0,0.6); border: 1px solid #555; color: #aaa;
+      padding: 8px 15px; cursor: pointer; font-family: 'JetBrains Mono'; font-size: 0.8rem;
+      transition: all 0.2s; border-radius: 4px;
+    }
+    .hud-btn:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,0.1); }
+
+    /* 底部 HUD (技能 + 装备) */
+    .hud-bottom { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; pointer-events: auto; }
     
-    .skill-bar { display: flex; gap: 15px; }
+    .skill-panel { display: flex; gap: 10px; align-items: center; }
     .skill-slot {
-      width: 70px; height: 70px; border: 2px solid #444; background: rgba(0,0,0,0.7);
+      width: 60px; height: 60px; border: 2px solid #444; background: rgba(0,0,0,0.7);
       position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
       border-radius: 8px; transition: all 0.1s; overflow: hidden; cursor: help;
     }
-    .skill-slot.ready { border-color: var(--color); box-shadow: 0 0 15px var(--color); }
-    .skill-slot.cooldown { border-color: #333; opacity: 0.7; cursor: not-allowed; }
-    
+    .skill-slot.ready { border-color: var(--color); box-shadow: 0 0 10px var(--color); }
+    .skill-slot.cooldown { border-color: #333; opacity: 0.6; filter: grayscale(1); }
     .skill-key { position: absolute; top: 2px; left: 2px; background: #000; border: 1px solid #555; color: #fff; font-size: 0.6rem; padding: 1px 4px; border-radius: 2px; }
-    .skill-icon { font-size: 1.5rem; margin-bottom: 5px; }
-    .skill-name { font-size: 0.6rem; color: #aaa; text-transform: uppercase; }
-    
+    .skill-icon { font-size: 1.5rem; }
     .cooldown-overlay {
       position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8);
-      height: 0%; transition: height 0.1s linear;
-      display: flex; justify-content: center; align-items: center;
+      height: 0%; transition: height 0.1s linear; display: flex; justify-content: center; align-items: center;
     }
-    .cooldown-text {
-      color: white; font-weight: bold; font-size: 1.2rem; font-family: 'Share Tech Mono';
-    }
+    .cooldown-text { color: white; font-weight: bold; font-size: 1rem; font-family: 'Share Tech Mono'; }
 
-    /* 技能提示框 (Tooltip) */
+    /* 装备栏 */
+    .inventory-panel { display: flex; gap: 5px; background: rgba(0,0,0,0.6); padding: 5px; border: 1px solid #333; border-radius: 6px; }
+    .item-slot {
+      width: 40px; height: 40px; border: 1px solid #444; background: rgba(0,0,0,0.8);
+      display: flex; justify-content: center; align-items: center; font-size: 1.2rem; position: relative;
+      cursor: help;
+    }
+    .item-slot img { width: 100%; height: 100%; object-fit: cover; }
+    .item-slot.empty { color: #222; font-size: 0.8rem; }
+
+    .shop-hint { margin-left: 15px; color: #ffee00; border: 1px solid #ffee00; padding: 8px; font-size: 0.8rem; animation: pulse 2s infinite; cursor: pointer; }
+    @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+    /* Tooltip */
     .tooltip {
       position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
-      background: rgba(10, 15, 20, 0.95); border: 1px solid var(--neon-blue);
-      padding: 15px; border-radius: 8px; width: 300px; pointer-events: none;
-      display: none; text-align: left; box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      background: rgba(12, 18, 24, 0.98); border: 1px solid var(--neon-blue);
+      padding: 15px; border-radius: 8px; width: 320px; pointer-events: none;
+      display: none; text-align: left; box-shadow: 0 0 30px rgba(0,0,0,0.8); z-index: 100;
     }
-    .tooltip h4 { margin: 0 0 5px 0; color: #fff; font-size: 1rem; }
-    .tooltip p { margin: 0; color: #aaa; font-size: 0.8rem; line-height: 1.4; }
-    .tooltip .cost { margin-top: 8px; font-size: 0.7rem; color: #ff0055; font-weight: bold; }
+    .tooltip h4 { margin: 0 0 8px 0; color: #00f3ff; font-size: 1rem; font-family: 'Share Tech Mono'; border-bottom: 1px solid #333; padding-bottom: 5px; }
+    .tooltip p { margin: 0 0 8px 0; color: #ccc; font-size: 0.8rem; line-height: 1.4; }
+    .tooltip .stats { color: #888; font-size: 0.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .tooltip .stats span { color: #fff; }
+    .tooltip .passive { color: #ffee00; font-size: 0.75rem; margin-top: 8px; font-style: italic; }
 
     /* ====== 模态窗口 ====== */
     .modal {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(5,5,10,0.95); display: flex; flex-direction: column;
-      justify-content: center; align-items: center; z-index: 100; pointer-events: auto;
+      background: rgba(5,5,8,0.98); display: flex; flex-direction: column;
+      z-index: 100; pointer-events: auto; overflow-y: auto;
     }
     .hidden { display: none !important; }
+    .modal-content { width: 100%; max-width: 1200px; margin: 0 auto; padding: 30px; display: flex; flex-direction: column; height: 100%; align-items: center; }
 
-    h1 { font-family: 'Share Tech Mono'; font-size: 3rem; color: #00f3ff; text-shadow: 0 0 30px #00f3ff; margin: 0 0 20px 0; }
-    h2 { font-size: 1.5rem; color: #ccc; margin-bottom: 20px; }
-    p { color: #888; margin-bottom: 20px; font-size: 1rem; max-width: 800px; line-height: 1.6; text-align: center; }
-
+    h1 { font-family: 'Share Tech Mono'; font-size: 2.5rem; color: #00f3ff; text-shadow: 0 0 20px #00f3ff; margin: 10px 0; }
+    
+    /* 通用按钮 */
     .btn {
       background: transparent; border: 2px solid #00ff9d; color: #00ff9d;
-      padding: 12px 30px; font-size: 1.2rem; font-family: 'Share Tech Mono';
-      cursor: pointer; box-shadow: 0 0 20px rgba(0,255,157,0.2); transition: all 0.2s;
-      margin: 10px;
+      padding: 10px 25px; font-size: 1rem; font-family: 'Share Tech Mono';
+      cursor: pointer; box-shadow: 0 0 15px rgba(0,255,157,0.2); transition: all 0.2s;
+      margin: 5px;
     }
-    .btn:hover { background: #00ff9d; color: black; box-shadow: 0 0 50px rgba(0,255,157,0.6); transform: scale(1.05); }
-    .btn-red { border-color: #ff0055; color: #ff0055; box-shadow: 0 0 20px rgba(255,0,85,0.2); }
-    .btn-red:hover { background: #ff0055; color: white; box-shadow: 0 0 50px rgba(255,0,85,0.6); }
+    .btn:hover { background: #00ff9d; color: black; box-shadow: 0 0 30px rgba(0,255,157,0.4); transform: scale(1.05); }
+    .btn-red { border-color: #ff0055; color: #ff0055; }
+    .btn-red:hover { background: #ff0055; color: white; }
 
-    /* 选人界面 */
-    .char-container { display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center; }
-    .char-card {
-      border: 1px solid #444; padding: 15px; width: 200px; background: rgba(255,255,255,0.05);
-      cursor: pointer; transition: all 0.3s; text-align: left; position: relative; overflow: hidden;
+    /* 规则页 */
+    .rules-box {
+      background: rgba(255,255,255,0.05); padding: 30px; border-radius: 8px; border: 1px solid #333;
+      max-width: 800px; width: 100%; margin-bottom: 30px; text-align: left; line-height: 1.8;
     }
-    .char-card:hover, .char-card.selected { border-color: #ffee00; background: rgba(255,238,0,0.1); box-shadow: 0 0 30px rgba(255,238,0,0.2); transform: translateY(-5px); }
-    .char-card.selected::after { content:"SELECTED"; position:absolute; top:5px; right:5px; font-size:0.6rem; color:#ffee00; font-weight:bold; }
+    .rules-box h3 { color: #ffee00; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
+    .key-tag { background: #333; border: 1px solid #666; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; color: #fff; font-family: monospace; margin: 0 3px; }
     
-    .char-name { font-size: 1.1rem; color: #fff; margin-bottom: 5px; font-weight: bold; }
-    .char-title { color: #888; font-size: 0.7rem; margin-bottom: 10px; font-style: italic; height: 2.5em; }
-    .char-stats { font-size: 0.75rem; color: #aaa; line-height: 1.6; }
-    .stat-bar { height: 4px; background: #333; margin-top: 2px; width: 100%; position: relative; }
-    .stat-fill { height: 100%; background: #00f3ff; }
-
-    /* 难度选择 */
-    .diff-select { display: flex; gap: 10px; margin-bottom: 30px; }
-    .diff-btn { padding: 8px 20px; border: 1px solid #555; color: #555; cursor: pointer; font-family: 'JetBrains Mono'; }
+    .diff-select { display: flex; gap: 10px; margin-bottom: 30px; justify-content: center; width: 100%; }
+    .diff-btn { padding: 10px 30px; border: 1px solid #555; color: #555; cursor: pointer; font-family: 'JetBrains Mono'; border-radius: 4px; }
     .diff-btn:hover { border-color: #fff; color: #fff; }
     .diff-btn.active { border-color: #00f3ff; color: #00f3ff; box-shadow: 0 0 10px #00f3ff; background: rgba(0, 243, 255, 0.1); font-weight: bold; }
 
-    /* 商店界面 */
-    #shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 600px; width: 100%; }
-    .shop-item { border: 1px solid #333; padding: 15px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); }
-    .shop-info b { display: block; color: #00f3ff; margin-bottom: 5px; font-size: 0.9rem; }
-    .shop-info span { font-size: 0.7rem; color: #888; }
-    .shop-btn { font-size: 0.8rem; padding: 5px 15px; margin: 0; }
-    
-    /* 浮动伤害数字 */
-    .floating-text { position: absolute; font-weight: bold; pointer-events: none; animation: floatUp 1s ease-out forwards; }
-    @keyframes floatUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-50px); opacity: 0; } }
+    /* 选人页 */
+    .category-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; width: 100%; }
+    .tab-btn {
+      padding: 8px 20px; background: rgba(255,255,255,0.05); border: 1px solid #444; color: #888;
+      cursor: pointer; font-family: 'JetBrains Mono'; font-size: 0.9rem; transition: all 0.2s;
+      border-radius: 4px;
+    }
+    .tab-btn:hover { border-color: #fff; color: #fff; }
+    .tab-btn.active { background: rgba(0, 243, 255, 0.15); border-color: #00f3ff; color: #00f3ff; font-weight: bold; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); }
 
+    .char-selection-area { display: flex; gap: 20px; flex: 1; width: 100%; overflow: hidden; }
+    .char-list { 
+      flex: 2; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
+      gap: 10px; overflow-y: auto; align-content: start; padding-right: 5px;
+      border: 1px solid #333; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;
+    }
+    .char-detail-panel { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid #444; padding: 20px; overflow-y: auto; min-width: 300px; display:flex; flex-direction:column; align-items:center; }
+    
+    .char-mini-card { background: rgba(255,255,255,0.05); border: 1px solid #444; padding: 10px; cursor: pointer; text-align: center; border-radius: 8px; }
+    .char-mini-card:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+    .char-mini-card.selected { border-color: #ffee00; background: rgba(255,238,0,0.15); box-shadow: inset 0 0 10px rgba(255,238,0,0.2); }
+    .mini-avatar { width: 50px; height: 50px; border-radius: 50%; margin-bottom: 5px; background: #000; object-fit: cover; }
+    .mini-name { font-size: 0.7rem; font-weight: bold; color: #eee; line-height: 1.2; }
+
+    .stat-bar { height: 4px; background: #333; width: 100%; margin-top: 3px; }
+    .stat-fill { height: 100%; background: #00f3ff; }
+    
+    .skill-list { width: 100%; text-align: left; font-size: 0.85rem; margin-top: 20px; }
+    .skill-item { margin-bottom: 12px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+    .skill-item strong { color: #fff; font-size: 0.9rem; display: block; margin-bottom: 2px; }
+    .skill-item span { font-size: 0.75rem; color: #888; }
+    .key-badge { display: inline-block; background: #333; color: #fff; padding: 1px 4px; border-radius: 2px; font-size: 0.7rem; margin-right: 5px; }
+
+    /* 商店界面 */
+    #shop-menu h1 { border-bottom: 2px solid #333; width: 100%; text-align: center; padding-bottom: 10px; }
+    .shop-container { display: flex; width: 100%; height: 100%; gap: 20px; overflow: hidden; }
+    .shop-tabs { display: flex; flex-direction: column; gap: 10px; width: 150px; }
+    .shop-tab { padding: 15px; background: #111; color: #666; cursor: pointer; border-left: 3px solid transparent; transition: 0.2s; font-family: 'JetBrains Mono'; }
+    .shop-tab:hover { color: #fff; background: #222; }
+    .shop-tab.active { border-left-color: #00f3ff; color: #00f3ff; background: #1a1a2a; font-weight: bold; }
+    .shop-items { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; overflow-y: auto; align-content: start; padding: 10px; }
+    .shop-item-card { background: rgba(255,255,255,0.05); border: 1px solid #444; padding: 15px; display: flex; flex-direction: column; align-items: center; text-align: center; transition: 0.2s; position: relative; cursor: pointer; }
+    .shop-item-card:hover { border-color: #00f3ff; transform: translateY(-3px); background: rgba(255,255,255,0.08); }
+    .shop-item-icon { font-size: 2rem; margin-bottom: 10px; }
+    .shop-item-name { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; color: #fff; }
+    .shop-item-cost { color: #ffee00; font-size: 0.9rem; font-family: 'Share Tech Mono'; margin-bottom: 10px; }
+    .shop-item-desc { font-size: 0.7rem; color: #888; line-height: 1.3; height: 40px; overflow: hidden; }
+    .shop-buy-btn { margin-top: 10px; width: 100%; padding: 5px; font-size: 0.8rem; }
+    .shop-inventory { width: 100%; border-top: 1px solid #333; padding-top: 15px; display: flex; justify-content: space-between; align-items: center; }
+
+    .floating-text { position: absolute; font-weight: bold; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 20; text-shadow: 1px 1px 2px black; font-size: 0.9rem; }
+    @keyframes floatUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-30px); opacity: 0; } }
   </style>
 </head>
 <body>
@@ -133,700 +183,699 @@
   <canvas id="gameCanvas"></canvas>
   <div class="scanlines"></div>
 
-  <!-- HUD -->
-  <div id="ui-layer">
+  <!-- 游戏内 HUD (Start hidden) -->
+  <div id="ui-layer" class="hidden">
     <div class="hud-top">
-      <div class="stat-box">
-        <span class="label">GDP (SCORE)</span>
-        <div class="value" id="score-val">0</div>
+      <div class="hud-left">
+        <div class="stat-box"><span class="label">GDP (GOLD)</span><div class="value" id="score-val">0</div></div>
+        <div class="stat-box"><span class="label">CYCLE</span><div class="value" id="cycle-val">-</div></div>
+        <div class="stat-box"><span class="label">LIQUIDITY (HP)</span><div class="value" id="health-val">100%</div></div>
       </div>
-      <div class="stat-box">
-        <span class="label">MACRO CYCLE</span>
-        <div class="value" id="cycle-val">LOADING...</div>
-      </div>
-      <div class="stat-box">
-        <span class="label">LIQUIDITY (HP)</span>
-        <div class="value" id="health-val">100%</div>
+      <div class="hud-right">
+        <div class="hud-btn" onclick="togglePause()">⏸️ PAUSE</div>
+        <div class="hud-btn" onclick="location.reload()">🔄 RESTART</div>
       </div>
     </div>
 
     <div class="hud-bottom">
-      <!-- Tooltip Container -->
-      <div id="skill-tooltip" class="tooltip">
+      <!-- 技能提示框 (Tooltip) -->
+      <div id="tooltip" class="tooltip">
         <h4 id="tt-title">Skill Name</h4>
-        <p id="tt-desc">Description goes here.</p>
-        <div id="tt-cost" class="cost">Cooldown: 10s</div>
+        <p id="tt-desc">Description</p>
+        <div class="stats" id="tt-stats"></div>
+        <div class="passive" id="tt-passive"></div>
       </div>
 
-      <div class="skill-bar">
-        <!-- A / Click -->
-        <div class="skill-slot" style="--color: #fff; border-color:#fff;" onmouseenter="showTooltip('a')" onmouseleave="hideTooltip()">
-          <span class="skill-key">A</span>
-          <span class="skill-icon">🔫</span>
-          <span class="skill-name">Attack</span>
+      <div style="display:flex; align-items:flex-end; gap:20px; width:100%; justify-content:center;">
+        <div class="skill-panel">
+          <div class="skill-slot" style="--color:#fff; border-color:#fff;">
+            <span class="skill-key">A</span><span class="skill-icon">🔫</span>
+          </div>
+          <div class="skill-slot" id="skill-q" style="--color:#00f3ff" onmouseenter="showSkillTooltip('q')" onmouseleave="hideTooltip()">
+            <span class="skill-key">Q</span><span class="skill-icon">💠</span>
+            <div class="cooldown-overlay"><span class="cooldown-text"></span></div>
+          </div>
+          <div class="skill-slot" id="skill-w" style="--color:#00ff9d" onmouseenter="showSkillTooltip('w')" onmouseleave="hideTooltip()">
+            <span class="skill-key">W</span><span class="skill-icon">🛡️</span>
+            <div class="cooldown-overlay"><span class="cooldown-text"></span></div>
+          </div>
+          <div class="skill-slot" id="skill-e" style="--color:#ffee00" onmouseenter="showSkillTooltip('e')" onmouseleave="hideTooltip()">
+            <span class="skill-key">E</span><span class="skill-icon">⚡</span>
+            <div class="cooldown-overlay"><span class="cooldown-text"></span></div>
+          </div>
+          <div class="skill-slot" id="skill-r" style="--color:#ff0055" onmouseenter="showSkillTooltip('r')" onmouseleave="hideTooltip()">
+            <span class="skill-key">R</span><span class="skill-icon">☢️</span>
+            <div class="cooldown-overlay"><span class="cooldown-text"></span></div>
+          </div>
         </div>
-        <!-- Q -->
-        <div class="skill-slot" id="skill-q" style="--color: #00f3ff" onmouseenter="showTooltip('q')" onmouseleave="hideTooltip()">
-          <span class="skill-key">Q</span>
-          <span class="skill-icon">💠</span>
-          <span class="skill-name" id="name-q">Tactical</span>
-          <div class="cooldown-overlay"><span class="cooldown-text"></span></div>
+        
+        <!-- 装备栏 -->
+        <div class="inventory-panel" id="inventory-display">
+          <div class="item-slot empty" data-idx="0"></div>
+          <div class="item-slot empty" data-idx="1"></div>
+          <div class="item-slot empty" data-idx="2"></div>
+          <div class="item-slot empty" data-idx="3"></div>
+          <div class="item-slot empty" data-idx="4"></div>
+          <div class="item-slot empty" data-idx="5"></div>
         </div>
-        <!-- W -->
-        <div class="skill-slot" id="skill-w" style="--color: #00ff9d" onmouseenter="showTooltip('w')" onmouseleave="hideTooltip()">
-          <span class="skill-key">W</span>
-          <span class="skill-icon">🛡️</span>
-          <span class="skill-name">Defense</span>
-          <div class="cooldown-overlay"><span class="cooldown-text"></span></div>
-        </div>
-        <!-- E -->
-        <div class="skill-slot" id="skill-e" style="--color: #ffee00" onmouseenter="showTooltip('e')" onmouseleave="hideTooltip()">
-          <span class="skill-key">E</span>
-          <span class="skill-icon">⚡</span>
-          <span class="skill-name">Dash</span>
-          <div class="cooldown-overlay"><span class="cooldown-text"></span></div>
-        </div>
-        <!-- R -->
-        <div class="skill-slot" id="skill-r" style="--color: #ff0055" onmouseenter="showTooltip('r')" onmouseleave="hideTooltip()">
-          <span class="skill-key">R</span>
-          <span class="skill-icon">☢️</span>
-          <span class="skill-name" id="name-r">Ultimate</span>
-          <div class="cooldown-overlay"><span class="cooldown-text"></span></div>
-        </div>
+        
+        <div class="shop-hint" onclick="toggleShop()">SHOP [B]</div>
       </div>
-      <div class="shop-hint">SHOP [B] | PAUSE [P]</div>
     </div>
   </div>
 
-  <!-- 1. 开始/选人界面 -->
-  <div id="start-screen" class="modal">
-    <h1>MACRO DEFENDER 3.0</h1>
-    <p>
-      <strong>MOBA 风格操作：</strong><br>
-      [鼠标右键] 移动角色 | [鼠标位置] 瞄准方向<br>
-      [A / 左键] 普攻 | [Q W E R] 释放技能
-    </p>
+  <!-- 1. 规则/难度界面 -->
+  <div id="screen-rules" class="modal">
+    <div class="modal-content" style="justify-content:center;">
+      <h1>MACRO DEFENDER 4.1</h1>
+      <p class="subtitle">Global Economy Defense Initiative</p>
 
-    <div class="diff-select">
-      <div class="diff-btn" onclick="setDifficulty(0.8, this)">EASY (简单)</div>
-      <div class="diff-btn active" onclick="setDifficulty(1, this)">NORMAL (普通)</div>
-      <div class="diff-btn" onclick="setDifficulty(1.5, this)">HARD (困难)</div>
-    </div>
+      <div class="rules-box">
+        <h3>🔰 任务简报 (Mission Briefing)</h3>
+        <p>
+          1. <strong>选择领袖</strong>：从央行、政界、华尔街或科技界选择你的英雄。<br>
+          2. <strong>操作方式</strong>：<span class="key-tag">鼠标右键</span> 移动，<span class="key-tag">A</span> 键普攻，<span class="key-tag">QWER</span> 释放技能。<br>
+          3. <strong>防御目标</strong>：击退通胀恶魔与资产泡沫，保护全球流动性(HP)。<br>
+          4. <strong>经济系统</strong>：击杀敌人获得 GDP，按 <span class="key-tag">B</span> 键购买强化装备。
+        </p>
+      </div>
 
-    <div class="char-container">
-      <!-- Powell -->
-      <div class="char-card selected" onclick="selectChar('powell', this)">
-        <div class="char-name">鲍威尔 (Powell)</div>
-        <div class="char-title">"Data Dependent"</div>
-        <div class="char-stats">
-          <div>HP: <span style="color:#00f3ff">■■■■■</span></div>
-          <div>ATK: <span style="color:#00f3ff">■■■□□</span></div>
-          <div style="margin-top:5px; font-size:0.7rem; color:#888;">Q: 鹰派三连射<br>R: 无限印钞 (全屏激光)</div>
-        </div>
+      <p style="margin-bottom:10px; color:#fff;">SELECT DIFFICULTY</p>
+      <div class="diff-select">
+        <div class="diff-btn" onclick="setDifficulty(0.8, this)">EASY (简单)</div>
+        <div class="diff-btn active" onclick="setDifficulty(1, this)">NORMAL (普通)</div>
+        <div class="diff-btn" onclick="setDifficulty(1.5, this)">HARD (困难)</div>
       </div>
-      <!-- Trump -->
-      <div class="char-card" onclick="selectChar('trump', this)">
-        <div class="char-name">特朗普 (Trump)</div>
-        <div class="char-title">"Make Market Great"</div>
-        <div class="char-stats">
-          <div>HP: <span style="color:#ff0055">■■□□□</span></div>
-          <div>ATK: <span style="color:#ff0055">■■■■■</span></div>
-          <div style="margin-top:5px; font-size:0.7rem; color:#888;">Q: 推特风暴 (散射)<br>R: 贸易战 (清屏核弹)</div>
-        </div>
-      </div>
-      <!-- Xi -->
-      <div class="char-card" onclick="selectChar('xi', this)">
-        <div class="char-name">掌舵人 (Big Boss)</div>
-        <div class="char-title">"Steady Growth"</div>
-        <div class="char-stats">
-          <div>HP: <span style="color:#ffee00">■■■■■+</span></div>
-          <div>ATK: <span style="color:#ffee00">■■■□□</span></div>
-          <div style="margin-top:5px; font-size:0.7rem; color:#888;">Q: 逆周期调节 (震荡波)<br>R: 共同富裕 (回血+伤害)</div>
-        </div>
-      </div>
-      <!-- Takaichi -->
-      <div class="char-card" onclick="selectChar('takaichi', this)">
-        <div class="char-name">高市早苗 (Takaichi)</div>
-        <div class="char-title">"Sanaenomics"</div>
-        <div class="char-stats">
-          <div>HP: <span style="color:#bd34fe">■■□□□</span></div>
-          <div>ATK: <span style="color:#bd34fe">■■□□□ (高射速)</span></div>
-          <div style="margin-top:5px; font-size:0.7rem; color:#888;">Q: 财政刺激 (攻速爆发)<br>R: 日元海啸 (弹幕雨)</div>
-        </div>
-      </div>
-      <!-- Macron -->
-      <div class="char-card" onclick="selectChar('macron', this)">
-        <div class="char-name">马克龙 (Macron)</div>
-        <div class="char-title">"European Autonomy"</div>
-        <div class="char-stats">
-          <div>HP: <span style="color:#00ff9d">■■■□□</span></div>
-          <div>ATK: <span style="color:#00ff9d">■■■□□</span></div>
-          <div style="margin-top:5px; font-size:0.7rem; color:#888;">Q: 改革重拳 (穿透)<br>R: 战略自主 (无敌光环)</div>
-        </div>
-      </div>
+
+      <button class="btn" style="width:300px; margin-top:20px;" onclick="goToCharSelect()">NEXT: SELECT HERO</button>
     </div>
-    
-    <button class="btn" onclick="gameInit()">START MISSION</button>
   </div>
 
-  <!-- 2. 暂停菜单 -->
+  <!-- 2. 选人界面 -->
+  <div id="screen-char" class="modal hidden">
+    <div class="modal-content">
+      <h1>SELECT YOUR HERO</h1>
+      
+      <!-- 分类 Tab -->
+      <div class="category-tabs" id="category-tabs">
+        <div class="tab-btn active" onclick="filterChars('banker')">🏛️ 央行当局</div>
+        <div class="tab-btn" onclick="filterChars('politician')">🦅 国家领袖</div>
+        <div class="tab-btn" onclick="filterChars('investor')">💼 华尔街</div>
+        <div class="tab-btn" onclick="filterChars('tech')">🚀 科技巨头</div>
+        <div class="tab-btn" onclick="filterChars('org')">🌍 国际组织</div>
+      </div>
+
+      <div class="char-selection-area">
+        <!-- 左侧列表 -->
+        <div class="char-list" id="char-list-container">
+          <!-- JS 生成 -->
+        </div>
+
+        <!-- 右侧详情 -->
+        <div class="char-detail-panel">
+          <img id="detail-avatar" class="detail-avatar" src="" alt="Avatar">
+          <div id="detail-name" class="detail-name">Select a Hero</div>
+          <div id="detail-title" class="detail-title">--</div>
+          
+          <div class="stats-grid" style="width:100%; font-size:0.8rem;">
+            <div class="stat-row"><span class="stat-label">HP</span><div class="stat-track"><div class="stat-bar" id="bar-hp" style="width:0%"></div></div></div>
+            <div class="stat-row"><span class="stat-label">ATK</span><div class="stat-track"><div class="stat-bar" id="bar-atk" style="width:0%"></div></div></div>
+            <div class="stat-row"><span class="stat-label">SPD</span><div class="stat-track"><div class="stat-bar" id="bar-spd" style="width:0%"></div></div></div>
+            <div class="stat-row"><span class="stat-label">RATE</span><div class="stat-track"><div class="stat-bar" id="bar-rate" style="width:0%"></div></div></div>
+          </div>
+
+          <div class="skill-list">
+            <div class="skill-item">
+              <strong><span class="key-badge">Q</span> <span id="skill-q-name">-</span></strong>
+              <span id="skill-q-desc">-</span>
+            </div>
+            <div class="skill-item">
+              <strong><span class="key-badge">W</span> <span id="skill-w-name">-</span></strong>
+              <span id="skill-w-desc">-</span>
+            </div>
+            <div class="skill-item">
+              <strong><span class="key-badge">R</span> <span id="skill-r-name">-</span></strong>
+              <span id="skill-r-desc">-</span>
+            </div>
+          </div>
+
+          <button class="start-btn" style="margin-top:auto" onclick="startGame()">DEPLOY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 暂停菜单 -->
   <div id="pause-menu" class="modal hidden">
     <h1>SYSTEM PAUSED</h1>
     <button class="btn" onclick="togglePause()">RESUME</button>
-    <button class="btn btn-red" onclick="location.reload()">ABORT</button>
+    <button class="btn btn-red" onclick="location.reload()">ABORT MISSION</button>
   </div>
 
-  <!-- 3. 商店界面 -->
+  <!-- 4. 商店界面 -->
   <div id="shop-menu" class="modal hidden">
-    <h1>GDP STORE</h1>
-    <p>Invest your GDP to boost economy stats.</p>
-    <p>Current GDP: <span id="shop-gdp" style="color:#00ff9d; font-size:1.5rem;">$0</span></p>
-    
-    <div id="shop-grid">
-      <div class="shop-item">
-        <div class="shop-info"><b>Monetary Power (DMG)</b><span>增加 20% 伤害</span></div>
-        <button class="btn shop-btn" onclick="buyUpgrade('damage')">$1000</button>
+    <div class="modal-content">
+      <h1>GDP STORE</h1>
+      <div class="shop-container">
+        <div class="shop-tabs">
+          <div class="shop-tab active" onclick="filterShop('attack')">⚔️ 进攻</div>
+          <div class="shop-tab" onclick="filterShop('defense')">🛡️ 防御</div>
+          <div class="shop-tab" onclick="filterShop('utility')">⚡ 功能</div>
+        </div>
+        <div class="shop-items" id="shop-items-container">
+          <!-- JS 生成 -->
+        </div>
       </div>
-      <div class="shop-item">
-        <div class="shop-info"><b>Velocity (SPD)</b><span>增加 10% 移速</span></div>
-        <button class="btn shop-btn" onclick="buyUpgrade('speed')">$800</button>
-      </div>
-      <div class="shop-item">
-        <div class="shop-info"><b>Printing Speed (RATE)</b><span>增加 15% 射速</span></div>
-        <button class="btn shop-btn" onclick="buyUpgrade('rate')">$1500</button>
-      </div>
-      <div class="shop-item">
-        <div class="shop-info"><b>Reserves Injection (HP)</b><span>回复 50% 生命值</span></div>
-        <button class="btn shop-btn" onclick="buyUpgrade('heal')">$500</button>
+      <div class="shop-inventory">
+        <div style="color:#fff">Your GDP: <span id="shop-current-gdp" style="color:#00ff9d">$0</span></div>
+        <button class="btn btn-red" onclick="toggleShop()">CLOSE [B]</button>
       </div>
     </div>
-
-    <button class="btn" style="margin-top:30px" onclick="toggleShop()">CLOSE SHOP [B]</button>
   </div>
 
-  <!-- 4. 游戏结束 -->
   <div id="game-over" class="modal hidden">
     <h1 style="color:#ff0055">MARKET CRASH</h1>
-    <p>Liquidity Dried Up. Final GDP: <span id="final-score" style="color:white; font-weight:bold;">0</span></p>
-    <button class="btn" onclick="location.reload()">REBOOT ECONOMY</button>
+    <p>Liquidity Dried Up. Final GDP: <span id="final-score">0</span></p>
+    <button class="btn" onclick="location.reload()">REBOOT</button>
   </div>
 
   <script>
-    /* ====== 核心引擎 ====== */
+    /* ====== 数据中心 (40+ Chars) ====== */
+    const CHARACTERS = {
+      // 1. Bankers
+      'powell': { cat: 'banker', name: 'Jerome Powell', title: 'Fed Chair', hp: 7, atk: 4, spd: 5, rate: 8, color: '#00f3ff', q:'Hawk Shot', w:'Rate Shield', r:'Infinite QE', qDesc:'鹰派三连射', wDesc:'加息护盾击退', rDesc:'无限印钞全屏激光' },
+      'yellen': { cat: 'banker', name: 'Janet Yellen', title: 'Treasury Secretary', hp: 6, atk: 5, spd: 5, rate: 7, color: '#0099ff', q:'Soft Landing', w:'Debt Ceiling', r:'Bailout', qDesc:'减速弹幕', wDesc:'债务上限防御塔', rDesc:'全员回血' },
+      'bernanke': { cat: 'banker', name: 'Ben Bernanke', title: 'Ex-Fed Chair', hp: 6, atk: 3, spd: 4, rate: 9, color: '#00cc99', q:'Helicopter', w:'Stress Test', r:'QE1', qDesc:'直升机撒钱散射', wDesc:'压力测试护盾', rDesc:'量化宽松轰炸' },
+      'greenspan': { cat: 'banker', name: 'Alan Greenspan', title: 'The Maestro', hp: 5, atk: 6, spd: 3, rate: 6, color: '#aaaaaa', q:'Fed Put', w:'Irrational Exub', r:'Great Moderation', qDesc:'看跌期权护盾', wDesc:'非理性繁荣加速', rDesc:'大缓和定身' },
+      'lagarde': { cat: 'banker', name: 'Christine Lagarde', title: 'ECB President', hp: 6, atk: 5, spd: 5, rate: 6, color: '#3366cc', q:'Euro Bond', w:'Fragmentation', r:'Whatever it takes', qDesc:'欧元回旋镖', wDesc:'反分裂立场', rDesc:'强力全屏震荡' },
+      'draghi': { cat: 'banker', name: 'Mario Draghi', title: 'Super Mario', hp: 7, atk: 6, spd: 6, rate: 7, color: '#0055a4', q:'Bazooka', w:'Euro Shield', r:'Save the Euro', qDesc:'火箭筒重击', wDesc:'欧元盾', rDesc:'拯救欧元全屏清场' },
+      'kuroda': { cat: 'banker', name: 'Haruhiko Kuroda', title: 'Ex-BOJ Gov', hp: 5, atk: 3, spd: 7, rate: 10, color: '#ff6600', q:'YCC Control', w:'Negative Rate', r:'Super Ease', qDesc:'YCC定身', wDesc:'负利率力场', rDesc:'超级宽松弹幕雨' },
+      'ueda': { cat: 'banker', name: 'Kazuo Ueda', title: 'BOJ Gov', hp: 6, atk: 4, spd: 6, rate: 8, color: '#ff9933', q:'Rate Hike', w:'Review', r:'Normalization', qDesc:'加息单点', wDesc:'政策检讨减速', rDesc:'正常化光束' },
+      'carney': { cat: 'banker', name: 'Mark Carney', title: 'Ex-BOE Gov', hp: 6, atk: 5, spd: 5, rate: 7, color: '#6600cc', q:'Forward Guidance', w:'Climate Risk', r:'Horizon', qDesc:'前瞻指引', wDesc:'气候风险迷雾', rDesc:'地平线冲击' },
+      'bailey': { cat: 'banker', name: 'Andrew Bailey', title: 'BOE Gov', hp: 6, atk: 5, spd: 4, rate: 7, color: '#9933ff', q:'Gilt Market', w:'Intervention', r:'Stability', qDesc:'国债冲击', wDesc:'干预护盾', rDesc:'金融稳定' },
+      'yigang': { cat: 'banker', name: 'Yi Gang', title: 'Ex-PBOC Gov', hp: 7, atk: 5, spd: 5, rate: 7, color: '#cc0000', q:'Prudent Policy', w:'FX Reserve', r:'Structural', qDesc:'稳健政策', wDesc:'外汇储备盾', rDesc:'结构性工具' },
+      'pan': { cat: 'banker', name: 'Pan Gongsheng', title: 'PBOC Gov', hp: 8, atk: 5, spd: 5, rate: 8, color: '#ff3333', q:'RRR Cut', w:'Swap Line', r:'Cross-Border', qDesc:'降准冲击波', wDesc:'互换通护盾', rDesc:'跨境支付洪流' },
+
+      // 2. Politicians
+      'biden': { cat: 'politician', name: 'Joe Biden', title: 'US President', hp: 9, atk: 6, spd: 3, rate: 5, color: '#0000cc', q:'Inflation Act', w:'Alliance', r:'Chips Ban', qDesc:'通胀法案重击', wDesc:'盟友召唤', rDesc:'芯片禁令全屏减速' },
+      'trump': { cat: 'politician', name: 'Donald Trump', title: 'Former President', hp: 8, atk: 9, spd: 5, rate: 6, color: '#ff0000', q:'Tariff Wall', w:'Twitter Storm', r:'Trade War', qDesc:'关税墙阻挡', wDesc:'推特声波攻击', rDesc:'贸易战核弹清屏' },
+      'obama': { cat: 'politician', name: 'Barack Obama', title: 'Former President', hp: 8, atk: 5, spd: 6, rate: 7, color: '#0066cc', q:'Stimulus', w:'Obamacare', r:'Hope', qDesc:'刺激计划', wDesc:'医保回血', rDesc:'希望之光' },
+      'xi': { cat: 'politician', name: 'Xi Jinping', title: 'President of PRC', hp: 10, atk: 7, spd: 4, rate: 6, color: '#ffcc00', q:'Dual Circulation', w:'Common Prosperity', r:'Belt & Road', qDesc:'双循环环绕弹', wDesc:'共同富裕回血', rDesc:'一带一路强力冲锋' },
+      'liqiang': { cat: 'politician', name: 'Li Qiang', title: 'Premier', hp: 8, atk: 6, spd: 6, rate: 7, color: '#ff9900', q:'Open Up', w:'Service', r:'High Quality', qDesc:'开放门户', wDesc:'服务型防御', rDesc:'高质量发展' },
+      'putin': { cat: 'politician', name: 'Vladimir Putin', title: 'Russian President', hp: 9, atk: 9, spd: 3, rate: 4, color: '#ffffff', q:'Energy Cut', w:'Iron Curtain', r:'Special Op', qDesc:'能源切断冻结', wDesc:'铁幕防御', rDesc:'特种行动高爆弹' },
+      'macron': { cat: 'politician', name: 'Emmanuel Macron', title: 'French President', hp: 7, atk: 6, spd: 6, rate: 7, color: '#0055a4', q:'Reform Strike', w:'Autonomy', r:'Euro Army', qDesc:'改革穿透弹', wDesc:'战略自主盾', rDesc:'欧洲军团召唤' },
+      'scholz': { cat: 'politician', name: 'Olaf Scholz', title: 'German Chancellor', hp: 8, atk: 5, spd: 4, rate: 6, color: '#000000', q:'Zeitenwende', w:'Industry', r:'Budget', qDesc:'时代转折', wDesc:'工业护盾', rDesc:'预算大炮' },
+      'modi': { cat: 'politician', name: 'Narendra Modi', title: 'Indian PM', hp: 8, atk: 6, spd: 5, rate: 7, color: '#ff9933', q:'Made in India', w:'Yoga', r:'Digital India', qDesc:'印度制造', wDesc:'瑜伽回血', rDesc:'数字印度激光' },
+      'kishida': { cat: 'politician', name: 'Fumio Kishida', title: 'Japanese PM', hp: 6, atk: 5, spd: 5, rate: 7, color: '#cc0033', q:'New Capitalism', w:'Defense', r:'Invest', qDesc:'新资本主义', wDesc:'防卫增税', rDesc:'投资未来' },
+      'trudeau': { cat: 'politician', name: 'Justin Trudeau', title: 'Canadian PM', hp: 7, atk: 5, spd: 6, rate: 7, color: '#ff0000', q:'Carbon Tax', w:'Multicultural', r:'Emergency', qDesc:'碳税打击', wDesc:'多元文化', rDesc:'紧急状态' },
+      'sunak': { cat: 'politician', name: 'Rishi Sunak', title: 'UK Ex-PM', hp: 6, atk: 6, spd: 6, rate: 7, color: '#0000ff', q:'Math', w:'Finance', r:'Windsor', qDesc:'数学计算', wDesc:'金融城护盾', rDesc:'温莎框架' },
+
+      // 3. Investors
+      'buffett': { cat: 'investor', name: 'Warren Buffett', title: 'Oracle of Omaha', hp: 6, atk: 10, spd: 2, rate: 4, color: '#339933', q:'Value Pick', w:'Moat', r:'Compound Interest', qDesc:'价值狙击(高伤)', wDesc:'护城河(无敌)', rDesc:'复利滚雪球(全屏)' },
+      'munger': { cat: 'investor', name: 'Charlie Munger', title: 'The Architect', hp: 5, atk: 10, spd: 1, rate: 3, color: '#555555', q:'Wisdom', w:'Patience', r:'Lollapalooza', qDesc:'智慧箴言', wDesc:'耐心等待', rDesc:'效应叠加' },
+      'dalio': { cat: 'investor', name: 'Ray Dalio', title: 'Bridgewater', hp: 7, atk: 6, spd: 5, rate: 8, color: '#6600cc', q:'All Weather', w:'Deleveraging', r:'Big Cycle', qDesc:'全天候散射', wDesc:'去杠杆推推乐', rDesc:'大周期重置' },
+      'marks': { cat: 'investor', name: 'Howard Marks', title: 'Oaktree', hp: 6, atk: 7, spd: 4, rate: 6, color: '#996633', q:'Cycle Memo', w:'Risk Control', r:'Distressed', qDesc:'备忘录', wDesc:'风控', rDesc:'困境反转' },
+      'tepper': { cat: 'investor', name: 'David Tepper', title: 'Appaloosa', hp: 6, atk: 9, spd: 6, rate: 7, color: '#003366', q:'Bullish', w:'Fed Put', r:'Buy Everything', qDesc:'牛市冲击', wDesc:'联储看跌', rDesc:'买入一切' },
+      'griffin': { cat: 'investor', name: 'Ken Griffin', title: 'Citadel', hp: 8, atk: 8, spd: 8, rate: 9, color: '#000099', q:'HFT', w:'Market Maker', r:'Algo Dominance', qDesc:'高频交易', wDesc:'做市商', rDesc:'算法统治' },
+      'ackman': { cat: 'investor', name: 'Bill Ackman', title: 'Pershing Square', hp: 6, atk: 8, spd: 7, rate: 7, color: '#999999', q:'Activist', w:'Hedge', r:'Big Short', qDesc:'激进投资', wDesc:'对冲', rDesc:'大空头' },
+      'soros': { cat: 'investor', name: 'George Soros', title: 'Quantum Fund', hp: 5, atk: 9, spd: 6, rate: 6, color: '#333333', q:'Short Sell', w:'Reflexivity', r:'Breaking Bank', qDesc:'做空暴击', wDesc:'反身性闪避', rDesc:'击穿央行' },
+      'druckenmiller': { cat: 'investor', name: 'Stanley Druckenmiller', title: 'Duquesne', hp: 6, atk: 9, spd: 7, rate: 7, color: '#000000', q:'Macro Bet', w:'Flexibility', r:'Top Down', qDesc:'宏观押注', wDesc:'灵活配置', rDesc:'自上而下' },
+      'schwarzman': { cat: 'investor', name: 'Stephen Schwarzman', title: 'Blackstone', hp: 8, atk: 7, spd: 5, rate: 6, color: '#000000', q:'Private Equity', w:'Real Estate', r:'Capital', qDesc:'私募股权', wDesc:'不动产', rDesc:'资本洪流' },
+      'kravis': { cat: 'investor', name: 'Henry Kravis', title: 'KKR', hp: 7, atk: 8, spd: 5, rate: 6, color: '#cc0000', q:'LBO', w:'Management', r:'Buyout', qDesc:'杠杆收购', wDesc:'管理优化', rDesc:'收购全场' },
+      'simons': { cat: 'investor', name: 'Jim Simons', title: 'Renaissance', hp: 6, atk: 8, spd: 9, rate: 10, color: '#006600', q:'Quant Model', w:'Black Box', r:'Medallion', qDesc:'量化模型', wDesc:'黑箱防御', rDesc:'大奖章收益' },
+
+      // 4. Tech
+      'musk': { cat: 'tech', name: 'Elon Musk', title: 'Technoking', hp: 6, atk: 8, spd: 9, rate: 9, color: '#999999', q:'Doge Meme', w:'Starship', r:'Mars Colony', qDesc:'狗狗币攻击', wDesc:'星舰护盾', rDesc:'火星殖民轰炸' },
+      'bezos': { cat: 'tech', name: 'Jeff Bezos', title: 'Amazon', hp: 7, atk: 7, spd: 6, rate: 8, color: '#ff9900', q:'Prime', w:'Cloud', r:'Logistic', qDesc:'Prime飞弹', wDesc:'云盾', rDesc:'物流网络' },
+      'cook': { cat: 'tech', name: 'Tim Cook', title: 'Apple', hp: 8, atk: 6, spd: 5, rate: 7, color: '#aaaaaa', q:'Supply Chain', w:'Privacy', r:'Ecosystem', qDesc:'供应链', wDesc:'隐私盾', rDesc:'生态围墙' },
+      'zuckerberg': { cat: 'tech', name: 'Mark Zuckerberg', title: 'Meta', hp: 6, atk: 7, spd: 7, rate: 8, color: '#0066ff', q:'Metaverse', w:'Connect', r:'VR World', qDesc:'元宇宙波', wDesc:'连接', rDesc:'虚拟世界' },
+      'nadella': { cat: 'tech', name: 'Satya Nadella', title: 'Microsoft', hp: 8, atk: 7, spd: 6, rate: 8, color: '#00a1f1', q:'Copilot', w:'Enterprise', r:'Cloud AI', qDesc:'副驾驶', wDesc:'企业级', rDesc:'云端AI' },
+      'huang': { cat: 'tech', name: 'Jensen Huang', title: 'NVIDIA', hp: 5, atk: 10, spd: 8, rate: 10, color: '#76b900', q:'CUDA', w:'Ray Tracing', r:'Singularity', qDesc:'算力弹幕', wDesc:'光追反射', rDesc:'奇点爆发' },
+      'ponyma': { cat: 'tech', name: 'Pony Ma', title: 'Tencent', hp: 7, atk: 7, spd: 6, rate: 9, color: '#33ccff', q:'WeChat', w:'Social', r:'Game Empire', qDesc:'微信连接', wDesc:'社交网络', rDesc:'游戏帝国' },
+      'jackma': { cat: 'tech', name: 'Jack Ma', title: 'Alibaba', hp: 6, atk: 8, spd: 7, rate: 8, color: '#ff6600', q:'E-Commerce', w:'Payment', r:'Data', qDesc:'电商洪流', wDesc:'支付盾', rDesc:'数据云' },
+      'robinli': { cat: 'tech', name: 'Robin Li', title: 'Baidu', hp: 6, atk: 6, spd: 6, rate: 7, color: '#0033cc', q:'Search', w:'Auto', r:'Ernie Bot', qDesc:'搜索索引', wDesc:'自动驾驶', rDesc:'文心一言' },
+
+      // 5. Org
+      'georgieva': { cat: 'org', name: 'Kristalina Georgieva', title: 'IMF', hp: 8, atk: 4, spd: 5, rate: 6, color: '#003399', q:'SDR', w:'Austerity', r:'Rescue', qDesc:'SDR支援', wDesc:'紧缩', rDesc:'全球救援' },
+      'banga': { cat: 'org', name: 'Ajay Banga', title: 'World Bank', hp: 8, atk: 4, spd: 5, rate: 6, color: '#0099cc', q:'Development', w:'Poverty', r:'Infrastructure', qDesc:'发展援助', wDesc:'扶贫', rDesc:'基建狂魔' },
+      'okonjo': { cat: 'org', name: 'Ngozi Okonjo-Iweala', title: 'WTO', hp: 7, atk: 4, spd: 5, rate: 6, color: '#00cc00', q:'Trade Flow', w:'Dispute', r:'Global Market', qDesc:'贸易流', wDesc:'争端解决', rDesc:'全球市场' },
+      'guterres': { cat: 'org', name: 'António Guterres', title: 'UN SG', hp: 9, atk: 2, spd: 4, rate: 5, color: '#3399ff', q:'Resolution', w:'Peace', r:'Humanity', qDesc:'决议', wDesc:'维和', rDesc:'人类命运' },
+      'stoltenberg': { cat: 'org', name: 'Jens Stoltenberg', title: 'NATO SG', hp: 7, atk: 8, spd: 6, rate: 6, color: '#003366', q:'Article 5', w:'Defense', r:'Alliance', qDesc:'第五条款', wDesc:'共同防御', rDesc:'军事联盟' }
+    };
+
+    // 装备数据库
+    const ITEMS = {
+      'inf_sword': { type: 'attack', name: 'Infinity Ledger', cost: 1500, icon: '⚔️', stats: { dmg: 2, rate: 0.8 }, desc: '攻击力大幅提升，射速加快' },
+      'hft_chip': { type: 'attack', name: 'HFT Chip', cost: 1200, icon: '💾', stats: { rate: 0.6 }, desc: '高频交易芯片，射速翻倍' },
+      'bull_horn': { type: 'attack', name: 'Bull Horn', cost: 2000, icon: '🐂', stats: { dmg: 3 }, desc: '牛市之角，伤害极高' },
+      'invisible_hand': { type: 'attack', name: 'Invisible Hand', cost: 2500, icon: '🖐️', stats: { dmg: 1 }, passive: 'homing', desc: '【被动】子弹自动追踪敌人' },
+      'gold_armor': { type: 'defense', name: 'Gold Reserve', cost: 1000, icon: '🥇', stats: { maxHp: 50 }, desc: '增加 50 点生命上限' },
+      'fed_put': { type: 'defense', name: 'Fed Put', cost: 1800, icon: '📉', stats: { hpRegen: 0.2 }, desc: '美联储看跌期权，每秒回血' },
+      'bretton_shield': { type: 'defense', name: 'Bretton Shield', cost: 2200, icon: '🛡️', stats: { maxHp: 30 }, passive: 'shield', desc: '【被动】每10秒生成一个抵挡伤害的护盾' },
+      'rocket_boots': { type: 'utility', name: 'Liquidity Boots', cost: 800, icon: '👢', stats: { spd: 2 }, desc: '增加移动速度' },
+      'comp_interest': { type: 'utility', name: 'Compound Int.', cost: 1500, icon: '📈', stats: {}, passive: 'income', desc: '【被动】每秒获得 5 GDP' },
+      'helicopter': { type: 'utility', name: 'Helicopter', cost: 3000, icon: '🚁', stats: { spd: 3 }, passive: 'trail', desc: '【被动】移动时留下伤害路径' }
+    };
+
+    /* ====== 核心变量 ====== */
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     let width, height;
     
-    function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    }
+    let state = {
+      screen: 'menu', // menu -> char -> playing ...
+      score: 1000, 
+      frame: 0,
+      player: null,
+      bullets: [],
+      enemies: [],
+      particles: [],
+      texts: [],
+      inventory: [], 
+      selectedChar: 'powell'
+    };
+
+    /* ====== 引擎初始化 ====== */
+    function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
     window.addEventListener('resize', resize);
     resize();
 
-    // 游戏状态
-    const STATE = { menu: 0, playing: 1, paused: 2, shop: 3, over: 4 };
-    let currentState = STATE.menu;
-    
-    // 玩家配置
-    let difficultyMultiplier = 1; 
-    let selectedChar = 'powell';
-    let score = 0; 
-    let frame = 0;
-    
-    // 角色属性定义 (CD 时间大幅增加)
-    // 60 frames = 1s. e.g., 300 = 5s.
-    const CHAR_STATS = {
-      'powell': { hp: 150, speed: 4, dmg: 4, rate: 15, color: '#00f3ff', qCd: 180, wCd: 480, eCd: 240, rCd: 1800, qName:'鹰派射击', wName:'加息护盾', eName:'政策转向', rName:'无限印钞' },
-      'trump':  { hp: 80, speed: 6, dmg: 6, rate: 20, color: '#ff0055', qCd: 150, wCd: 600, eCd: 200, rCd: 2400, qName:'推特风暴', wName:'贸易壁垒', eName:'快速反应', rName:'全面关税' },
-      'xi':     { hp: 250, speed: 3, dmg: 5, rate: 25, color: '#ffee00', qCd: 240, wCd: 900, eCd: 300, rCd: 3000, qName:'逆周期调节', wName:'定力', eName:'稳健步伐', rName:'共同富裕' },
-      'takaichi':{ hp: 100, speed: 5, dmg: 2, rate: 5, color: '#bd34fe', qCd: 400, wCd: 480, eCd: 240, rCd: 1800, qName:'财政刺激', wName:'央行干预', eName:'日元贬值', rName:'货币海啸' }, 
-      'macron': { hp: 120, speed: 5, dmg: 3, rate: 12, color: '#00ff9d', qCd: 180, wCd: 360, eCd: 240, rCd: 1800, qName:'改革重拳', wName:'欧洲盾牌', eName:'外交斡旋', rName:'战略自主' }
-    };
-    
-    // 技能描述
-    const SKILL_DESC = {
-      'a': { title: "普通攻击 (A/Click)", desc: "向鼠标方向发射基础弹幕。不消耗法力。" },
-      'q': { title: "战术技能 (Q)", desc: "短CD的特殊攻击方式，用于清兵或爆发。" },
-      'w': { title: "防御技能 (W)", desc: "提供护盾、回复或击退敌人，增加生存能力。" },
-      'e': { title: "位移技能 (E)", desc: "快速移动一段距离，躲避致命伤害。" },
-      'r': { title: "终极技能 (R)", desc: "消耗极长CD，造成全屏毁灭性打击或强力增益。" }
-    };
-
-    // 实体池
-    let player = { x:0, y:0, targetX:0, targetY:0, moving: false, r:15, hp:100, maxHp:100, speed:5, dmg:1, rate:10, angle:0, cd:{q:0, w:0, e:0, r:0} };
-    let bullets = [];
-    let enemies = [];
-    let particles = [];
-    let texts = [];
-
-    const CYCLES = ['RECOVERY', 'OVERHEAT', 'STAGFLATION', 'RECESSION'];
-    let cycleIdx = 0;
-    let cycleTimer = 0;
-
-    /* ====== 输入处理 (RTS/MOBA 风格) ====== */
-    let keys = {};
-    let mouse = { x: width/2, y: height/2 };
-    let mouseDown = false;
-
-    // 禁用右键菜单
-    window.addEventListener('contextmenu', e => {
-      e.preventDefault();
-      if (currentState === STATE.playing) {
-        // 右键移动
-        player.targetX = e.clientX;
-        player.targetY = e.clientY;
-        player.moving = true;
-        // 创建点击特效
-        createParticles(e.clientX, e.clientY, '#00ff00', 3); 
-      }
-    });
-
-    window.addEventListener('keydown', e => {
-      keys[e.key] = true;
-      if (currentState === STATE.playing) {
-        if(e.key.toLowerCase() === 'a') mouseDown = true; // A键攻击
-        if(e.key.toLowerCase() === 'q') useSkill('q');
-        if(e.key.toLowerCase() === 'w') useSkill('w');
-        if(e.key.toLowerCase() === 'e') useSkill('e');
-        if(e.key.toLowerCase() === 'r') useSkill('r');
-        if(e.key.toLowerCase() === 'b') toggleShop();
-        if(e.key === 'Escape' || e.key.toLowerCase() === 'p') togglePause();
-      } else if (currentState === STATE.shop && e.key.toLowerCase() === 'b') {
-        toggleShop();
-      }
-    });
-
-    window.addEventListener('keyup', e => {
-      keys[e.key] = false;
-      if(e.key.toLowerCase() === 'a') mouseDown = false;
-    });
-
-    window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-    window.addEventListener('mousedown', e => { if(e.button === 0) mouseDown = true; }); // 左键攻击
-    window.addEventListener('mouseup', e => { if(e.button === 0) mouseDown = false; });
-
-    /* ====== 逻辑控制 ====== */
-    function setDifficulty(val, el) {
-      difficultyMultiplier = val;
-      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
-    }
-    function selectChar(char, el) {
-      selectedChar = char;
-      document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-    }
-
-    function gameInit() {
-      const s = CHAR_STATS[selectedChar];
-      player.maxHp = s.hp; player.hp = s.hp;
-      player.speed = s.speed; player.dmg = s.dmg; player.rate = s.rate;
-      player.color = s.color;
-      player.x = width/2; player.y = height/2;
-      player.targetX = player.x; player.targetY = player.y; player.moving = false;
-      player.cd = { q:0, w:0, e:0, r:0 };
-      
-      // 更新技能名 UI
-      document.getElementById('name-q').innerText = s.qName;
-      document.getElementById('name-r').innerText = s.rName;
-
-      score = 500;
-      bullets = []; enemies = []; particles = []; texts = [];
-
-      document.getElementById('start-screen').classList.add('hidden');
-      currentState = STATE.playing;
-      loop();
-    }
-
-    function togglePause() {
-      if(currentState === STATE.playing) {
-        currentState = STATE.paused;
-        document.getElementById('pause-menu').classList.remove('hidden');
-      } else if(currentState === STATE.paused) {
-        currentState = STATE.playing;
-        document.getElementById('pause-menu').classList.add('hidden');
-        loop();
+    function gameLoop() {
+      requestAnimationFrame(gameLoop);
+      if (state.screen === 'playing') {
+        update();
+        render();
+        state.frame++;
+      } else if (state.screen === 'shop') {
+        render(); 
       }
     }
 
-    function toggleShop() {
-      if(currentState === STATE.playing) {
-        currentState = STATE.shop;
-        document.getElementById('shop-gdp').innerText = '$' + Math.floor(score);
-        document.getElementById('shop-menu').classList.remove('hidden');
-      } else if(currentState === STATE.shop) {
-        currentState = STATE.playing;
-        document.getElementById('shop-menu').classList.add('hidden');
-        loop();
-      }
-    }
-
-    function buyUpgrade(type) {
-      let cost = 0;
-      if(type === 'damage') { cost = 1000; if(score >= cost) { score-=cost; player.dmg *= 1.2; spawnFloatingText(width/2, height/2, "DMG UP!", "#00ff9d"); } }
-      if(type === 'speed') { cost = 800; if(score >= cost) { score-=cost; player.speed *= 1.1; spawnFloatingText(width/2, height/2, "SPD UP!", "#00ff9d"); } }
-      if(type === 'rate') { cost = 1500; if(score >= cost) { score-=cost; player.rate = Math.max(2, player.rate * 0.85); spawnFloatingText(width/2, height/2, "RATE UP!", "#00ff9d"); } }
-      if(type === 'heal') { cost = 500; if(score >= cost) { score-=cost; player.hp = Math.min(player.maxHp, player.hp + player.maxHp*0.5); spawnFloatingText(width/2, height/2, "HEALED!", "#00f3ff"); } }
-      document.getElementById('shop-gdp').innerText = '$' + Math.floor(score);
-      document.getElementById('score-val').innerText = Math.floor(score);
-    }
-
-    /* ====== 提示框逻辑 ====== */
-    function showTooltip(key) {
-      const tt = document.getElementById('skill-tooltip');
-      const title = document.getElementById('tt-title');
-      const desc = document.getElementById('tt-desc');
-      const cost = document.getElementById('tt-cost');
-      
-      const info = SKILL_DESC[key];
-      const stats = CHAR_STATS[selectedChar];
-      
-      let name = info.title;
-      if(key==='q') name += ` - ${stats.qName}`;
-      if(key==='w') name += ` - ${stats.wName}`;
-      if(key==='e') name += ` - ${stats.eName}`;
-      if(key==='r') name += ` - ${stats.rName}`;
-      
-      let cdTime = 0;
-      if(key==='q') cdTime = stats.qCd/60;
-      if(key==='w') cdTime = stats.wCd/60;
-      if(key==='e') cdTime = stats.eCd/60;
-      if(key==='r') cdTime = stats.rCd/60;
-
-      title.innerText = name;
-      desc.innerText = info.desc;
-      cost.innerText = key === 'a' ? "No Cooldown" : `Cooldown: ${cdTime.toFixed(1)}s`;
-      
-      tt.style.display = 'block';
-    }
-    function hideTooltip() {
-      document.getElementById('skill-tooltip').style.display = 'none';
-    }
-
-    /* ====== LOOP ====== */
-    function loop() {
-      if(currentState !== STATE.playing) return;
-      requestAnimationFrame(loop);
-      update();
-      render();
-      frame++;
-    }
-
+    /* ====== 逻辑更新 ====== */
     function update() {
-      // 1. Cycle
-      cycleTimer++;
-      if(cycleTimer > 600) {
-        cycleTimer = 0;
-        cycleIdx = (cycleIdx + 1) % CYCLES.length;
-        document.getElementById('cycle-val').innerText = CYCLES[cycleIdx];
+      const p = state.player;
+      if(!p) return;
+
+      // 属性计算 (Base + Items)
+      let totalSpd = p.baseSpd;
+      let totalDmg = p.baseDmg;
+      let totalRate = p.baseRate;
+      let totalHpMax = p.baseMaxHp;
+      let passiveEffects = [];
+
+      state.inventory.forEach(itemId => {
+        const item = ITEMS[itemId];
+        if(item.stats.spd) totalSpd += item.stats.spd;
+        if(item.stats.dmg) totalDmg += item.stats.dmg;
+        if(item.stats.rate) totalRate *= item.stats.rate;
+        if(item.stats.maxHp) totalHpMax += item.stats.maxHp;
+        if(item.passive) passiveEffects.push(item.passive);
+      });
+      
+      p.maxHp = totalHpMax; 
+
+      // Passives Logic
+      if(state.frame % 60 === 0 && passiveEffects.includes('income')) {
+        state.score += 5; 
+        spawnFloatingText(p.x, p.y - 20, "+5 GDP", "#ffee00");
       }
-
-      // 2. Player Move (RTS Logic) & Aim
-      player.angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
-
-      if (player.moving) {
-        let dx = player.targetX - player.x;
-        let dy = player.targetY - player.y;
+      if(state.frame % 60 === 0 && passiveEffects.includes('hpRegen')) {
+        p.hp = Math.min(p.hp + 1, p.maxHp);
+      }
+      if(state.frame % 600 === 0 && passiveEffects.includes('shield')) {
+        p.shield = true; 
+        spawnFloatingText(p.x, p.y, "SHIELD UP", "#00ff9d");
+      }
+      
+      // Movement
+      if (p.moving) {
+        let dx = p.targetX - p.x;
+        let dy = p.targetY - p.y;
         let dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < totalSpd) { p.x = p.targetX; p.y = p.targetY; p.moving = false; } 
+        else { p.x += (dx/dist) * totalSpd; p.y += (dy/dist) * totalSpd; }
         
-        if (dist < player.speed) {
-          player.x = player.targetX;
-          player.y = player.targetY;
-          player.moving = false;
-        } else {
-          player.x += (dx/dist) * player.speed;
-          player.y += (dy/dist) * player.speed;
+        if(passiveEffects.includes('trail') && state.frame % 10 === 0) {
+           createParticles(p.x, p.y, '#ff9900', 3);
         }
       }
-      
       // Bounds
-      if(player.x < 10) player.x = 10; if(player.x > width-10) player.x = width-10;
-      if(player.y < 10) player.y = 10; if(player.y > height-10) player.y = height-10;
+      p.x = Math.max(20, Math.min(width-20, p.x));
+      p.y = Math.max(20, Math.min(height-20, p.y));
 
-      // 3. Cooldowns
-      for(let k in player.cd) { if(player.cd[k] > 0) player.cd[k]--; }
-      updateSkillUI();
+      // Aim
+      p.angle = Math.atan2(input.mouse.y - p.y, input.mouse.x - p.x);
 
-      // 4. Auto Fire (A or Left Click)
-      if(mouseDown && frame % Math.floor(player.rate) === 0) {
-         shootBullet(player.angle, 0, player.dmg, player.color, 5);
+      // Cooldowns
+      for(let k in p.cd) if(p.cd[k]>0) p.cd[k]--;
+      updateHUD();
+
+      // Attack
+      if(input.mouseDown && state.frame % Math.ceil(totalRate) === 0) {
+        shootBullet(p, totalDmg, passiveEffects.includes('homing'));
       }
 
-      // 5. Bullets
-      for(let i=bullets.length-1; i>=0; i--) {
-        let b = bullets[i];
+      // Bullets
+      for(let i=state.bullets.length-1; i>=0; i--) {
+        let b = state.bullets[i];
+        // Homing logic
+        if(b.homing && state.enemies.length > 0) {
+           let nearest = state.enemies[0];
+           let minD = 9999;
+           state.enemies.forEach(e => {
+             let d = Math.hypot(e.x - b.x, e.y - b.y);
+             if(d < minD) { minD = d; nearest = e; }
+           });
+           let angle = Math.atan2(nearest.y - b.y, nearest.x - b.x);
+           b.vx = b.vx * 0.9 + Math.cos(angle) * 2; 
+           b.vy = b.vy * 0.9 + Math.sin(angle) * 2;
+        }
+
         b.x += b.vx; b.y += b.vy; b.life--;
-        if(b.life <= 0) bullets.splice(i, 1);
+        if(b.life <= 0) state.bullets.splice(i,1);
       }
 
-      // 6. Enemy Spawn (Slower Pace)
-      let spawnRate = 120 / difficultyMultiplier; // 减慢刷怪频率
-      if(CYCLES[cycleIdx] === 'OVERHEAT') spawnRate /= 1.5;
-      if(frame % Math.floor(spawnRate) === 0) spawnEnemy();
-
-      // 7. Collision
-      for(let i=enemies.length-1; i>=0; i--) {
-        let e = enemies[i];
-        // Move to player
-        let angle = Math.atan2(player.y - e.y, player.x - e.x);
-        e.x += Math.cos(angle) * e.speed;
-        e.y += Math.sin(angle) * e.speed;
+      // Enemies
+      if(state.frame % 60 === 0) spawnEnemy();
+      
+      for(let i=state.enemies.length-1; i>=0; i--) {
+        let e = state.enemies[i];
+        let angle = Math.atan2(p.y - e.y, p.x - e.x);
+        e.x += Math.cos(angle) * e.speed; e.y += Math.sin(angle) * e.speed;
 
         // Hit Player
-        let dist = Math.hypot(player.x - e.x, player.y - e.y);
-        if(dist < player.r + e.r) {
-          let dmg = 10 * difficultyMultiplier;
-          player.hp -= dmg;
-          enemies.splice(i, 1);
-          createParticles(e.x, e.y, '#ff0000', 10);
-          spawnFloatingText(player.x, player.y, `-${Math.floor(dmg)}`, "#ff0000");
-          checkGameOver();
+        if(Math.hypot(p.x-e.x, p.y-e.y) < p.r + e.r) {
+          if(p.shield) {
+             p.shield = false;
+             spawnFloatingText(p.x, p.y, "BLOCKED", "#fff");
+             e.x -= Math.cos(angle)*50; e.y -= Math.sin(angle)*50;
+          } else {
+             p.hp -= 10;
+             createParticles(p.x, p.y, '#ff0000', 10);
+             if(p.hp <= 0) gameOver();
+          }
+          state.enemies.splice(i,1);
           continue;
         }
 
         // Hit by Bullet
-        for(let j=bullets.length-1; j>=0; j--) {
-          let b = bullets[j];
-          let bDist = Math.hypot(b.x - e.x, b.y - e.y);
-          if(bDist < e.r + 10) { // Hitbox
-            if(!b.penetrate) bullets.splice(j, 1);
-            e.hp -= b.dmg;
-            createParticles(e.x, e.y, '#fff', 1);
-            
-            if(e.hp <= 0) {
-              score += e.value;
-              enemies.splice(i, 1);
-              createParticles(e.x, e.y, e.color, 8);
-              spawnFloatingText(e.x, e.y, `+$${e.value}`, "#00ff9d");
-              break;
-            }
+        for(let j=state.bullets.length-1; j>=0; j--) {
+          let b = state.bullets[j];
+          if(Math.hypot(b.x-e.x, b.y-e.y) < e.r + 5) {
+             e.hp -= b.dmg;
+             state.bullets.splice(j,1);
+             createParticles(e.x, e.y, '#fff', 2);
+             if(e.hp <= 0) {
+               state.score += e.val;
+               spawnFloatingText(e.x, e.y, `+$${e.val}`, "#00ff9d");
+               state.enemies.splice(i,1);
+               createParticles(e.x, e.y, e.color, 8);
+               break;
+             }
           }
         }
       }
-
+      
       updateParticles();
-      
-      // HUD Update
-      document.getElementById('score-val').innerText = Math.floor(score);
-      let hpPct = Math.max(0, Math.floor((player.hp / player.maxHp)*100));
-      document.getElementById('health-val').innerText = hpPct + "%";
-    }
-
-    function shootBullet(angle, spread, dmg, color, size, speed=15, penetrate=false) {
-      bullets.push({
-        x: player.x, y: player.y,
-        vx: Math.cos(angle + spread) * speed,
-        vy: Math.sin(angle + spread) * speed,
-        life: 60, color: color, dmg: dmg, r: size, penetrate: penetrate
-      });
-    }
-
-    /* ====== 技能逻辑 (QWER) ====== */
-    function useSkill(key) {
-      if(player.cd[key] > 0) return;
-      
-      const s = CHAR_STATS[selectedChar];
-      
-      // --- Q Skill ---
-      if(key === 'q') {
-        player.cd.q = s.qCd;
-        if(selectedChar === 'powell') { 
-           for(let i=0; i<3; i++) setTimeout(() => shootBullet(player.angle, 0, player.dmg*2, '#00f3ff', 8), i*100);
-        } else if(selectedChar === 'trump') {
-           for(let i=-2; i<=2; i++) shootBullet(player.angle, i*0.15, player.dmg, '#ffaa00', 6);
-        } else if(selectedChar === 'xi') { 
-           for(let i=0; i<12; i++) shootBullet(i * (Math.PI/6), 0, player.dmg*1.5, '#ffee00', 6, 10);
-        } else if(selectedChar === 'takaichi') { 
-           let oldRate = player.rate; player.rate = 2;
-           setTimeout(() => player.rate = oldRate, 3000);
-           spawnFloatingText(player.x, player.y, "RATE BOOST!", "#bd34fe");
-        } else if(selectedChar === 'macron') { 
-           shootBullet(player.angle, 0, player.dmg*3, '#00ff9d', 10, 20, true);
-        }
-      }
-
-      // --- W Skill ---
-      if(key === 'w') {
-        player.cd.w = s.wCd;
-        enemies.forEach(e => {
-           if(Math.hypot(player.x - e.x, player.y - e.y) < 250) {
-             let a = Math.atan2(e.y - player.y, e.x - player.x);
-             e.x += Math.cos(a) * 150; e.y += Math.sin(a) * 150;
-           }
-        });
-        if(selectedChar === 'trump') { 
-           enemies.forEach(e => { if(Math.hypot(player.x-e.x, player.y-e.y)<300) e.hp -= 20; });
-           createShockwave(player.x, player.y, '#ff0055', 300);
-        } else {
-           createShockwave(player.x, player.y, '#00f3ff', 200);
-        }
-      }
-
-      // --- E Skill (Dash toward Mouse) ---
-      if(key === 'e') {
-        player.cd.e = s.eCd;
-        let dashDist = 200;
-        player.x += Math.cos(player.angle) * dashDist;
-        player.y += Math.sin(player.angle) * dashDist;
-        player.targetX = player.x; // Stop moving after dash
-        player.targetY = player.y;
-        createParticles(player.x, player.y, '#fff', 10);
-      }
-
-      // --- R Skill ---
-      if(key === 'r') {
-        player.cd.r = s.rCd;
-        spawnFloatingText(player.x, player.y, "ULTIMATE!!!", player.color);
-        if(selectedChar === 'powell') { 
-          enemies.forEach(e => { e.hp -= 50; createParticles(e.x, e.y, '#00f3ff', 3); });
-          ctx.fillStyle = 'rgba(0, 243, 255, 0.3)'; ctx.fillRect(0,0,width,height);
-        } else if(selectedChar === 'trump') { 
-          enemies = []; 
-          createShockwave(width/2, height/2, '#ff0055', 1000);
-        } else if(selectedChar === 'xi') { 
-          player.hp = player.maxHp; enemies.forEach(e => e.hp -= 30);
-        } else if(selectedChar === 'takaichi') { 
-          for(let i=0; i<36; i++) shootBullet(i*0.2, 0, 10, '#bd34fe', 5, 8);
-        } else if(selectedChar === 'macron') { 
-          enemies.forEach(e => { e.x = e.x < width/2 ? -100 : width+100; });
-        }
-      }
-    }
-
-    function updateSkillUI() {
-      ['q','w','e','r'].forEach(k => {
-        const slot = document.getElementById(`skill-${k}`);
-        const cd = player.cd[k];
-        const overlay = slot.querySelector('.cooldown-overlay');
-        const text = slot.querySelector('.cooldown-text');
-        const stats = CHAR_STATS[selectedChar];
-        const maxCd = k==='q'?stats.qCd : k==='w'?stats.wCd : k==='e'?stats.eCd : stats.rCd;
-
-        if(cd > 0) {
-          slot.classList.remove('ready'); slot.classList.add('cooldown');
-          let pct = (cd/maxCd)*100;
-          overlay.style.height = pct + '%';
-          // Display remaining seconds
-          text.innerText = Math.ceil(cd / 60);
-        } else {
-          slot.classList.add('ready'); slot.classList.remove('cooldown');
-          overlay.style.height = '0%';
-          text.innerText = "";
-        }
-      });
-    }
-
-    /* ====== 粒子与辅助 ====== */
-    function spawnEnemy() {
-      let side = Math.floor(Math.random()*4);
-      let x, y;
-      if(side===0) { x=Math.random()*width; y=-50; }
-      else if(side===1) { x=width+50; y=Math.random()*height; }
-      else if(side===2) { x=Math.random()*width; y=height+50; }
-      else { x=-50; y=Math.random()*height; }
-
-      let type = Math.random();
-      // 怪物减速 50%
-      let e = { x, y, r:15, hp:3*difficultyMultiplier, speed:1*difficultyMultiplier, color:'#ff0055', value:50 };
-      
-      if(type > 0.7) e = { x, y, r:25, hp:10*difficultyMultiplier, speed:0.5*difficultyMultiplier, color:'#00ff9d', value:150 };
-      if(type > 0.9) e = { x, y, r:35, hp:30*difficultyMultiplier, speed:0.25*difficultyMultiplier, color:'#bd34fe', value:500 };
-
-      enemies.push(e);
-    }
-
-    function createParticles(x, y, color, count) {
-      for(let i=0; i<count; i++) {
-        particles.push({ x, y, vx:(Math.random()-0.5)*10, vy:(Math.random()-0.5)*10, life:30, color, size:Math.random()*3 });
-      }
-    }
-    function createShockwave(x, y, color, maxR=200) {
-      particles.push({ x, y, r:10, maxR, color, life:20, type:'wave' });
-    }
-    function spawnFloatingText(x, y, text, color) {
-      texts.push({ x, y, text, color, life:60 });
-    }
-
-    function updateParticles() {
-      for(let i=particles.length-1; i>=0; i--) {
-        let p = particles[i];
-        if(p.type === 'wave') { p.r += (p.maxR - p.r) * 0.1; p.life--; } 
-        else { p.x += p.vx; p.y += p.vy; p.life--; }
-        if(p.life <= 0) particles.splice(i, 1);
-      }
-      for(let i=texts.length-1; i>=0; i--) {
-        let t = texts[i]; t.y -= 1; t.life--;
-        if(t.life <= 0) texts.splice(i, 1);
-      }
     }
 
     function render() {
-      ctx.fillStyle = 'rgba(5,5,10,0.3)'; ctx.fillRect(0,0,width,height); 
+      ctx.fillStyle = 'rgba(5,5,10,0.3)'; ctx.fillRect(0,0,width,height);
+      
+      const p = state.player;
+      if(!p) return;
 
-      // Grid
-      ctx.strokeStyle = 'rgba(0,255,255,0.05)'; ctx.lineWidth = 1; ctx.beginPath();
-      for(let i=0; i<width; i+=100) { ctx.moveTo(i,0); ctx.lineTo(i,height); }
-      for(let i=0; i<height; i+=100) { ctx.moveTo(0,i); ctx.lineTo(width,i); }
-      ctx.stroke();
-
-      // Draw Move Marker
-      if(player.moving) {
-        ctx.strokeStyle = '#00ff00'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(player.targetX-5, player.targetY-5); ctx.lineTo(player.targetX+5, player.targetY+5);
-        ctx.moveTo(player.targetX+5, player.targetY-5); ctx.lineTo(player.targetX-5, player.targetY+5);
+      if(p.moving) {
+        ctx.strokeStyle = '#00ff00'; ctx.beginPath(); 
+        ctx.moveTo(p.targetX-5, p.targetY-5); ctx.lineTo(p.targetX+5, p.targetY+5);
+        ctx.moveTo(p.targetX+5, p.targetY-5); ctx.lineTo(p.targetX-5, p.targetY+5);
         ctx.stroke();
       }
 
-      // Player
-      ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
-      ctx.fillStyle = 'black'; ctx.strokeStyle = player.color; ctx.lineWidth = 2;
-      ctx.shadowBlur = 15; ctx.shadowColor = player.color;
-      ctx.beginPath(); ctx.moveTo(20,0); ctx.lineTo(-15,12); ctx.lineTo(-10,0); ctx.lineTo(-15,-12); ctx.closePath();
-      ctx.fill(); ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.translate(p.x, p.y);
+      if(p.shield) { ctx.strokeStyle = '#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,25,0,Math.PI*2); ctx.stroke(); }
+      if(p.img && p.img.complete) {
+        ctx.save(); ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.clip();
+        ctx.drawImage(p.img, -20, -20, 40, 40); ctx.restore();
+        ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.stroke();
+      } else {
+        ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+      }
+      ctx.fillStyle = "red"; ctx.fillRect(-20, 25, 40, 4);
+      ctx.fillStyle = "#00ff00"; ctx.fillRect(-20, 25, 40 * (Math.max(0,p.hp)/p.maxHp), 4);
+      ctx.restore();
 
-      enemies.forEach(e => {
-        ctx.save(); ctx.translate(e.x, e.y);
-        ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.strokeStyle = e.color; ctx.lineWidth = 2;
-        ctx.shadowBlur = 10; ctx.shadowColor = e.color;
-        ctx.beginPath();
-        if(e.r === 15) { ctx.moveTo(15,0); ctx.lineTo(-10,10); ctx.lineTo(-10,-10); ctx.closePath(); } 
-        else if(e.r === 25) { ctx.arc(0,0,e.r,0,Math.PI*2); } 
-        else { ctx.rect(-20,-20,40,40); } 
-        ctx.fill(); ctx.stroke(); ctx.restore();
-      });
+      state.enemies.forEach(e => { ctx.fillStyle = e.color; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2); ctx.fill(); });
+      state.bullets.forEach(b => { ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI*2); ctx.fill(); });
+      state.particles.forEach(pt => { ctx.fillStyle = pt.color; ctx.globalAlpha = pt.life/30; ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI*2); ctx.fill(); });
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "#fff"; ctx.font = "bold 14px monospace";
+      state.texts.forEach(t => ctx.fillText(t.text, t.x, t.y));
+    }
 
-      bullets.forEach(b => {
-        ctx.fillStyle = b.color; ctx.shadowBlur = 5; ctx.shadowColor = b.color;
-        ctx.beginPath(); ctx.arc(b.x, b.y, b.r||4, 0, Math.PI*2); ctx.fill();
-        ctx.shadowBlur = 0;
-      });
+    /* ====== 辅助函数 ====== */
+    const input = { keys: {}, mouse: {x:0,y:0}, mouseDown: false };
+    window.onkeydown = e => {
+      if(e.key.toLowerCase() === 'a') input.mouseDown = true;
+      if(state.screen === 'playing') {
+         if('qwer'.includes(e.key.toLowerCase())) useSkill(e.key.toLowerCase());
+         if(e.key.toLowerCase() === 'b') toggleShop();
+         if(e.key === 'Escape' || e.key.toLowerCase() === 'p') togglePause();
+      } else if(state.screen === 'shop' && e.key.toLowerCase() === 'b') toggleShop();
+      else if(state.screen === 'paused' && (e.key === 'Escape' || e.key.toLowerCase() === 'p')) togglePause();
+    };
+    window.onkeyup = e => { if(e.key.toLowerCase() === 'a') input.mouseDown = false; };
+    window.onmousemove = e => { input.mouse.x = e.clientX; input.mouse.y = e.clientY; };
+    window.onmousedown = e => { if(e.button===0) input.mouseDown = true; if(e.button===2 && state.player) {
+      state.player.moving = true; state.player.targetX = e.clientX; state.player.targetY = e.clientY;
+    }};
+    window.onmouseup = () => input.mouseDown = false;
+    window.oncontextmenu = e => e.preventDefault();
 
-      particles.forEach(p => {
-        if(p.type === 'wave') {
-          ctx.strokeStyle = p.color; ctx.lineWidth = 5; ctx.globalAlpha = p.life/20;
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.stroke();
-        } else {
-          ctx.fillStyle = p.color; ctx.globalAlpha = p.life/30;
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-        }
-        ctx.globalAlpha = 1;
-      });
+    function setDifficulty(val, el) {
+      difficultyMultiplier = val; // Not really used in this stripped down logic but structure is here
+      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
 
-      ctx.font = "bold 20px 'Share Tech Mono'";
-      texts.forEach(t => {
-        ctx.fillStyle = t.color; ctx.fillText(t.text, t.x, t.y);
+    function goToCharSelect() {
+      document.getElementById('screen-rules').classList.add('hidden');
+      document.getElementById('screen-char').classList.remove('hidden');
+      filterChars('banker'); 
+      updateCharDetail('powell');
+    }
+
+    function startGame() {
+      const charData = CHARACTERS[state.selectedChar];
+      state.player = {
+        x: width/2, y: height/2,
+        baseHp: charData.hp * 20, hp: charData.hp * 20, maxHp: charData.hp * 20,
+        baseSpd: charData.spd * 0.8 + 2,
+        baseDmg: charData.atk * 0.8 + 1,
+        baseRate: Math.max(4, 40 - (charData.rate * 3)),
+        color: charData.color,
+        r: 20, angle: 0, moving: false, targetX: 0, targetY: 0,
+        cd: {q:0, w:0, e:0, r:0},
+        img: new Image()
+      };
+      state.player.img.src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${charData.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+      
+      state.bullets = []; state.enemies = []; state.particles = []; state.texts = [];
+      state.screen = 'playing';
+      state.score = 1000; 
+      
+      document.getElementById('screen-char').classList.add('hidden');
+      document.getElementById('ui-layer').classList.remove('hidden');
+      gameLoop();
+    }
+
+    function shootBullet(p, dmg, homing) {
+      state.bullets.push({
+        x: p.x, y: p.y,
+        vx: Math.cos(p.angle) * 15, vy: Math.sin(p.angle) * 15,
+        life: 60, color: p.color, dmg: dmg, homing: homing
       });
     }
 
-    function checkGameOver() {
-      if(player.hp <= 0) {
-        currentState = STATE.over;
-        document.getElementById('final-score').innerText = '$' + Math.floor(score);
-        document.getElementById('game-over').classList.remove('hidden');
+    function spawnEnemy() {
+      let angle = Math.random() * Math.PI * 2;
+      let r = Math.max(width, height) / 2 + 50;
+      state.enemies.push({
+        x: width/2 + Math.cos(angle)*r, y: height/2 + Math.sin(angle)*r,
+        hp: 10, speed: 1.5 + Math.random(), r: 15, color: '#ff0055', val: 50
+      });
+    }
+
+    function useSkill(key) {
+      const p = state.player;
+      if(p.cd[key] > 0) return;
+      p.cd[key] = key==='q'?100:key==='w'?300:key==='e'?120:900; // Simple CD
+
+      if(key === 'e') { // Dash
+        p.x += Math.cos(p.angle)*200; p.y += Math.sin(p.angle)*200;
+        p.targetX = p.x;
+        createParticles(p.x, p.y, '#fff', 10);
+      } else if(key === 'q') { // Burst
+        for(let i=-0.5; i<=0.5; i+=0.2) shootBullet({...p, angle: p.angle+i}, p.baseDmg*1.5, false);
+      } else if(key === 'w') { // Shield/AoE
+        state.enemies.forEach(e => { if(Math.hypot(p.x-e.x, p.y-e.y)<200) { e.x -= Math.cos(Math.atan2(p.y-e.y, p.x-e.x))*150; } });
+        createParticles(p.x, p.y, '#00f3ff', 20);
+      } else if(key === 'r') { // Ult
+        state.enemies = [];
+        spawnFloatingText(width/2, height/2, "ULTIMATE!", "#ffee00");
       }
     }
 
+    /* ====== UI Functions ====== */
+    function filterChars(cat) {
+      // Update visual tabs
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const container = document.getElementById('char-list-container');
+      container.innerHTML = '';
+      for (const [id, data] of Object.entries(CHARACTERS)) {
+        if (data.cat === cat) {
+          const div = document.createElement('div');
+          div.className = `char-mini-card ${id === state.selectedChar ? 'selected' : ''}`;
+          div.onclick = () => { 
+            state.selectedChar = id; 
+            filterChars(cat); 
+            updateCharDetail(id); 
+          };
+          div.innerHTML = `<img src="https://api.dicebear.com/9.x/avataaars/svg?seed=${data.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9" class="mini-avatar"><div class="mini-name">${data.name}</div>`;
+          container.appendChild(div);
+        }
+      }
+    }
+    
+    function updateCharDetail(id) {
+      const data = CHARACTERS[id];
+      document.getElementById('detail-name').innerText = data.name;
+      document.getElementById('detail-title').innerText = data.title;
+      document.getElementById('detail-avatar').src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${data.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+      
+      document.getElementById('bar-hp').style.width = (data.hp * 10) + '%';
+      document.getElementById('bar-atk').style.width = (data.atk * 10) + '%';
+      document.getElementById('bar-spd').style.width = (data.spd * 10) + '%';
+      document.getElementById('bar-rate').style.width = (data.rate * 8) + '%';
+      
+      document.getElementById('skill-q-name').innerText = data.q; document.getElementById('skill-q-desc').innerText = data.qDesc;
+      document.getElementById('skill-w-name').innerText = data.w; document.getElementById('skill-w-desc').innerText = data.wDesc;
+      document.getElementById('skill-r-name').innerText = data.r; document.getElementById('skill-r-desc').innerText = data.rDesc;
+    }
+
+    function updateHUD() {
+      const p = state.player;
+      document.getElementById('score-val').innerText = Math.floor(state.score);
+      document.getElementById('health-val').innerText = Math.floor(p.hp);
+      ['q','w','e','r'].forEach(k => {
+         let cd = p.cd[k];
+         let el = document.querySelector(`#skill-${k} .cooldown-overlay`);
+         let txt = el.querySelector('.cooldown-text');
+         if(cd > 0) { el.style.height = "100%"; txt.innerText = Math.ceil(cd/60); }
+         else { el.style.height = "0%"; txt.innerText = ""; }
+      });
+      
+      // Inventory
+      const slots = document.querySelectorAll('.item-slot');
+      state.inventory.forEach((itemId, idx) => {
+        if(slots[idx].classList.contains('empty')) {
+           const item = ITEMS[itemId];
+           slots[idx].innerText = item.icon;
+           slots[idx].classList.remove('empty');
+           slots[idx].onmouseenter = () => showItemTooltip(itemId);
+           slots[idx].onmouseleave = hideTooltip;
+        }
+      });
+    }
+
+    function toggleShop() {
+      if(state.screen === 'playing') {
+        state.screen = 'shop';
+        document.getElementById('shop-menu').classList.remove('hidden');
+        document.getElementById('shop-current-gdp').innerText = '$' + state.score;
+        filterShop('attack');
+      } else {
+        state.screen = 'playing';
+        document.getElementById('shop-menu').classList.add('hidden');
+      }
+    }
+
+    function filterShop(type) {
+      const container = document.getElementById('shop-items-container');
+      container.innerHTML = '';
+      document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      for (const [id, item] of Object.entries(ITEMS)) {
+        if(item.type === type) {
+          const div = document.createElement('div');
+          div.className = 'shop-item-card';
+          div.onclick = () => buyItem(id);
+          div.innerHTML = `
+            <div class="shop-item-icon">${item.icon}</div>
+            <div class="shop-item-name">${item.name}</div>
+            <div class="shop-item-cost">$${item.cost}</div>
+            <div class="shop-item-desc">${item.desc}</div>
+            <div class="shop-buy-btn btn">BUY</div>
+          `;
+          container.appendChild(div);
+        }
+      }
+    }
+
+    function buyItem(id) {
+      const item = ITEMS[id];
+      if(state.score >= item.cost) {
+        if(state.inventory.length < 6) {
+          state.score -= item.cost;
+          state.inventory.push(id);
+          document.getElementById('shop-current-gdp').innerText = '$' + state.score;
+          spawnFloatingText(width/2, height/2, "PURCHASED!", "#00ff9d");
+        } else { alert("Inventory Full!"); }
+      } else { alert("Not enough GDP!"); }
+    }
+
+    function showSkillTooltip(key) {
+      const tt = document.getElementById('tooltip');
+      const char = CHARACTERS[state.selectedChar];
+      // ... simplified skill stats
+      document.getElementById('tt-title').innerText = key.toUpperCase() + " SKILL";
+      document.getElementById('tt-desc').innerText = "Special Ability";
+      tt.style.display = 'block';
+    }
+    
+    function showItemTooltip(id) {
+      const tt = document.getElementById('tooltip');
+      const item = ITEMS[id];
+      document.getElementById('tt-title').innerText = item.name;
+      document.getElementById('tt-desc').innerText = item.desc;
+      tt.style.display = 'block';
+    }
+    function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
+    
+    function createParticles(x,y,c,n) { for(let i=0;i<n;i++) state.particles.push({x,y,vx:(Math.random()-.5)*10,vy:(Math.random()-.5)*10,life:30,color:c,size:Math.random()*3}); }
+    function spawnFloatingText(x,y,t,c='#fff') { state.texts.push({x,y,text:t,color:c,life:60}); }
+    function updateParticles() { 
+      for(let i=state.particles.length-1;i>=0;i--){ let p=state.particles[i]; p.x+=p.vx; p.y+=p.vy; p.life--; if(p.life<=0) state.particles.splice(i,1); }
+      for(let i=state.texts.length-1;i>=0;i--){ let t=state.texts[i]; t.y--; t.life--; if(t.life<=0) state.texts.splice(i,1); }
+    }
+    function togglePause() {
+      if(state.screen === 'playing') { state.screen = 'paused'; document.getElementById('pause-menu').classList.remove('hidden'); }
+      else if(state.screen === 'paused') { state.screen = 'playing'; document.getElementById('pause-menu').classList.add('hidden'); loop(); }
+    }
+    function gameOver() {
+      state.screen = 'over';
+      document.getElementById('game-over').classList.remove('hidden');
+      document.getElementById('final-score').innerText = state.score;
+    }
+    
+    // Initial Render
+    // Wait for DOM
+    window.onload = () => {
+       // Already handled by inline scripts mostly, but good practice to check
+    };
   </script>
 </body>
 </html>
