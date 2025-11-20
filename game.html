@@ -67,8 +67,9 @@
     .ctrl-btn:hover { border-color: var(--neon-blue); color: var(--neon-blue); }
     .ctrl-btn.active { background: var(--neon-yellow); color: black; border-color: var(--neon-yellow); font-weight: bold; }
 
-    .stats { display: flex; gap: 20px; font-size: 0.9rem; align-items: center; }
-    .stat-box { text-align: right; }
+    /* 数据栏布局优化 */
+    .stats { display: flex; gap: 15px; font-size: 0.9rem; align-items: center; }
+    .stat-box { text-align: right; min-width: 80px; }
     .stat-box span { display: block; font-size: 0.65rem; color: var(--text-dim); letter-spacing: 1px; }
     .stat-value { font-weight: bold; font-size: 1rem; font-family: 'Share Tech Mono'; }
     
@@ -298,12 +299,21 @@
 
       <div class="stats">
         <div class="stat-box">
-          <span>TIME REMAINING</span>
+          <span>TIME</span>
           <div class="stat-value" id="time-display" style="color:var(--neon-yellow)">Y1 / Q1</div>
         </div>
         <div class="stat-box">
           <span>NET WORTH</span>
           <div class="stat-value" id="net-worth">---</div>
+        </div>
+        <!-- 修复点：添加了 CASH 和 YIELD (PnL) 的显示 -->
+        <div class="stat-box">
+          <span>CASH</span>
+          <div class="stat-value" id="cash-balance">---</div>
+        </div>
+        <div class="stat-box">
+          <span>YIELD</span>
+          <div class="stat-value" id="pnl-val">0.00%</div>
         </div>
         <div class="stat-box">
           <span>DEBT</span>
@@ -401,8 +411,8 @@
 
     let state = {
       cash: 0,
-      debt: 0, // 新增债务记录
-      leverage: 1, // 当前选择的杠杆倍数
+      debt: 0, 
+      leverage: 1, 
       difficulty: 'normal',
       cycle: 'RECOVERY',
       cycleTimer: 0,
@@ -412,7 +422,8 @@
       selectedAssetId: 'stock',
       gameStarted: false,
       isGameOver: false,
-      isPaused: false
+      isPaused: false,
+      initialCash: 0
     };
 
     // ====== UI Interaction ======
@@ -446,7 +457,6 @@
       }
     }
     
-    // Keyboard shortcut for pause
     document.addEventListener('keydown', (e) => {
       if(e.key === 'p' || e.key === 'P') togglePause();
     });
@@ -454,6 +464,7 @@
     function startGame() {
       const settings = difficultySettings[state.difficulty];
       state.cash = settings.cash;
+      state.initialCash = settings.cash;
       state.debt = 0;
       state.gameStarted = true;
       document.getElementById('start-screen').style.display = 'none';
@@ -522,7 +533,7 @@
       document.getElementById('news-content').innerText = newsText;
     }
 
-    // ====== Trade System (With Leverage) ======
+    // ====== Trade System ======
 
     function trade(type) {
       if (!state.gameStarted || state.isGameOver || state.isPaused) return;
@@ -531,25 +542,18 @@
       const percent = parseInt(document.getElementById('trade-slider').value) / 100;
 
       if (type === 'buy') {
-        // 1. 计算本金
         const principal = state.cash * percent;
         if (principal < 10) return;
         
-        // 2. 计算杠杆后总金额
         const totalBuyAmount = principal * state.leverage;
-        
-        // 3. 计算借款金额
         const loan = totalBuyAmount - principal;
         
-        // 4. 执行交易
         const units = totalBuyAmount / asset.price;
         asset.holdings += units;
         state.cash -= principal;
         state.debt += loan;
         
       } else {
-        // 卖出逻辑：简单化处理，卖出回笼资金，债务保留
-        // 为了简化街机体验，我们不强制按比例还债，而是看总净值
         const unitsToSell = asset.holdings * percent;
         if (unitsToSell <= 0) return;
         
@@ -557,8 +561,6 @@
         state.cash += cashBack;
         asset.holdings -= unitsToSell;
         
-        // 自动还债逻辑 (Optional: 如果现金很多，自动还一部分债，或者手动还？)
-        // 这里为了游戏流畅，如果有现金且有债务，自动优先还债
         if (state.debt > 0) {
             if (state.cash >= state.debt) {
                 state.cash -= state.debt;
@@ -605,7 +607,7 @@
       
       modal.style.display = 'flex';
       title.innerText = titleText;
-      document.getElementById('end-score').innerText = "FINAL PnL: " + ((getNetWorth() - difficultySettings[state.difficulty].cash)/difficultySettings[state.difficulty].cash * 100).toFixed(2) + "%";
+      document.getElementById('end-score').innerText = "FINAL PnL: " + (((getNetWorth() - state.initialCash)/state.initialCash) * 100).toFixed(2) + "%";
       document.getElementById('end-reason').innerText = reason;
       
       if(win) {
@@ -625,34 +627,41 @@
       const netWorth = getNetWorth();
       const settings = difficultySettings[state.difficulty];
       
+      // 1. 基础数值显示
       document.getElementById('net-worth').innerText = '$' + Math.floor(netWorth).toLocaleString();
       document.getElementById('cash-balance').innerText = '$' + Math.floor(state.cash).toLocaleString();
       document.getElementById('debt-val').innerText = state.debt > 0 ? '-$' + Math.floor(state.debt).toLocaleString() : '$0';
       document.getElementById('time-display').innerText = `YEAR ${state.year} / Q${state.quarter}`;
       
-      // Cycle
+      // 2. 收益率计算
+      const pnl = ((netWorth - state.initialCash) / state.initialCash) * 100;
+      const pnlEl = document.getElementById('pnl-val');
+      pnlEl.innerText = (pnl > 0 ? '+' : '') + pnl.toFixed(2) + '%';
+      pnlEl.style.color = pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)';
+
+      // 3. 周期显示
       const cycleEl = document.getElementById('cycle-name');
       cycleEl.innerText = state.cycle;
       if(state.cycle === 'RECESSION') cycleEl.style.color = '#ff0055';
       else if(state.cycle === 'RECOVERY') cycleEl.style.color = '#00ff9d';
       else cycleEl.style.color = '#ffee00';
 
-      // Progress Bar
+      // 4. 进度条
       let progressPct = ((netWorth - settings.fail) / (settings.win - settings.fail)) * 100;
       if(progressPct < 0) progressPct = 0;
       if(progressPct > 100) progressPct = 100;
       document.getElementById('goal-bar').style.width = progressPct + '%';
       
-      // Update Assets List
+      // 5. 资产列表更新
       const totalAssetsVal = assets.reduce((acc, a) => acc + a.holdings * a.price, 0);
       assets.forEach(asset => {
         document.getElementById(`price-${asset.id}`).innerText = '$' + asset.price.toFixed(2);
         const val = asset.holdings * asset.price;
-        // 进度条显示该资产占总资产（而非总净值）的比例
         const pct = totalAssetsVal > 0 ? (val / totalAssetsVal) * 100 : 0;
         document.getElementById(`bar-${asset.id}`).style.width = pct + '%';
       });
 
+      // 6. 持仓文字更新
       const current = assets.find(a => a.id === state.selectedAssetId);
       document.getElementById('current-hold-val').innerText = current.holdings.toFixed(2);
     }
