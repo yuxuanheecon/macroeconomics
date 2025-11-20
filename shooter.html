@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Macro Defender 4.8 | Earth Macro</title>
+  <title>Macro Defender 4.9 | Earth Macro</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     /* ====== 基础样式 ====== */
@@ -30,7 +30,7 @@
     .hud-left { display: flex; gap: 15px; }
     .hud-right { display: flex; gap: 10px; pointer-events: auto; }
 
-    .stat-box { text-shadow: 0 0 10px currentColor; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 4px; border: 1px solid #333; }
+    .stat-box { text-shadow: 0 0 10px currentColor; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 4px; border: 1px solid #333; backdrop-filter: blur(4px); }
     .label { font-size: 0.7rem; color: #888; display: block; letter-spacing: 1px; margin-bottom: 2px; }
     .value { font-family: 'Share Tech Mono'; font-size: 1.5rem; font-weight: bold; }
     #score-val { color: #00ff9d; }
@@ -92,8 +92,10 @@
     /* ====== 模态窗口 ====== */
     .modal {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(5,5,8,0.98); display: flex; flex-direction: column;
+      background: rgba(5,5,8,0.85); /* 半透明背景，透出 Canvas */
+      display: flex; flex-direction: column;
       z-index: 100; pointer-events: auto; overflow-y: auto;
+      backdrop-filter: blur(5px);
     }
     .modal.hidden { display: none !important; }
     
@@ -122,11 +124,11 @@
     .tab-btn:hover { border-color: #fff; color: #fff; }
     .tab-btn.active { background: rgba(0, 243, 255, 0.15); border-color: #00f3ff; color: #00f3ff; font-weight: bold; }
 
-    .char-selection-area { display: flex; gap: 20px; flex: 1; width: 100%; overflow: hidden; }
+    .char-selection-area { display: flex; gap: 20px; flex: 1; width: 100%; overflow: hidden; min-height: 400px; }
     .char-list { 
       flex: 2; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
       grid-auto-rows: 160px; gap: 10px; overflow-y: auto; align-content: start; padding-right: 5px;
-      border: 1px solid #333; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;
+      border: 1px solid #333; padding: 15px; background: rgba(0,0,0,0.4); border-radius: 8px;
     }
     .char-detail-panel { flex: 1; background: rgba(10,15,20,0.95); border: 1px solid #00f3ff; padding: 20px; overflow-y: auto; min-width: 320px; display:flex; flex-direction:column; align-items:center; border-radius: 12px; }
     
@@ -271,11 +273,11 @@
     <div class="modal-content">
       <h1>SELECT HERO</h1>
       <div class="category-tabs">
-        <div class="tab-btn active" data-cat="banker" onclick="filterChars('banker')">🏛️ 央行</div>
-        <div class="tab-btn" data-cat="politician" onclick="filterChars('politician')">🦅 政要</div>
-        <div class="tab-btn" data-cat="investor" onclick="filterChars('investor')">💼 资本</div>
-        <div class="tab-btn" data-cat="tech" onclick="filterChars('tech')">🚀 科技</div>
-        <div class="tab-btn" data-cat="org" onclick="filterChars('org')">🌍 组织</div>
+        <div class="tab-btn active" onclick="filterChars('banker')">🏛️ 央行</div>
+        <div class="tab-btn" onclick="filterChars('politician')">🦅 政要</div>
+        <div class="tab-btn" onclick="filterChars('investor')">💼 资本</div>
+        <div class="tab-btn" onclick="filterChars('tech')">🚀 科技</div>
+        <div class="tab-btn" onclick="filterChars('org')">🌍 组织</div>
       </div>
       <div class="char-selection-area">
         <div class="char-list" id="char-list-container"></div>
@@ -375,7 +377,7 @@
       'sunak': { cat: 'politician', name: 'Rishi Sunak (苏纳克)', title: 'UK Ex-PM', hp: 6, atk: 6, spd: 6, rate: 7, color: '#0000ff', q:'Math', w:'Finance', e:'Tech Bro', r:'Windsor', qDesc:'数学计算', wDesc:'金融城护盾', eDesc:'科技步伐', rDesc:'温莎框架', qInfo:'Calc | CD: 3s', wInfo:'Shield | CD: 10s', eInfo:'Dash | CD: 5s', rInfo:'Agreement | CD: 40s' },
 
       // 3. Investors
-      'buffett': { cat: 'investor', name: 'Warren Buffett (巴菲特)', title: 'Oracle', hp: 6, atk: 10, spd: 2, rate: 4, color: '#339933', q:'Value Sniper', w:'Moat', e:'Compound', r:'Snowball', qDesc:'价值狙击', wDesc:'护城河', eDesc:'复利位移', rDesc:'滚雪球', qInfo:'Crit | CD: 5s', wInfo:'Invuln | CD: 20s', eInfo:'CD: 1s', rInfo:'Grow Dmg | CD: 50s' },
+      'buffett': { cat: 'investor', name: 'Warren Buffett (巴菲特)', title: 'Oracle', hp: 6, atk: 10, spd: 2, rate: 4, color: '#339933', q:'Value Shot', w:'Moat', e:'Compound', r:'Snowball', qDesc:'价值狙击', wDesc:'护城河', eDesc:'复利位移', rDesc:'滚雪球', qInfo:'Crit | CD: 5s', wInfo:'Invuln | CD: 20s', eInfo:'CD: 1s', rInfo:'Grow Dmg | CD: 50s' },
       'munger': { cat: 'investor', name: 'Charlie Munger (芒格)', title: 'Architect', hp: 5, atk: 10, spd: 1, rate: 3, color: '#555555', q:'Wisdom', w:'Patience', e:'Sit', r:'Lollapalooza', qDesc:'智慧箴言', wDesc:'耐心等待', eDesc:'坐看云起', rDesc:'效应叠加', qInfo:'Stun | CD: 8s', wInfo:'Def Up | CD: 10s', eInfo:'Regen | CD: 0s', rInfo:'Combo | CD: 60s' },
       'dalio': { cat: 'investor', name: 'Ray Dalio (达利欧)', title: 'Bridgewater', hp: 7, atk: 6, spd: 5, rate: 8, color: '#6600cc', q:'All Weather', w:'Deleverage', e:'Cycle Surf', r:'Big Cycle', qDesc:'全天候散射', wDesc:'去杠杆', eDesc:'周期冲浪', rDesc:'大周期重置', qInfo:'Spread | CD: 3s', wInfo:'Push | CD: 8s', eInfo:'Speed | CD: 5s', rInfo:'Reset | CD: 60s' },
       'marks': { cat: 'investor', name: 'Howard Marks (马克斯)', title: 'Oaktree', hp: 6, atk: 7, spd: 4, rate: 6, color: '#996633', q:'Memo', w:'Risk Control', e:'Pendulum', r:'Distressed', qDesc:'投资备忘录', wDesc:'风险控制', eDesc:'钟摆摆动', rDesc:'困境反转', qInfo:'Buff | CD: 10s', wInfo:'Shield | CD: 12s', eInfo:'Swing | CD: 4s', rInfo:'Revive | CD: 60s' },
@@ -394,7 +396,7 @@
       'cook': { cat: 'tech', name: 'Tim Cook (库克)', title: 'Apple', hp: 8, atk: 6, spd: 5, rate: 7, color: '#aaaaaa', q:'Supply Chain', w:'Privacy', e:'One More Thing', r:'Ecosystem', qDesc:'供应链打击', wDesc:'隐私盾', eDesc:'惊喜发布', rDesc:'生态围墙', qInfo:'Link | CD: 5s', wInfo:'Stealth | CD: 12s', eInfo:'Dash | CD: 8s', rInfo:'Trap | CD: 45s' },
       'zuckerberg': { cat: 'tech', name: 'Mark Zuckerberg (扎克伯格)', title: 'Meta', hp: 6, atk: 7, spd: 7, rate: 8, color: '#0066ff', q:'Metaverse', w:'Connect', e:'VR Step', r:'Virtual World', qDesc:'元宇宙波', wDesc:'连接', eDesc:'VR步', rDesc:'虚拟世界', qInfo:'Wave | CD: 3s', wInfo:'Link | CD: 10s', eInfo:'Teleport | CD: 5s', rInfo:'Confuse | CD: 40s' },
       'nadella': { cat: 'tech', name: 'Satya Nadella (纳德拉)', title: 'Microsoft', hp: 8, atk: 7, spd: 6, rate: 8, color: '#00a1f1', q:'Copilot', w:'Enterprise', e:'Azure', r:'Cloud AI', qDesc:'副驾驶射击', wDesc:'企业级护盾', eDesc:'云端传输', rDesc:'云端AI降临', qInfo:'Assist | CD: 2s', wInfo:'Shield | CD: 12s', eInfo:'Teleport | CD: 6s', rInfo:'Global Dmg | CD: 45s' },
-      'huang': { cat: 'tech', name: 'Jensen Huang (黄仁勋)', title: 'NVIDIA', hp: 5, atk: 10, spd: 8, rate: 10, color: '#76b900', q:'CUDA', w:'Ray Tracing', e:'Tensor', r:'Singularity', qDesc:'CUDA弹幕', wDesc:'光追反射', eDesc:'张量加速', rDesc:'AI奇点', qInfo:'Split | CD: 2s', wInfo:'Mirror | CD: 12s', eInfo:'Dash | CD: 6s', rInfo:'Black Hole | CD: 45s' },
+      'huang': { cat: 'tech', name: 'Jensen Huang (黄仁勋)', title: 'NVIDIA', hp: 5, atk: 10, spd: 8, rate: 10, color: '#76b900', q:'CUDA Core', w:'Ray Tracing', e:'Tensor Flow', r:'Singularity', qDesc:'算力弹幕', wDesc:'光追反射', eDesc:'张量流加速', rDesc:'奇点爆发', qInfo:'Split | CD: 2s', wInfo:'Mirror | CD: 12s', eInfo:'Spd | CD: 6s', rInfo:'Black Hole | CD: 45s' },
       'ponyma': { cat: 'tech', name: 'Pony Ma (马化腾)', title: 'Tencent', hp: 7, atk: 7, spd: 6, rate: 9, color: '#33ccff', q:'WeChat', w:'Social', e:'Link', r:'Game Empire', qDesc:'微信连接', wDesc:'社交网络', eDesc:'链接跳转', rDesc:'游戏帝国', qInfo:'Beam | CD: 3s', wInfo:'Web | CD: 10s', eInfo:'Dash | CD: 5s', rInfo:'Summon | CD: 40s' },
       'jackma': { cat: 'tech', name: 'Jack Ma (马云)', title: 'Alibaba', hp: 6, atk: 8, spd: 7, rate: 8, color: '#ff6600', q:'E-Commerce', w:'Payment', e:'Logistics', r:'Data Cloud', qDesc:'电商洪流', wDesc:'支付盾', eDesc:'物流速递', rDesc:'数据云爆破', qInfo:'Rapid | CD: 2s', wInfo:'Shield | CD: 12s', eInfo:'Speed | CD: 4s', rInfo:'AoE | CD: 40s' },
       'robinli': { cat: 'tech', name: 'Robin Li (李彦宏)', title: 'Baidu', hp: 6, atk: 6, spd: 6, rate: 7, color: '#0033cc', q:'Search', w:'Auto', e:'Map', r:'Ernie Bot', qDesc:'搜索索引', wDesc:'自动驾驶', eDesc:'地图导航', rDesc:'文心一言', qInfo:'Lock | CD: 4s', wInfo:'Dodge | CD: 10s', eInfo:'Teleport | CD: 6s', rInfo:'Smart Bomb | CD: 45s' },
@@ -427,9 +429,17 @@
     let width, height;
     
     let state = {
-      screen: 'menu', score: 1000, frame: 0,
-      player: null, bullets: [], enemies: [], particles: [], texts: [],
-      inventory: [], selectedChar: 'powell', difficulty: 1
+      screen: 'menu', // Start at menu
+      score: 1000, 
+      frame: 0,
+      player: null,
+      bullets: [],
+      enemies: [],
+      particles: [],
+      texts: [],
+      inventory: [], 
+      selectedChar: 'powell',
+      difficulty: 1
     };
     const input = { mouse: {x:0,y:0}, mouseDown: false };
 
@@ -437,184 +447,94 @@
     window.addEventListener('resize', resize);
     resize();
 
-    /* ====== 游戏循环 ====== */
-    function gameLoop() {
-      requestAnimationFrame(gameLoop);
-      if (state.screen === 'playing') {
-        update();
-        render();
-        state.frame++;
-      } else if (state.screen === 'shop') {
-        render(); 
-      }
-    }
-
-    /* ====== 逻辑更新 ====== */
-    function update() {
-      const p = state.player;
-      if(!p || p.hp <= 0) return; // Prevent update if dead
-
-      // Passives logic (Simple Regen)
-      if(state.frame % 60 === 0 && p.hp < p.maxHp) p.hp += 0.1;
-
-      // Movement
-      if (p.moving) {
-        let dx = p.targetX - p.x;
-        let dy = p.targetY - p.y;
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < p.baseSpd) { p.x = p.targetX; p.y = p.targetY; p.moving = false; } 
-        else { p.x += (dx/dist) * p.baseSpd; p.y += (dy/dist) * p.baseSpd; }
-      }
-      p.x = Math.max(20, Math.min(width-20, p.x));
-      p.y = Math.max(20, Math.min(height-20, p.y));
-
-      // Aim
-      p.angle = Math.atan2(input.mouse.y - p.y, input.mouse.x - p.x);
-
-      // Cooldowns
-      for(let k in p.cd) if(p.cd[k]>0) p.cd[k]--;
-      updateHUD();
-
-      // Attack
-      if(input.mouseDown && state.frame % Math.ceil(p.baseRate) === 0) {
-        shootBullet(p.angle, p.baseDmg, p.color);
-      }
-
-      // Bullets
-      for(let i=state.bullets.length-1; i>=0; i--) {
-        let b = state.bullets[i];
-        b.x += b.vx; b.y += b.vy; b.life--;
-        if(b.life <= 0) state.bullets.splice(i,1);
-      }
-
-      // Enemies
-      let difficultyMultiplier = state.difficulty || 1;
-      if(state.frame % Math.floor(60/difficultyMultiplier) === 0) spawnEnemy();
-      
-      for(let i=state.enemies.length-1; i>=0; i--) {
-        let e = state.enemies[i];
-        let angle = Math.atan2(p.y - e.y, p.x - e.x);
-        e.x += Math.cos(angle) * e.speed; e.y += Math.sin(angle) * e.speed;
-
-        if(Math.hypot(p.x-e.x, p.y-e.y) < p.r + e.r) {
-          p.hp -= 10;
-          createParticles(p.x, p.y, '#ff0000', 10);
-          if(p.hp <= 0) gameOver();
-          state.enemies.splice(i,1);
-          continue;
-        }
-
-        for(let j=state.bullets.length-1; j>=0; j--) {
-          let b = state.bullets[j];
-          if(Math.hypot(b.x-e.x, b.y-e.y) < e.r + 5) {
-             e.hp -= b.dmg; state.bullets.splice(j,1);
-             createParticles(e.x, e.y, '#fff', 2);
-             if(e.hp <= 0) {
-               state.score += e.val;
-               spawnFloatingText(e.x, e.y, `+$${e.val}`, "#00ff9d");
-               state.enemies.splice(i,1);
-               createParticles(e.x, e.y, e.color, 8);
-               break;
-             }
-          }
-        }
-      }
-      updateParticles();
-    }
-
-    function render() {
-      ctx.fillStyle = 'rgba(5,5,10,0.3)'; ctx.fillRect(0,0,width,height);
-      const p = state.player;
-      if(!p) return;
-
-      if(p.moving) {
-        ctx.strokeStyle = '#00ff00'; ctx.beginPath(); 
-        ctx.moveTo(p.targetX-5, p.targetY-5); ctx.lineTo(p.targetX+5, p.targetY+5);
-        ctx.moveTo(p.targetX+5, p.targetY-5); ctx.lineTo(p.targetX-5, p.targetY+5);
-        ctx.stroke();
-      }
-
-      ctx.save(); ctx.translate(p.x, p.y);
-      if(p.img && p.img.complete) {
-        ctx.save(); ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.clip();
-        ctx.drawImage(p.img, -20, -20, 40, 40); ctx.restore();
-        ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.stroke();
+    // BG Loop
+    let bgFrame = 0;
+    function bgLoop() {
+      requestAnimationFrame(bgLoop);
+      if (state.screen !== 'playing') {
+        drawCyberBackground();
       } else {
-        ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+        gameLoop(); 
       }
-      // HP Bar
-      ctx.fillStyle = "red"; ctx.fillRect(-20, 25, 40, 4);
-      ctx.fillStyle = "#00ff00"; ctx.fillRect(-20, 25, 40 * (Math.max(0,p.hp)/p.maxHp), 4);
-      ctx.restore();
-
-      state.enemies.forEach(e => { ctx.fillStyle = e.color; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2); ctx.fill(); });
-      state.bullets.forEach(b => { ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI*2); ctx.fill(); });
-      state.particles.forEach(pt => { ctx.fillStyle = pt.color; ctx.globalAlpha = pt.life/30; ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI*2); ctx.fill(); });
-      ctx.globalAlpha = 1;
-      state.texts.forEach(t => { ctx.fillStyle = t.color; ctx.font = "bold 14px monospace"; ctx.fillText(t.text, t.x, t.y); });
+      bgFrame++;
     }
 
-    /* ====== 辅助 ====== */
-    window.addEventListener('keydown', e => {
-      if(e.key.toLowerCase() === 'a') input.mouseDown = true;
-      if(state.screen === 'playing') {
-         if('qwer'.includes(e.key.toLowerCase())) useSkill(e.key.toLowerCase());
-         if(e.key.toLowerCase() === 'b') toggleShop();
-         if(e.key === 'Escape') togglePause();
-      } else if(state.screen === 'shop' && e.key.toLowerCase() === 'b') toggleShop();
-    });
-    window.addEventListener('keyup', e => { if(e.key.toLowerCase() === 'a') input.mouseDown = false; });
-    window.addEventListener('mousemove', e => { input.mouse.x = e.clientX; input.mouse.y = e.clientY; });
-    window.addEventListener('mousedown', e => { if(e.button===0) input.mouseDown = true; if(e.button===2 && state.player) {
-      state.player.moving = true; state.player.targetX = e.clientX; state.player.targetY = e.clientY;
-    }});
-    window.addEventListener('mouseup', () => input.mouseDown = false);
-    window.addEventListener('contextmenu', e => e.preventDefault());
-
-    /* ====== UI Logic ====== */
-    function setDifficulty(val, el) {
-      state.difficulty = val;
-      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
+    // Game Loop
+    function gameLoop() {
+      update();
+      render();
+      state.frame++;
     }
+
+    function drawCyberBackground() {
+      ctx.fillStyle = '#050505'; ctx.fillRect(0,0,width,height);
+      const pY = (bgFrame * 2) % 100;
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.2)'; ctx.lineWidth = 1; ctx.beginPath();
+      let horizonY = height * 0.3;
+      for(let i = -width; i < width*2; i+=100) { ctx.moveTo(i, height); ctx.lineTo(width/2 + (i-width/2)*0.1, horizonY); }
+      for(let i = 0; i < height; i+=40) { let y = i + pY; if(y > horizonY && y < height) { ctx.moveTo(0, y); ctx.lineTo(width, y); } }
+      ctx.stroke();
+    }
+
+    /* ====== 选人逻辑 ====== */
     function goToCharSelect() {
       document.getElementById('screen-rules').classList.add('hidden');
       document.getElementById('screen-char').classList.remove('hidden');
-      filterChars('banker');
-      updateCharDetail('powell');
+      // Force render first category to ensure grid is populated
+      filterChars('banker'); 
+      selectChar('powell');
     }
+
     function filterChars(cat) {
+      const tabs = document.querySelectorAll('.tab-btn');
+      tabs.forEach(t => t.classList.remove('active'));
+      if(event && event.target) event.target.classList.add('active');
+
       const container = document.getElementById('char-list-container');
       container.innerHTML = '';
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      if(event && event.target) event.target.classList.add('active');
       
       for (const [id, data] of Object.entries(CHARACTERS)) {
-        if(data.cat === cat) {
+        if (data.cat === cat) {
           const div = document.createElement('div');
           div.className = `char-mini-card ${id === state.selectedChar ? 'selected' : ''}`;
-          div.onclick = () => { state.selectedChar = id; filterChars(cat); updateCharDetail(id); };
-          div.innerHTML = `<img src="https://api.dicebear.com/9.x/avataaars/svg?seed=${data.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9" class="mini-avatar"><div class="mini-name">${data.name.split(' ')[0]}</div>`;
+          div.id = `card-${id}`; 
+          div.onclick = () => selectChar(id);
+          
+          div.innerHTML = `
+            <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=${data.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9" class="mini-avatar">
+            <div class="mini-name">${data.name.split(' ')[0]}</div>
+          `;
           container.appendChild(div);
         }
       }
     }
-    function updateCharDetail(id) {
-      const data = CHARACTERS[id];
-      document.getElementById('detail-name').innerText = data.name;
-      document.getElementById('detail-title').innerText = data.title;
-      document.getElementById('detail-avatar').src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${data.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+
+    function selectChar(id) {
+      state.selectedChar = id;
+      document.querySelectorAll('.char-mini-card').forEach(c => c.classList.remove('selected'));
+      const card = document.getElementById(`card-${id}`);
+      if(card) card.classList.add('selected');
+      updateDetailPanel(id);
+    }
+
+    function updateDetailPanel(id) {
+      const d = CHARACTERS[id];
+      if(!d) return;
+
+      document.getElementById('detail-name').innerText = d.name;
+      document.getElementById('detail-title').innerText = d.title;
+      document.getElementById('detail-avatar').src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${d.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
       
-      document.getElementById('bar-hp').style.width = (data.hp * 10) + '%';
-      document.getElementById('bar-atk').style.width = (data.atk * 10) + '%';
-      document.getElementById('bar-spd').style.width = (data.spd * 10) + '%';
-      document.getElementById('bar-rate').style.width = (data.rate * 8) + '%';
+      document.getElementById('bar-hp').style.width = (d.hp * 10) + '%';
+      document.getElementById('bar-atk').style.width = (d.atk * 10) + '%';
+      document.getElementById('bar-spd').style.width = (d.spd * 10) + '%';
+      document.getElementById('bar-rate').style.width = (d.rate * 8) + '%';
       
       const updateSkill = (key) => {
         const nameEl = document.getElementById(`skill-${key}-name`);
         const descEl = document.getElementById(`skill-${key}-desc`);
-        if(nameEl) nameEl.innerText = data[key] || 'Skill';
-        if(descEl) descEl.innerText = data[key+'Desc'] || 'Desc';
+        if(nameEl) nameEl.innerText = d[key] || 'Tactical';
+        if(descEl) descEl.innerText = d[key+'Desc'] || 'Special Ability';
       };
       updateSkill('q'); updateSkill('w'); updateSkill('e'); updateSkill('r');
     }
@@ -634,7 +554,8 @@
       state.player.img.src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${d.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
       
       state.bullets = []; state.enemies = []; state.particles = []; state.texts = [];
-      state.score = 1000; state.inventory = [];
+      state.score = 1000;
+      state.inventory = [];
       
       document.getElementById('screen-char').classList.add('hidden');
       document.getElementById('ui-layer').classList.remove('hidden');
@@ -655,55 +576,216 @@
       }
 
       state.screen = 'playing';
-      gameLoop();
+      // Clear focus
+      if(document.activeElement) document.activeElement.blur();
+      // Reset keys
+      input.mouseDown = false;
     }
 
-    function shootBullet(angle, dmg, homing) {
-      state.bullets.push({
-        x: state.player.x, y: state.player.y,
-        vx: Math.cos(angle) * 15, vy: Math.sin(angle) * 15,
-        life: 60, color: state.player.color, dmg: dmg, homing: homing
+    /* ====== 逻辑 ====== */
+    function update() {
+      const p = state.player;
+      if (!p || p.hp <= 0) return;
+
+      let spdMod = 0, dmgMod = 0, hpMod = 0, rateMod = 1;
+      let passives = [];
+      state.inventory.forEach(itemId => {
+        const item = ITEMS[itemId];
+        if(item.stats.spd) spdMod += item.stats.spd;
+        if(item.stats.dmg) dmgMod += item.stats.dmg;
+        if(item.stats.maxHp) hpMod += item.stats.maxHp;
+        if(item.stats.rate) rateMod *= item.stats.rate;
+        if(item.passive) passives.push(item.passive);
       });
+      
+      p.maxHp = p.baseHp + hpMod; 
+      const currentSpd = p.baseSpd + spdMod;
+      const currentDmg = p.baseDmg + dmgMod;
+      const currentRate = p.baseRate * rateMod;
+
+      if(state.frame % 60 === 0 && passives.includes('income')) { state.score += 5; spawnFloatingText(p.x, p.y-20, "+5 GDP", "#ffee00"); }
+      if(state.frame % 60 === 0 && passives.includes('hpRegen')) p.hp = Math.min(p.hp+0.5, p.maxHp);
+      if(state.frame % 600 === 0 && passives.includes('shield')) { p.shield = true; spawnFloatingText(p.x, p.y, "SHIELD", "#00ff9d"); }
+
+      if (p.moving) {
+        let dx = p.targetX - p.x, dy = p.targetY - p.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < currentSpd) { p.x = p.targetX; p.y = p.targetY; p.moving = false; }
+        else { p.x += (dx/dist)*currentSpd; p.y += (dy/dist)*currentSpd; }
+        if(passives.includes('trail') && state.frame % 10 === 0) createParticles(p.x, p.y, '#ff9900', 2);
+      }
+      p.x = Math.max(20, Math.min(width-20, p.x));
+      p.y = Math.max(20, Math.min(height-20, p.y));
+
+      p.angle = Math.atan2(input.mouse.y - p.y, input.mouse.x - p.x);
+      for(let k in p.cd) if(p.cd[k]>0) p.cd[k]--;
+      updateHUD();
+
+      if(input.mouseDown && state.frame % Math.ceil(currentRate) === 0) {
+        shootBullet(p, currentDmg, passives.includes('homing'));
+      }
+
+      for(let i=state.bullets.length-1; i>=0; i--) {
+        let b = state.bullets[i];
+        if(b.homing && state.enemies.length>0) {
+           let nearest = state.enemies[0];
+           let minD = 9999;
+           state.enemies.forEach(e => {
+             let d = Math.hypot(e.x - b.x, e.y - b.y);
+             if(d < minD) { minD = d; nearest = e; }
+           });
+           let angle = Math.atan2(nearest.y - b.y, nearest.x - b.x);
+           b.vx = b.vx*0.9 + Math.cos(angle)*2; b.vy = b.vy*0.9 + Math.sin(angle)*2;
+        }
+        b.x += b.vx; b.y += b.vy; b.life--;
+        if(b.life<=0) state.bullets.splice(i,1);
+      }
+
+      let difficultyMultiplier = state.difficulty || 1;
+      if(state.frame % Math.floor(60/difficultyMultiplier) === 0) spawnEnemy();
+      
+      for(let i=state.enemies.length-1; i>=0; i--) {
+        let e = state.enemies[i];
+        let angle = Math.atan2(p.y - e.y, p.x - e.x);
+        e.x += Math.cos(angle)*e.speed; e.y += Math.sin(angle)*e.speed;
+
+        if(Math.hypot(p.x-e.x, p.y-e.y) < p.r+e.r) {
+          if(p.shield) { 
+             p.shield = false; spawnFloatingText(p.x, p.y, "BLOCKED", "#fff"); 
+             e.x -= Math.cos(angle)*50; e.y -= Math.sin(angle)*50; 
+          } else { 
+             p.hp -= 10; createParticles(p.x, p.y, '#ff0000', 10); 
+             if(p.hp <= 0) gameOver(); 
+          }
+          state.enemies.splice(i,1); continue;
+        }
+
+        for(let j=state.bullets.length-1; j>=0; j--) {
+          let b = state.bullets[j];
+          if(Math.hypot(b.x-e.x, b.y-e.y) < e.r+5) {
+             e.hp -= b.dmg; state.bullets.splice(j,1);
+             if(e.hp<=0) {
+               state.score += e.val; spawnFloatingText(e.x, e.y, `+$${e.val}`, "#00ff9d");
+               state.enemies.splice(i,1); createParticles(e.x, e.y, e.color, 8); break;
+             }
+          }
+        }
+      }
+      updateParticles();
     }
+
+    function render() {
+      // Always render cyber background first
+      drawCyberBackground();
+      
+      // If not playing, stop here (just bg)
+      if(state.screen !== 'playing') return;
+
+      const p = state.player;
+      if(!p) return;
+
+      if(p.moving) {
+        ctx.strokeStyle='#00ff00'; ctx.beginPath(); 
+        ctx.moveTo(p.targetX-5, p.targetY-5); ctx.lineTo(p.targetX+5, p.targetY+5);
+        ctx.moveTo(p.targetX+5, p.targetY-5); ctx.lineTo(p.targetX-5, p.targetY+5);
+        ctx.stroke();
+      }
+
+      ctx.save(); ctx.translate(p.x, p.y);
+      if(p.shield) { ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,25,0,Math.PI*2); ctx.stroke(); }
+      if(p.img && p.img.complete) {
+        ctx.save(); ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.clip();
+        ctx.drawImage(p.img, -20, -20, 40, 40); ctx.restore();
+        ctx.strokeStyle=p.color; ctx.lineWidth=2; ctx.stroke();
+      } else {
+        ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+      }
+      ctx.fillStyle="red"; ctx.fillRect(-20, 25, 40, 4);
+      ctx.fillStyle="#00ff00"; ctx.fillRect(-20, 25, 40*(Math.max(0,p.hp)/p.maxHp), 4);
+      ctx.restore();
+
+      state.enemies.forEach(e=>{ ctx.fillStyle=e.color; ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill(); });
+      state.bullets.forEach(b=>{ ctx.fillStyle=b.color; ctx.beginPath(); ctx.arc(b.x,b.y,4,0,Math.PI*2); ctx.fill(); });
+      state.particles.forEach(pt=>{ ctx.fillStyle=pt.color; ctx.globalAlpha=pt.life/30; ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.size,0,Math.PI*2); ctx.fill(); });
+      ctx.globalAlpha=1;
+      ctx.fillStyle="#fff"; ctx.font="bold 14px monospace";
+      state.texts.forEach(t=>ctx.fillText(t.text, t.x, t.y));
+    }
+
+    /* ====== 辅助 ====== */
+    window.addEventListener('keydown', e => {
+      if(e.key.toLowerCase() === 'a') input.mouseDown = true;
+      if(state.screen === 'playing') {
+         if('qwer'.includes(e.key.toLowerCase())) useSkill(e.key.toLowerCase());
+         if(e.key.toLowerCase() === 'b') toggleShop();
+         if(e.key === 'Escape') togglePause();
+      } else if(state.screen === 'shop' && e.key.toLowerCase() === 'b') toggleShop();
+    });
+    window.addEventListener('keyup', e => { if(e.key.toLowerCase() === 'a') input.mouseDown = false; });
+    window.addEventListener('mousemove', e => { input.mouse.x = e.clientX; input.mouse.y = e.clientY; });
+    window.addEventListener('mousedown', e => { if(e.button===0) input.mouseDown = true; if(e.button===2 && state.player) {
+      state.player.moving = true; state.player.targetX = e.clientX; state.player.targetY = e.clientY;
+    }});
+    window.addEventListener('mouseup', () => input.mouseDown = false);
+    window.addEventListener('contextmenu', e => e.preventDefault());
+
+    function setDifficulty(val, el) {
+      state.difficulty = val;
+      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+    function togglePause() {
+      if(state.screen === 'playing') { state.screen = 'paused'; document.getElementById('pause-menu').classList.remove('hidden'); }
+      else if(state.screen === 'paused') { state.screen = 'playing'; document.getElementById('pause-menu').classList.add('hidden'); }
+    }
+    function toggleShop() {
+      if(state.screen === 'playing') { 
+        state.screen = 'shop'; 
+        document.getElementById('shop-menu').classList.remove('hidden'); 
+        document.getElementById('shop-current-gdp').innerText = '$' + Math.floor(state.score);
+      }
+      else if(state.screen === 'shop') { 
+        state.screen = 'playing'; 
+        document.getElementById('shop-menu').classList.add('hidden'); 
+      }
+    }
+    function gameOver() {
+      state.screen = 'over';
+      document.getElementById('game-over').classList.remove('hidden');
+      document.getElementById('final-score').innerText = state.score;
+    }
+    
+    /* ====== Skills ====== */
     function spawnEnemy() {
       let angle = Math.random() * Math.PI * 2;
       let r = Math.max(width, height) / 2 + 50;
-      state.enemies.push({
-        x: width/2 + Math.cos(angle)*r, y: height/2 + Math.sin(angle)*r,
-        hp: 10 * (state.difficulty || 1), speed: 2, r: 15, color: '#ff0055', val: 50
-      });
+      state.enemies.push({ x: width/2 + Math.cos(angle)*r, y: height/2 + Math.sin(angle)*r, hp: 10 * (state.difficulty || 1), speed: 2, r: 15, color: '#ff0055', val: 50 });
+    }
+    function shootBullet(p, dmg, homing) {
+      state.bullets.push({ x: p.x, y: p.y, vx: Math.cos(p.angle) * 15, vy: Math.sin(p.angle) * 15, life: 60, color: p.color, dmg: dmg, homing: homing });
     }
     function useSkill(key) {
       const p = state.player;
       if(p.cd[key]>0) return;
       p.cd[key] = key==='q'?120 : key==='w'?300 : key==='e'?180 : 900;
-      
-      if(key === 'e') { 
-        p.x += Math.cos(p.angle)*200; p.y += Math.sin(p.angle)*200; p.targetX = p.x;
-        createParticles(p.x, p.y, '#fff', 10);
-      } else if(key === 'q') { 
-        for(let i=-0.5; i<=0.5; i+=0.2) shootBullet(p.angle+i, p.baseDmg*1.5, false);
-      } else if(key === 'w') { 
-        state.enemies.forEach(e => { if(Math.hypot(p.x-e.x, p.y-e.y)<200) { e.x -= Math.cos(Math.atan2(p.y-e.y, p.x-e.x))*150; } });
-        createParticles(p.x, p.y, '#00f3ff', 20);
-      } else if(key === 'r') { 
-        state.enemies = [];
-        spawnFloatingText(width/2, height/2, "ULTIMATE!", "#ffee00");
-      }
+      if(key === 'e') { p.x += Math.cos(p.angle)*200; p.y += Math.sin(p.angle)*200; p.targetX = p.x; createParticles(p.x, p.y, '#fff', 10); }
+      else if(key === 'q') { for(let i=-0.5; i<=0.5; i+=0.2) shootBullet({...p, angle: p.angle+i}, p.baseDmg*1.5, false); }
+      else if(key === 'w') { state.enemies.forEach(e => { if(Math.hypot(p.x-e.x, p.y-e.y)<200) { e.x -= Math.cos(Math.atan2(p.y-e.y, p.x-e.x))*150; } }); createParticles(p.x, p.y, '#00f3ff', 20); }
+      else if(key === 'r') { state.enemies = []; spawnFloatingText(width/2, height/2, "ULTIMATE!", "#ffee00"); }
     }
     function buyItem(id) {
       const item = ITEMS[id];
-      if(state.score >= item.cost && state.inventory.length < 6) {
-        state.score -= item.cost;
-        state.inventory.push(id);
-        spawnFloatingText(width/2, height/2, "PURCHASED!", "#00ff9d");
-        updateHUD();
-      } else { alert("Inventory Full or Low GDP!"); }
+      if(state.score >= item.cost) {
+        if(state.inventory.length < 6) {
+          state.score -= item.cost; state.inventory.push(id);
+          document.getElementById('shop-current-gdp').innerText = '$' + Math.floor(state.score);
+          spawnFloatingText(width/2, height/2, "PURCHASED!", "#00ff9d");
+          updateHUD();
+        } else { alert("Inventory Full!"); }
+      } else { alert("Not enough GDP!"); }
     }
-
     function updateHUD() {
-      const p = state.player;
-      if(!p) return;
+      const p = state.player; if(!p) return;
       document.getElementById('score-val').innerText = Math.floor(state.score);
       document.getElementById('health-val').innerText = Math.floor(p.hp);
       ['q','w','e','r'].forEach(k => {
@@ -724,7 +806,7 @@
       });
     }
 
-    /* ====== Tooltip Logic ====== */
+    /* ====== Tooltip ====== */
     function showSelectTooltip(el, key) {
       const d = CHARACTERS[state.selectedChar];
       showTooltipBase(el, d[key]||key, d[key+'Desc'], d[key+'Info']);
@@ -750,43 +832,9 @@
       for(let i=state.particles.length-1;i>=0;i--){ let p=state.particles[i]; p.x+=p.vx; p.y+=p.vy; p.life--; if(p.life<=0) state.particles.splice(i,1); }
       for(let i=state.texts.length-1;i>=0;i--){ let t=state.texts[i]; t.y--; t.life--; if(t.life<=0) state.texts.splice(i,1); }
     }
-    
-    function togglePause() {
-      if(state.screen === 'playing') { state.screen = 'paused'; document.getElementById('pause-menu').classList.remove('hidden'); }
-      else if(state.screen === 'paused') { state.screen = 'playing'; document.getElementById('pause-menu').classList.add('hidden'); loop(); }
-    }
-    function toggleShop() {
-      if(state.screen === 'playing') { 
-        state.screen = 'shop'; 
-        document.getElementById('shop-menu').classList.remove('hidden'); 
-        // Fix: Force update GDP display
-        document.getElementById('shop-current-gdp').innerText = '$' + Math.floor(state.score);
-      }
-      else if(state.screen === 'shop') { 
-        state.screen = 'playing'; 
-        document.getElementById('shop-menu').classList.add('hidden'); 
-      }
-    }
-    function gameOver() {
-      state.screen = 'over';
-      document.getElementById('game-over').classList.remove('hidden');
-      document.getElementById('final-score').innerText = state.score;
-    }
 
-    // Init: Do NOT auto start game logic, just render BG
-    function loop() {
-      requestAnimationFrame(loop);
-      // Only update game logic if playing
-      if (state.screen === 'playing') {
-        update();
-        render();
-        state.frame++;
-      } else {
-        // Just clear or draw static BG if needed, or nothing
-        // drawCyberBackground(); // Optional
-      }
-    }
-    loop();
+    // Start BG Loop
+    bgLoop();
   </script>
 </body>
 </html>
