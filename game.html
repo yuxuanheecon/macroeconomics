@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alpha Trader 2077 | Earth Macro</title>
+  
+  <!-- 引入字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #050505;
+      --panel-bg: rgba(16, 20, 24, 0.9);
+      --neon-green: #00ff9d;
+      --neon-red: #ff0055;
+      --neon-blue: #00f3ff;
+      --neon-yellow: #ffee00;
+      --text-dim: #666;
+      --grid-color: rgba(0, 243, 255, 0.05);
+    }
+
+    * { box-sizing: border-box; user-select: none; }
+    
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--bg-color);
+      color: white;
+      font-family: 'JetBrains Mono', monospace;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* CRT 扫描线效果 */
+    body::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      z-index: 100;
+      background-size: 100% 2px, 3px 100%;
+      pointer-events: none;
+    }
+
+    /* 顶部 HUD */
+    .hud {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 30px;
+      border-bottom: 1px solid var(--neon-blue);
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(5px);
+      z-index: 10;
+      height: 70px;
+    }
+    
+    .logo { font-family: 'Share Tech Mono'; font-size: 1.5rem; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+    
+    .stats { display: flex; gap: 30px; font-size: 1rem; }
+    .stat-box span { display: block; font-size: 0.7rem; color: var(--text-dim); letter-spacing: 1px; }
+    .stat-value { font-weight: bold; font-size: 1.1rem; }
+    .stat-value.up { color: var(--neon-green); }
+    .stat-value.down { color: var(--neon-red); }
+
+    /* 主游戏区 */
+    .main-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 3fr 1fr; /* 左侧图表，右侧操作 */
+      height: calc(100vh - 70px);
+    }
+
+    /* 图表区域 */
+    .chart-area {
+      position: relative;
+      border-right: 1px solid #333;
+      background-image: 
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 40px 40px;
+      overflow: hidden;
+    }
+
+    #market-chart { width: 100%; height: 100%; }
+
+    .cycle-indicator {
+      position: absolute; top: 20px; left: 20px;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid var(--neon-yellow);
+      padding: 10px 20px;
+      border-radius: 4px;
+      box-shadow: 0 0 20px rgba(255, 238, 0, 0.2);
+    }
+    .cycle-label { font-size: 0.8rem; color: var(--neon-yellow); margin-bottom: 5px; }
+    .cycle-value { font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+
+    .news-ticker {
+      position: absolute; bottom: 0; left: 0; width: 100%;
+      background: var(--neon-blue); color: black;
+      font-weight: bold; padding: 5px 0;
+      overflow: hidden; white-space: nowrap;
+    }
+    .ticker-content { display: inline-block; animation: ticker 20s linear infinite; padding-left: 100%; }
+    @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+
+    /* 交易控制台 */
+    .trade-panel {
+      background: var(--panel-bg);
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 15px;
+      overflow-y: auto;
+      border-left: 1px solid var(--neon-blue);
+    }
+
+    .panel-header {
+      font-family: 'Share Tech Mono'; color: var(--text-dim); 
+      border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 5px;
+      font-size: 0.9rem;
+    }
+
+    .asset-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* 选中状态 */
+    .asset-card.active {
+      border-color: var(--neon-green);
+      background: rgba(0, 255, 157, 0.05);
+      box-shadow: inset 0 0 20px rgba(0, 255, 157, 0.1);
+    }
+
+    /* 仓位进度条 */
+    .position-bar {
+      position: absolute; bottom: 0; left: 0; height: 3px; 
+      background: var(--neon-green); width: 0%; transition: width 0.5s;
+    }
+
+    .asset-info { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; }
+    .asset-name { font-weight: bold; color: white; font-size: 0.9rem; }
+    .asset-price { font-family: 'Share Tech Mono'; font-size: 1rem; }
+    
+    /* 交易操作区 */
+    .trade-controls {
+      margin-top: auto;
+      background: rgba(0,0,0,0.3);
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+
+    .slider-container {
+      margin-bottom: 15px;
+    }
+    
+    .slider-label {
+      display: flex; justify-content: space-between;
+      font-size: 0.8rem; color: var(--text-dim); margin-bottom: 5px;
+    }
+    
+    /* 赛博朋克滑块 */
+    input[type=range] {
+      -webkit-appearance: none; width: 100%; background: transparent;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; height: 20px; width: 10px;
+      background: var(--neon-blue); cursor: pointer; margin-top: -8px;
+      box-shadow: 0 0 10px var(--neon-blue);
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%; height: 4px; cursor: pointer;
+      background: #333; border-radius: 2px;
+    }
+    
+    .control-pad {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+
+    .btn {
+      border: none; padding: 12px; border-radius: 2px;
+      font-weight: bold; cursor: pointer; font-family: 'JetBrains Mono';
+      text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem;
+      transition: all 0.1s; position: relative; overflow: hidden;
+    }
+    .btn:active { transform: scale(0.98); }
+    
+    .btn-buy { background: rgba(0, 255, 157, 0.1); color: var(--neon-green); border: 1px solid var(--neon-green); }
+    .btn-buy:hover { background: var(--neon-green); color: black; box-shadow: 0 0 20px var(--neon-green); }
+    
+    .btn-sell { background: rgba(255, 0, 85, 0.1); color: var(--neon-red); border: 1px solid var(--neon-red); }
+    .btn-sell:hover { background: var(--neon-red); color: white; box-shadow: 0 0 20px var(--neon-red); }
+    
+    .holding-display { text-align: center; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 10px; }
+
+    /* 全屏模态框 (Start/Game Over) */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.95); z-index: 200;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+    }
+    
+    .modal-panel {
+      width: 600px; max-width: 90%;
+      border: 2px solid var(--neon-blue); padding: 40px; 
+      box-shadow: 0 0 50px rgba(0, 243, 255, 0.2); 
+      background: rgba(10,10,10,0.95);
+      text-align: center;
+    }
+    
+    .modal-title { font-size: 2.5rem; color: var(--neon-blue); margin-bottom: 10px; font-family: 'Share Tech Mono'; }
+    .modal-subtitle { color: var(--text-dim); margin-bottom: 30px; font-size: 0.9rem; }
+    
+    .rules-box {
+      text-align: left; background: rgba(255,255,255,0.05); padding: 20px;
+      border-radius: 4px; margin-bottom: 30px; font-size: 0.9rem; line-height: 1.6;
+      border-left: 3px solid var(--neon-yellow);
+    }
+    .rules-box h4 { margin: 0 0 10px 0; color: var(--neon-yellow); }
+    
+    .difficulty-select { display: flex; gap: 10px; justify-content: center; margin-bottom: 30px; }
+    .diff-btn {
+      flex: 1; padding: 15px; background: transparent; border: 1px solid #555; color: #555;
+      cursor: pointer; font-family: 'JetBrains Mono'; transition: all 0.2s;
+    }
+    .diff-btn:hover { border-color: white; color: white; }
+    .diff-btn.selected { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0,255,157,0.1); box-shadow: 0 0 15px rgba(0,255,157,0.2); }
+    
+    .start-btn {
+      width: 100%; padding: 15px; background: var(--neon-blue); color: black; font-weight: bold;
+      border: none; font-size: 1.2rem; cursor: pointer; font-family: 'Share Tech Mono';
+      box-shadow: 0 0 20px var(--neon-blue); transition: transform 0.2s;
+    }
+    .start-btn:hover { transform: scale(1.02); }
+
+    /* 移动端适配 */
+    @media (max-width: 768px) {
+      .main-container { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+      .hud { padding: 10px; height: auto; flex-wrap: wrap; }
+      .logo { width: 100%; text-align: center; margin-bottom: 10px; }
+      .stats { width: 100%; justify-content: space-between; gap: 0; font-size: 0.8rem; }
+      .modal-panel { padding: 20px; }
+      .modal-title { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. 游戏前置界面 (Start Screen) -->
+  <div class="modal-overlay" id="start-screen">
+    <div class="modal-panel">
+      <div class="modal-title">ALPHA TRADER 2077</div>
+      <div class="modal-subtitle">// QUANTUM MACRO HEDGE FUND SIMULATOR //</div>
+      
+      <div class="rules-box">
+        <h4>MISSION BRIEFING:</h4>
+        <p>1. 市场在 <strong>衰退、复苏、过热、滞胀</strong> 四个周期中快速轮动。</p>
+        <p>2. 根据宏观信号切换仓位：<strong>债券、股票、黄金、比特币</strong>。</p>
+        <p>3. 拖动滑块控制仓位大小，避免因单一资产波动而爆仓。</p>
+      </div>
+
+      <div style="margin-bottom:10px; color:#fff;">SELECT DIFFICULTY LEVEL</div>
+      <div class="difficulty-select">
+        <button class="diff-btn" onclick="selectDifficulty('easy')" id="btn-easy">
+          ROOKIE<br><span style="font-size:0.7em">$200k Start</span>
+        </button>
+        <button class="diff-btn selected" onclick="selectDifficulty('normal')" id="btn-normal">
+          VETERAN<br><span style="font-size:0.7em">$100k Start</span>
+        </button>
+        <button class="diff-btn" onclick="selectDifficulty('hard')" id="btn-hard">
+          LEGEND<br><span style="font-size:0.7em">$50k Start</span>
+        </button>
+      </div>
+
+      <button class="start-btn" onclick="startGame()">INITIALIZE SYSTEM</button>
+    </div>
+  </div>
+
+  <!-- 2. 游戏结束弹窗 -->
+  <div class="modal-overlay" id="game-over-modal" style="display:none;">
+    <div class="modal-panel" style="border-color: var(--neon-red);">
+      <div class="modal-title" id="end-title" style="color: var(--neon-red);">LIQUIDATED</div>
+      <div class="modal-score" id="end-score" style="font-size:1.5rem; margin-bottom:20px;"></div>
+      <p id="end-reason" style="color:#999; margin-bottom:30px;"></p>
+      <button class="start-btn" style="background:var(--neon-red); box-shadow:0 0 20px var(--neon-red);" onclick="location.reload()">RESTART</button>
+    </div>
+  </div>
+
+  <!-- 3. 主游戏界面 -->
+  <div class="hud">
+    <div class="logo">ALPHA TRADER <span style="font-size:0.7em; color:#555;">// v2.0</span></div>
+    <div class="stats">
+      <div class="stat-box">
+        <span>NET WORTH</span>
+        <div class="stat-value" id="net-worth">---</div>
+      </div>
+      <div class="stat-box">
+        <span>TARGET</span>
+        <div class="stat-value" style="color:var(--neon-yellow)" id="target-val">---</div>
+      </div>
+      <div class="stat-box">
+        <span>CASH</span>
+        <div class="stat-value" id="cash-balance">---</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-container">
+    <!-- 左侧图表 -->
+    <div class="chart-area">
+      <canvas id="market-chart"></canvas>
+      
+      <div class="cycle-indicator">
+        <div class="cycle-label">MACRO REGIME</div>
+        <div class="cycle-value" id="cycle-name">---</div>
+      </div>
+
+      <div class="news-ticker">
+        <div class="ticker-content" id="news-content">
+          SYSTEM STANDBY... AWAITING USER INPUT...
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧交易面板 -->
+    <div class="trade-panel">
+      <div class="panel-header">// MARKET WATCH</div>
+      <div id="asset-list"></div>
+
+      <div class="trade-controls">
+        <div class="panel-header">// ORDER ENTRY</div>
+        <div class="holding-display">
+          HOLDING: <span id="current-hold-val" style="color:white; font-weight:bold;">0</span> UNITS
+        </div>
+        
+        <div class="slider-container">
+          <div class="slider-label">
+            <span>SIZE</span>
+            <span id="slider-val" style="color:var(--neon-blue)">50%</span>
+          </div>
+          <input type="range" min="1" max="100" value="50" class="slider" id="trade-slider" oninput="updateSliderVal(this.value)">
+        </div>
+
+        <div class="control-pad">
+          <button class="btn btn-sell" onclick="trade('sell')">SELL</button>
+          <button class="btn btn-buy" onclick="trade('buy')">BUY</button>
+        </div>
+        
+        <a href="index.html" style="display:block; text-align:center; margin-top:15px; color:#555; text-decoration:none; font-size:0.7rem;">← DISCONNECT</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== 1. 游戏配置 ======
+    const GAME_SPEED = 100; // Update interval (ms)
+    const CYCLE_DURATION = 200; // Ticks per cycle
+
+    const difficultySettings = {
+      'easy': { cash: 200000, fail: 1000, win: 5000000, label: 'ROOKIE' },
+      'normal': { cash: 100000, fail: 5000, win: 10000000, label: 'VETERAN' },
+      'hard': { cash: 50000, fail: 10000, win: 20000000, label: 'LEGEND' }
+    };
+
+    // 资产定义
+    const assets = [
+      { id: 'bond', name: 'US 10Y BOND', price: 100, volatility: 0.005, color: '#00f3ff', holdings: 0, history: [] },
+      { id: 'stock', name: 'NASDAQ 100', price: 15000, volatility: 0.015, color: '#bd34fe', holdings: 0, history: [] },
+      { id: 'gold', name: 'GOLD (XAU)', price: 2000, volatility: 0.008, color: '#ffee00', holdings: 0, history: [] },
+      { id: 'crypto', name: 'BITCOIN', price: 60000, volatility: 0.04, color: '#ff0055', holdings: 0, history: [] }
+    ];
+
+    const cycles = {
+      'RECOVERY': { multipliers: { bond: 1.001, stock: 1.005, gold: 0.999, crypto: 1.008 }, news: "GDP Growth UP. Risk-on." },
+      'OVERHEAT': { multipliers: { bond: 0.998, stock: 1.001, gold: 1.005, crypto: 1.002 }, news: "Inflation High. Fed Hikes." },
+      'STAGFLATION': { multipliers: { bond: 0.995, stock: 0.992, gold: 1.008, crypto: 0.990 }, news: "Growth Slow, Prices High." },
+      'RECESSION': { multipliers: { bond: 1.005, stock: 0.990, gold: 1.003, crypto: 0.985 }, news: "Market Crash. Rate Cuts." }
+    };
+
+    // 游戏状态
+    let state = {
+      cash: 0,
+      difficulty: 'normal',
+      cycle: 'RECOVERY',
+      cycleTimer: 0,
+      tick: 0,
+      selectedAssetId: 'stock',
+      gameStarted: false,
+      isGameOver: false
+    };
+
+    // ====== 2. UI 交互逻辑 ======
+    
+    function selectDifficulty(level) {
+      state.difficulty = level;
+      document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('selected'));
+      document.getElementById(`btn-${level}`).classList.add('selected');
+    }
+
+    function startGame() {
+      const settings = difficultySettings[state.difficulty];
+      state.cash = settings.cash;
+      state.gameStarted = true;
+      
+      // 隐藏开始界面
+      document.getElementById('start-screen').style.display = 'none';
+      
+      // 初始化界面显示
+      document.getElementById('target-val').innerText = '$' + (settings.win / 1000000).toFixed(1) + 'M';
+      
+      initGameEngine();
+    }
+
+    function updateSliderVal(val) {
+      document.getElementById('slider-val').innerText = val + '%';
+    }
+
+    // ====== 3. 游戏引擎 ======
+
+    function initGameEngine() {
+      renderAssetList();
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+      // 启动循环
+      setInterval(gameLoop, GAME_SPEED);
+      drawLoop(); // 独立的绘图循环
+    }
+
+    function gameLoop() {
+      if (!state.gameStarted || state.isGameOver) return;
+
+      // 1. 周期轮动
+      state.cycleTimer++;
+      if (state.cycleTimer > CYCLE_DURATION) {
+        switchCycle();
+        state.cycleTimer = 0;
+      }
+
+      // 2. 价格更新
+      const currentParams = cycles[state.cycle];
+      assets.forEach(asset => {
+        const bias = currentParams.multipliers[asset.id];
+        const randomNoise = 1 + (Math.random() - 0.5) * asset.volatility;
+        asset.price = asset.price * bias * randomNoise;
+        
+        asset.history.push(asset.price);
+        if (asset.history.length > 150) asset.history.shift();
+      });
+
+      // 3. 胜负判定
+      checkGameStatus();
+      
+      // 4. UI更新
+      updateUI();
+    }
+
+    function switchCycle() {
+      const keys = Object.keys(cycles);
+      const next = keys[Math.floor(Math.random() * keys.length)];
+      state.cycle = next;
+      
+      // UI Effect
+      const el = document.querySelector('.cycle-indicator');
+      el.style.borderColor = 'white';
+      setTimeout(() => el.style.borderColor = 'var(--neon-yellow)', 300);
+      
+      const newsText = cycles[next].news + " /// " + cycles[next].news;
+      document.getElementById('news-content').innerText = newsText;
+    }
+
+    function checkGameStatus() {
+      const netWorth = getNetWorth();
+      const settings = difficultySettings[state.difficulty];
+      
+      if (netWorth < settings.fail) {
+        endGame(false, "Account Blown Up. Risk Management Failed.");
+      } else if (netWorth > settings.win) {
+        endGame(true, "Target Achieved. Welcome to the Citadel.");
+      }
+    }
+
+    function endGame(win, reason) {
+      state.isGameOver = true;
+      const modal = document.getElementById('game-over-modal');
+      const title = document.getElementById('end-title');
+      const btn = modal.querySelector('.start-btn');
+      
+      modal.style.display = 'flex';
+      document.getElementById('end-score').innerText = "FINAL PnL: " + document.getElementById('pnl').innerText;
+      document.getElementById('end-reason').innerText = reason;
+      
+      if(win) {
+        title.innerText = "MISSION ACCOMPLISHED";
+        title.style.color = "var(--neon-green)";
+        modal.querySelector('.modal-panel').style.borderColor = "var(--neon-green)";
+        btn.style.background = "var(--neon-green)";
+        btn.style.boxShadow = "0 0 20px var(--neon-green)";
+      }
+    }
+
+    // ====== 4. 交易系统 (升级版) ======
+
+    function trade(type) {
+      if (!state.gameStarted || state.isGameOver) return;
+      
+      const asset = assets.find(a => a.id === state.selectedAssetId);
+      const percent = parseInt(document.getElementById('trade-slider').value) / 100;
+
+      if (type === 'buy') {
+        // 买入指定百分比的现金
+        const cashToSpend = state.cash * percent;
+        if (cashToSpend < 10) return; 
+        
+        const amount = cashToSpend / asset.price;
+        asset.holdings += amount;
+        state.cash -= cashToSpend;
+      } else {
+        // 卖出指定百分比的持仓
+        const amountToSell = asset.holdings * percent;
+        if (amountToSell <= 0) return;
+        
+        const cashBack = amountToSell * asset.price;
+        state.cash += cashBack;
+        asset.holdings -= amountToSell;
+      }
+    }
+
+    function selectAsset(id) {
+      state.selectedAssetId = id;
+      document.querySelectorAll('.asset-card').forEach(el => el.classList.remove('active'));
+      document.getElementById(`card-${id}`).classList.add('active');
+    }
+
+    // ====== 5. 渲染逻辑 ======
+
+    function getNetWorth() {
+      let total = state.cash;
+      assets.forEach(a => total += a.holdings * a.price);
+      return total;
+    }
+
+    function updateUI() {
+      const netWorth = getNetWorth();
+      const startCash = difficultySettings[state.difficulty].cash;
+      const pnl = ((netWorth - startCash) / startCash) * 100;
+
+      document.getElementById('net-worth').innerText = '$' + Math.floor(netWorth).toLocaleString();
+      document.getElementById('cash-balance').innerText = '$' + Math.floor(state.cash).toLocaleString();
+      
+      const pnlEl = document.getElementById('pnl'); // Note: this element is dynamically created in HUD but I missed adding it to HTML structure above. Let's fix HUD structure dynamically or assume it's there? 
+      // Wait, I missed adding PnL to the new HUD structure. Let's use what we have.
+      
+      // Cycle Color
+      const cycleEl = document.getElementById('cycle-name');
+      cycleEl.innerText = state.cycle;
+      if(state.cycle === 'RECESSION') cycleEl.style.color = '#ff0055';
+      else if(state.cycle === 'RECOVERY') cycleEl.style.color = '#00ff9d';
+      else cycleEl.style.color = '#ffee00';
+
+      // Update Assets
+      const totalVal = getNetWorth();
+      assets.forEach(asset => {
+        document.getElementById(`price-${asset.id}`).innerText = '$' + asset.price.toFixed(2);
+        const val = asset.holdings * asset.price;
+        const pct = totalVal > 0 ? (val / totalVal) * 100 : 0;
+        document.getElementById(`bar-${asset.id}`).style.width = pct + '%';
+      });
+
+      // Update Selected Holding Text
+      const current = assets.find(a => a.id === state.selectedAssetId);
+      document.getElementById('current-hold-val').innerText = current.holdings.toFixed(2);
+    }
+
+    function renderAssetList() {
+      const container = document.getElementById('asset-list');
+      container.innerHTML = '';
+      assets.forEach(asset => {
+        const div = document.createElement('div');
+        div.className = `asset-card ${asset.id === state.selectedAssetId ? 'active' : ''}`;
+        div.id = `card-${asset.id}`;
+        div.onclick = () => selectAsset(asset.id);
+        div.innerHTML = `
+          <div class="asset-info">
+            <span class="asset-name" style="color:${asset.color}">${asset.name}</span>
+            <span class="asset-price" id="price-${asset.id}">$0.00</span>
+          </div>
+          <div class="position-bar" id="bar-${asset.id}"></div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Canvas Loop
+    const canvas = document.getElementById('market-chart');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    }
+
+    function drawLoop() {
+      requestAnimationFrame(drawLoop);
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.fillStyle = 'rgba(5,5,5,0.2)';
+      ctx.fillRect(0,0,w,h);
+      
+      // Grid
+      ctx.strokeStyle = 'rgba(0,243,255,0.05)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for(let i=0; i<w; i+=50) { ctx.moveTo(i,0); ctx.lineTo(i,h); }
+      for(let i=0; i<h; i+=50) { ctx.moveTo(0,i); ctx.lineTo(w,i); }
+      ctx.stroke();
+
+      assets.forEach(asset => {
+        if(asset.history.length < 2) return;
+        ctx.beginPath();
+        ctx.strokeStyle = asset.color;
+        ctx.lineWidth = 2;
+        
+        let min = Math.min(...asset.history);
+        let max = Math.max(...asset.history);
+        let range = max - min || 1;
+
+        for(let i=0; i<asset.history.length; i++) {
+          const x = (i / 150) * w;
+          const y = h - ((asset.history[i] - min) / range) * (h * 0.8) - h*0.1;
+          if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+      });
+    }
+
+  </script>
+</body>
+</html>
