@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VIP Nexus v2.1 | Earth Macro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=JetBrains+Mono:wght@300;500;700&display=swap" rel="stylesheet">
+  <!-- 引入 Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  
+  <style>
+    /* ====== 全局变量 ====== */
+    :root {
+      --bg-deep: #050505;
+      --gold-primary: #d4af37;
+      --gold-dim: #8a7035;
+      --gold-bright: #ffd700;
+      --text-main: #e0e0e0;
+      --glass-panel: rgba(20, 20, 20, 0.85);
+      --glass-border: rgba(212, 175, 55, 0.3);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg-deep);
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+      overflow-x: hidden; min-height: 100vh;
+    }
+
+    /* 背景 Canvas (全局) */
+    #bg-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: -1; pointer-events: none;
+    }
+
+    /* UI 容器 */
+    #ui-container { transition: opacity 0.5s ease; }
+    body.clock-mode #ui-container { opacity: 0; pointer-events: none; }
+
+    /* 顶部导航 */
+    header {
+      padding: 30px 50px; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+      background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+    }
+    .vip-logo {
+      font-family: 'Cinzel', serif; font-size: 1.8rem; color: var(--gold-primary);
+      letter-spacing: 4px; text-transform: uppercase;
+      text-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+    }
+    .back-link {
+      color: var(--gold-dim); text-decoration: none; font-size: 0.8rem;
+      border: 1px solid var(--gold-dim); padding: 8px 20px; border-radius: 50px; transition: all 0.3s;
+    }
+    .back-link:hover { color: var(--bg-deep); background: var(--gold-primary); border-color: var(--gold-primary); }
+
+    /* 主内容区 */
+    main { max-width: 1200px; margin: 0 auto; padding: 40px 20px 140px; }
+    h2 {
+      font-family: 'Cinzel', serif; color: var(--text-main); font-size: 1.5rem;
+      margin-bottom: 30px; display: flex; align-items: center; gap: 15px;
+    }
+    h2::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--gold-dim), transparent); }
+
+    /* Grid Styles */
+    .grid-vault, .encrypted-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-bottom: 60px;
+    }
+    .vault-card {
+      background: rgba(20, 20, 20, 0.4); border: 1px solid var(--glass-border);
+      padding: 25px; border-radius: 4px; transition: all 0.4s; cursor: pointer;
+    }
+    .vault-card:hover { transform: translateY(-5px); border-color: var(--gold-primary); background: rgba(212, 175, 55, 0.05); }
+    .vault-icon { font-size: 1.5rem; margin-bottom: 15px; color: var(--gold-primary); }
+    .vault-title { font-size: 1rem; font-weight: bold; margin-bottom: 10px; color: #fff; }
+    .vault-desc { font-size: 0.8rem; color: #888; line-height: 1.6; }
+    .locked-card {
+      background: rgba(0, 0, 0, 0.2); border: 1px dashed #333; padding: 30px;
+      text-align: center; border-radius: 8px; color: #444; transition: all 0.3s;
+    }
+    .locked-card:hover { border-color: var(--gold-dim); color: var(--gold-dim); }
+    .lock-icon { font-size: 1.5rem; margin-bottom: 10px; opacity: 0.5; }
+    
+    /* ====== 悬浮工具栏 (Dock) ====== */
+    .dock-container {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px;
+      padding: 12px 24px; display: flex; gap: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8); z-index: 100; transition: inherit;
+    }
+    .dock-item {
+      width: 50px; height: 50px; border-radius: 14px; background: #222;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 1.4rem; color: var(--gold-dim); cursor: pointer; transition: all 0.3s;
+      position: relative; border: 1px solid transparent;
+    }
+    .dock-item:hover {
+      transform: translateY(-15px) scale(1.15); background: linear-gradient(135deg, #222, #333);
+      color: var(--gold-primary); border-color: var(--gold-dim);
+    }
+    .dock-tooltip {
+      position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+      background: #000; color: var(--gold-primary); font-size: 0.7rem;
+      padding: 4px 10px; border-radius: 4px; opacity: 0; pointer-events: none;
+      white-space: nowrap; transition: opacity 0.2s; border: 1px solid var(--gold-dim);
+    }
+    .dock-item:hover .dock-tooltip { opacity: 1; top: -50px; }
+
+    /* ====== 全屏时钟 ====== */
+    #full-clock {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      z-index: 50; pointer-events: none; opacity: 0; transition: opacity 0.8s ease;
+      background: radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+    }
+    body.clock-mode #full-clock { opacity: 1; pointer-events: auto; }
+
+    .clock-time {
+      font-size: 12vw; font-weight: 700; color: var(--gold-bright);
+      text-shadow: 0 0 30px rgba(212, 175, 55, 0.5), 0 0 60px rgba(212, 175, 55, 0.2);
+      letter-spacing: -5px; line-height: 1; position: relative;
+    }
+    .clock-time::after {
+      content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 2px, transparent 2px, transparent 4px);
+      pointer-events: none;
+    }
+    .clock-date { font-size: 2vw; color: var(--gold-dim); letter-spacing: 5px; margin-top: 20px; text-transform: uppercase; }
+    .clock-hint { position: absolute; bottom: 30px; font-size: 0.8rem; color: #444; }
+
+    /* ====== 工具模态框 ====== */
+    #modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); z-index: 150; display: none; backdrop-filter: blur(5px);
+    }
+    .tool-modal {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+      width: 450px; max-width: 95%; background: rgba(12, 12, 14, 0.95);
+      border: 1px solid var(--gold-dim); border-radius: 12px; padding: 25px;
+      z-index: 200; display: none; opacity: 0; transition: all 0.3s ease;
+      box-shadow: 0 0 60px rgba(0,0,0,0.9);
+    }
+    .tool-modal.open { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .tool-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;
+    }
+    .tool-title { font-family: 'Cinzel'; color: var(--gold-primary); font-size: 1.2rem; }
+    .tool-close { cursor: pointer; color: #666; font-size: 1.2rem; transition: 0.2s; }
+    .tool-close:hover { color: #fff; }
+
+    /* 通用组件 */
+    .input-group { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
+    .input-label { width: 60px; font-size: 0.8rem; color: #888; }
+    .vip-input {
+      flex: 1; background: #111; border: 1px solid #333; color: var(--gold-primary);
+      padding: 8px; border-radius: 4px; font-family: 'JetBrains Mono'; outline: none; text-align: center;
+    }
+    .vip-input:focus { border-color: var(--gold-dim); }
+    .vip-btn {
+      width: 100%; background: var(--gold-dim); color: #000; border: none;
+      padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;
+      margin-top: 10px; transition: 0.2s; font-family: 'JetBrains Mono';
+    }
+    .vip-btn:hover { background: var(--gold-primary); }
+    .vip-btn.outline { background: transparent; border: 1px solid var(--gold-dim); color: var(--gold-dim); }
+    .vip-btn.outline:hover { background: rgba(212, 175, 55, 0.1); }
+
+    /* RNG */
+    .rng-result {
+      background: #000; border: 1px solid #333; padding: 15px; margin-top: 15px;
+      min-height: 60px; border-radius: 4px; color: var(--gold-bright);
+      font-size: 1.2rem; text-align: center; word-break: break-all; display: flex; align-items: center; justify-content: center;
+    }
+    .history-box {
+      margin-top: 15px; height: 100px; overflow-y: auto;
+      font-size: 0.7rem; color: #666; border-top: 1px solid #222; padding-top: 5px;
+    }
+    .history-item { margin-bottom: 3px; border-bottom: 1px dashed #222; padding-bottom: 2px; display: flex; justify-content: space-between; }
+
+    /* Toys (3D Scene) */
+    #toys-canvas-container {
+      width: 100%; height: 250px; background: #000; border: 1px solid #333;
+      border-radius: 4px; margin: 15px 0; overflow: hidden; position: relative;
+    }
+    .toys-controls { display: flex; gap: 10px; align-items: center; }
+    .toys-controls .input-group { margin-bottom: 0; width: 80px; }
+    
+    /* Timer */
+    .timer-display {
+      font-size: 4rem; font-weight: bold; text-align: center; color: var(--gold-primary);
+      margin: 20px 0; text-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+    }
+    .timer-custom { display: flex; justify-content: center; gap: 5px; margin-bottom: 20px; }
+    .timer-custom input { width: 60px; text-align: center; font-size: 1.2rem; padding: 5px; }
+  </style>
+</head>
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+
+  <div id="full-clock" onclick="toggleClockMode()">
+    <div class="clock-time" id="clock-time-display">00:00:00</div>
+    <div class="clock-date" id="clock-date-display">MONDAY, JAN 01</div>
+    <div class="clock-hint">CLICK ANYWHERE TO EXIT</div>
+  </div>
+
+  <div id="ui-container">
+    <header>
+      <div class="vip-logo">VIP NEXUS v2</div>
+      <a href="index.html" class="back-link">EXIT SECURE SPACE</a>
+    </header>
+
+    <main>
+      <section>
+        <h2><span style="color:var(--gold-primary)">01.</span> KNOWLEDGE VAULT</h2>
+        <div class="grid-vault">
+          <div class="vault-card" onclick="window.open('FupengspeechHSBC.pdf', '_blank')">
+            <div class="vault-icon">📜</div>
+            <div class="vault-title">2025 宏观终局推演</div>
+            <div class="vault-desc">付鹏 HSBC 内部演讲实录。</div>
+          </div>
+          <div class="vault-card" onclick="window.open('commodityinvestment.pdf', '_blank')">
+            <div class="vault-icon">⚖️</div>
+            <div class="vault-title">大类资产配置</div>
+            <div class="vault-desc">美林时钟的变体应用。</div>
+          </div>
+          <div class="vault-card" onclick="window.open('Wedge.pdf', '_blank')">
+            <div class="vault-icon">🧩</div>
+            <div class="vault-title">经济中的摩擦力</div>
+            <div class="vault-desc">理解交易成本与信息不对称。</div>
+          </div>
+        </div>
+      </section>
+      <section>
+        <h2><span style="color:var(--gold-primary)">02.</span> CLASSIFIED</h2>
+        <div class="encrypted-grid">
+          <div class="locked-card"><div class="lock-icon">🔒</div><div class="lock-text">QUANT_V1</div></div>
+          <div class="locked-card"><div class="lock-icon">🔒</div><div class="lock-text">DARK_POOL</div></div>
+          <div class="locked-card"><div class="lock-icon">🔒</div><div class="lock-text">WAR_ROOM</div></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="dock-container">
+      <div class="dock-item" onclick="toggleClockMode()">
+        🕒<div class="dock-tooltip">Full Clock</div>
+      </div>
+      <div class="dock-item" style="border-left:1px solid #444" onclick="openTool('rng')">
+        🎲<div class="dock-tooltip">Quantum RNG</div>
+      </div>
+      <div class="dock-item" onclick="openTool('toys')">
+        🪙<div class="dock-tooltip">Fate Caster 3D</div>
+      </div>
+      <div class="dock-item" onclick="openTool('timer')">
+        ⏳<div class="dock-tooltip">Focus Timer</div>
+      </div>
+      <div class="dock-item" style="border-left:1px solid #444" onclick="location.href='game.html'">
+        🎮<div class="dock-tooltip">Simulation</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-overlay" onclick="closeAllTools()"></div>
+
+  <!-- Tool 1: RNG -->
+  <div id="modal-rng" class="tool-modal">
+    <div class="tool-header">
+      <div class="tool-title">QUANTUM RNG</div>
+      <div class="tool-close" onclick="closeAllTools()">×</div>
+    </div>
+    <div class="input-group">
+      <span class="input-label">Range</span>
+      <input type="number" id="rng-min" class="vip-input" value="1" placeholder="Min">
+      <span style="color:#666">-</span>
+      <input type="number" id="rng-max" class="vip-input" value="100" placeholder="Max">
+    </div>
+    <div class="input-group">
+      <span class="input-label">Count</span>
+      <input type="number" id="rng-count" class="vip-input" value="5" max="50" min="1">
+      <label style="color:#888; font-size:0.8rem; display:flex; align-items:center; gap:5px; margin-left:10px;">
+        <input type="checkbox" id="rng-unique" checked> Unique
+      </label>
+    </div>
+    <button class="vip-btn" onclick="generateRNG()">GENERATE DATA</button>
+    <div class="rng-result" id="rng-display">READY</div>
+    <button class="vip-btn outline" onclick="copyRNG()">COPY OUTPUT</button>
+    <div class="history-box" id="rng-history"></div>
+  </div>
+
+  <!-- Tool 2: Toys (3D Version) -->
+  <div id="modal-toys" class="tool-modal">
+    <div class="tool-header">
+      <div class="tool-title">FATE CASTER 3D</div>
+      <div class="tool-close" onclick="closeAllTools()">×</div>
+    </div>
+    <div id="toys-canvas-container"></div>
+    <div class="toys-controls" style="margin-bottom:10px;">
+        <div class="input-group">
+            <input type="number" id="coin-qty" class="vip-input" value="1" min="1" max="5" title="Qty">
+        </div>
+        <button class="vip-btn" style="flex:3; margin-top:0;" onclick="throwObjects('coin')">FLIP COINS</button>
+    </div>
+    <div class="toys-controls">
+        <div class="input-group">
+            <input type="number" id="dice-qty" class="vip-input" value="1" min="1" max="5" title="Qty">
+        </div>
+        <button class="vip-btn outline" style="flex:3; margin-top:0;" onclick="throwObjects('dice')">ROLL DICE</button>
+    </div>
+    <div id="toys-result" style="text-align:center; margin-top:15px; color:var(--gold-primary); min-height:30px; font-size:1.2rem; font-weight:bold; font-family:'Share Tech Mono';"></div>
+  </div>
+
+  <!-- Tool 3: Timer -->
+  <div id="modal-timer" class="tool-modal">
+    <div class="tool-header">
+      <div class="tool-title">FOCUS FIELD</div>
+      <div class="tool-close" onclick="closeAllTools()">×</div>
+    </div>
+    <div class="timer-display" id="timer-val">25:00</div>
+    
+    <div class="timer-custom">
+      <input type="number" id="timer-input-min" class="vip-input" placeholder="MM" value="25" min="0" max="999">
+      <span style="font-size:1.5rem; color:#666">:</span>
+      <input type="number" id="timer-input-sec" class="vip-input" placeholder="SS" value="00" min="0" max="59">
+      <button class="vip-btn outline" style="width:auto; margin-top:0;" onclick="setCustomTimer()">SET</button>
+    </div>
+    
+    <div style="display:flex; gap:10px;">
+      <button class="vip-btn" onclick="toggleTimer()" id="timer-btn">START</button>
+      <button class="vip-btn outline" onclick="resetTimer()">RESET</button>
+    </div>
+  </div>
+
+  <script>
+    /* ====== 1. Global BG ====== */
+    const bgScene = new THREE.Scene();
+    const bgCamera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const bgRenderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true });
+    bgRenderer.setSize(window.innerWidth, window.innerHeight);
+    const bgGeo = new THREE.BufferGeometry();
+    const bgCount = 800;
+    const bgPos = new Float32Array(bgCount * 3);
+    for(let i=0; i<bgCount*3; i++) bgPos[i] = (Math.random()-0.5)*20;
+    bgGeo.setAttribute('position', new THREE.BufferAttribute(bgPos, 3));
+    const bgMat = new THREE.PointsMaterial({ size: 0.04, color: 0xd4af37, transparent: true, opacity: 0.5 });
+    const bgParticles = new THREE.Points(bgGeo, bgMat);
+    bgScene.add(bgParticles);
+    bgCamera.position.z = 5;
+    let mouseX=0, mouseY=0;
+    document.addEventListener('mousemove', e => { mouseX = e.clientX/window.innerWidth-0.5; mouseY = e.clientY/window.innerHeight-0.5; });
+    function animateBg() {
+      requestAnimationFrame(animateBg);
+      bgParticles.rotation.y += 0.0005;
+      bgParticles.rotation.x = mouseY * 0.1; bgParticles.rotation.y += mouseX * 0.1;
+      bgRenderer.render(bgScene, bgCamera);
+    }
+    animateBg();
+    window.addEventListener('resize', () => {
+      bgCamera.aspect = window.innerWidth/window.innerHeight; bgCamera.updateProjectionMatrix();
+      bgRenderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    /* ====== 2. Clock ====== */
+    function toggleClockMode() { document.body.classList.toggle('clock-mode'); }
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock-time-display').innerText = now.toLocaleTimeString('en-GB');
+      document.getElementById('clock-date-display').innerText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: '2-digit' });
+    }
+    setInterval(updateClock, 1000); updateClock();
+
+    /* ====== 3. Tools Modal Logic ====== */
+    function openTool(id) {
+      closeAllTools();
+      document.getElementById('modal-overlay').style.display = 'block';
+      document.getElementById('modal-' + id).classList.add('open');
+      if(id === 'toys') setTimeout(initToys3D, 100);
+    }
+    function closeAllTools() {
+      document.getElementById('modal-overlay').style.display = 'none';
+      document.querySelectorAll('.tool-modal').forEach(el => el.classList.remove('open'));
+      if(toysAnimFrameId) cancelAnimationFrame(toysAnimFrameId);
+    }
+
+    /* ====== 4. RNG ====== */
+    function generateRNG() {
+      const min = parseInt(document.getElementById('rng-min').value)||0;
+      const max = parseInt(document.getElementById('rng-max').value)||100;
+      let count = parseInt(document.getElementById('rng-count').value)||1;
+      const unique = document.getElementById('rng-unique').checked;
+      const display = document.getElementById('rng-display');
+      const history = document.getElementById('rng-history');
+
+      if(min >= max) { display.innerText = "Error: Min >= Max"; return; }
+      if(unique && (max - min + 1) < count) { display.innerText = "Error: Range too small"; return; }
+
+      let result = [];
+      if(unique) {
+        const set = new Set();
+        while(set.size < count) set.add(Math.floor(Math.random() * (max - min + 1)) + min);
+        result = Array.from(set);
+      } else {
+        for(let i=0; i<count; i++) result.push(Math.floor(Math.random() * (max - min + 1)) + min);
+      }
+      const resStr = result.join(', ');
+      display.innerText = resStr;
+      
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = `<span>${new Date().toLocaleTimeString()}</span> <span>${resStr}</span>`;
+      history.prepend(div);
+    }
+    function copyRNG() { navigator.clipboard.writeText(document.getElementById('rng-display').innerText).then(() => alert('Copied!')); }
+
+    /* ====== 5. Toys 3D (Rigged Physics) ====== */
+    let toysScene, toysCamera, toysRenderer, toysAnimFrameId;
+    let toyObjects = [];
+
+    function initToys3D() {
+      const container = document.getElementById('toys-canvas-container');
+      if(toysRenderer) { clearToys(); animateToys(); return; }
+      
+      toysScene = new THREE.Scene();
+      toysCamera = new THREE.PerspectiveCamera(50, container.offsetWidth/container.offsetHeight, 0.1, 1000);
+      toysRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      toysRenderer.setSize(container.offsetWidth, container.offsetHeight);
+      container.innerHTML = ''; container.appendChild(toysRenderer.domElement);
+      
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      toysScene.add(ambientLight);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+      dirLight.position.set(5, 10, 7);
+      toysScene.add(dirLight);
+      
+      toysCamera.position.set(0, 10, 10);
+      toysCamera.lookAt(0, 0, 0);
+      animateToys();
+    }
+
+    function clearToys() {
+      toyObjects.forEach(obj => toysScene.remove(obj.mesh));
+      toyObjects = [];
+      document.getElementById('toys-result').innerText = "";
+    }
+
+    function createCoinGeometry() {
+      const geo = new THREE.CylinderGeometry(1.2, 1.2, 0.15, 32);
+      const matTop = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.2 }); // Heads
+      const matSide = new THREE.MeshStandardMaterial({ color: 0xdaa520, metalness: 0.9, roughness: 0.3 });
+      const matBottom = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.9, roughness: 0.2 }); // Tails (Silver)
+      return new THREE.Mesh(geo, [matSide, matTop, matBottom]); 
+    }
+    
+    function createDiceGeometry() {
+        const geo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        // Simple colors to represent sides
+        // 0:Right(Red), 1:Left(Green), 2:Top(Blue), 3:Bottom(Yellow), 4:Front(Cyan), 5:Back(Magenta)
+        const materials = [
+            new THREE.MeshStandardMaterial({ color: 0xff0000 }), 
+            new THREE.MeshStandardMaterial({ color: 0x00ff00 }), 
+            new THREE.MeshStandardMaterial({ color: 0x0000ff }), 
+            new THREE.MeshStandardMaterial({ color: 0xffff00 }), 
+            new THREE.MeshStandardMaterial({ color: 0x00ffff }), 
+            new THREE.MeshStandardMaterial({ color: 0xff00ff }), 
+        ];
+        return new THREE.Mesh(geo, materials);
+    }
+
+    function throwObjects(type) {
+      clearToys();
+      const qty = parseInt(document.getElementById(type + '-qty').value) || 1;
+      let results = [];
+      
+      for(let i=0; i<qty; i++) {
+        let mesh, targetRot;
+        let res;
+
+        // 1. Determine Result & Target Rotation
+        if(type === 'coin') {
+          // Random Heads/Tails
+          res = Math.random() > 0.5 ? "HEADS" : "TAILS";
+          mesh = createCoinGeometry();
+          // If Heads (Top material), we want Top facing Up (+Y). Rot (0, y, 0).
+          // If Tails (Bottom material), we want Bottom facing Up. Rot (PI, y, 0).
+          // However Cylinder lays flat by default? No, cylinder default is upright (Y axis).
+          // Top is +Y, Bottom is -Y.
+          // So default (0,0,0) shows Top (Heads).
+          // To show Bottom (Tails), rotate X by PI.
+          targetRot = { x: res === "HEADS" ? 0 : Math.PI, z: 0 };
+        } else {
+          // Random 1-6
+          const val = Math.floor(Math.random() * 6) + 1; // 1-6
+          res = val.toString();
+          mesh = createDiceGeometry();
+          // Map value to which face index is "Up". 
+          // Default Box: 0:Right, 1:Left, 2:Top, 3:Bottom, 4:Front, 5:Back
+          // Let's map 1->Top, 2->Front, 3->Right, 4->Left, 5->Back, 6->Bottom (Standard dice sums to 7)
+          // Target Up is +Y.
+          // 1 (Top/Blue): (0,0,0)
+          // 6 (Bottom/Yellow): (PI,0,0)
+          // 2 (Front/Cyan): (-PI/2, 0, 0)
+          // 5 (Back/Magenta): (PI/2, 0, 0)
+          // 3 (Right/Red): (0, 0, PI/2)
+          // 4 (Left/Green): (0, 0, -PI/2)
+          
+          // Wait, colors above were index based. Let's map visually to colors for now or just rely on text result.
+          // For "High Quality", let's just map colors to numbers:
+          // Blue=1, Cyan=2, Red=3, Green=4, Magenta=5, Yellow=6
+          if(val===1) targetRot = {x:0, z:0}; // Blue Up
+          if(val===2) targetRot = {x:-Math.PI/2, z:0}; // Cyan Up
+          if(val===3) targetRot = {x:0, z:Math.PI/2}; // Red Up
+          if(val===4) targetRot = {x:0, z:-Math.PI/2}; // Green Up
+          if(val===5) targetRot = {x:Math.PI/2, z:0}; // Magenta Up
+          if(val===6) targetRot = {x:Math.PI, z:0}; // Yellow Up
+        }
+        
+        results.push(res);
+
+        // 2. Initial State (Chaos)
+        mesh.position.set((Math.random()-0.5)*4, 8 + Math.random()*2, (Math.random()-0.5)*2);
+        // Random initial rotation
+        mesh.rotation.set(Math.random()*Math.PI*2, Math.random()*Math.PI*2, Math.random()*Math.PI*2);
+        
+        toysScene.add(mesh);
+        
+        // 3. Physics Props (Rigged)
+        toyObjects.push({
+          mesh: mesh,
+          targetRot: targetRot, // The "Rigged" end state
+          vel: new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1),
+          rotVel: new THREE.Vector3(Math.random()*0.5+0.2, Math.random()*0.5+0.2, Math.random()*0.5+0.2),
+          yVel: 0, yPos: 8, settled: false, landingTime: 0
+        });
+      }
+      
+      // Show text result
+      document.getElementById('toys-result').innerText = "RESULT: " + results.join(", ");
+    }
+
+    function animateToys() {
+      toysAnimFrameId = requestAnimationFrame(animateToys);
+      
+      toyObjects.forEach(obj => {
+        if (obj.settled) {
+            // Lerp to exact target rotation to look clean
+            obj.mesh.rotation.x += (obj.targetRot.x - obj.mesh.rotation.x) * 0.1;
+            // obj.mesh.rotation.y += (0 - obj.mesh.rotation.y) * 0.1; // Align Y to 0
+            obj.mesh.rotation.z += (obj.targetRot.z - obj.mesh.rotation.z) * 0.1;
+            return;
+        }
+        
+        // Gravity
+        obj.yVel -= 0.015; 
+        obj.yPos += obj.yVel;
+        
+        // Floor
+        if(obj.yPos <= 0.5) { // 0.5 is rough radius
+          obj.yPos = 0.5;
+          obj.yVel *= -0.5; // Dampen
+          obj.rotVel.multiplyScalar(0.8);
+          
+          if(Math.abs(obj.yVel) < 0.05) {
+             obj.settled = true;
+             // Set rotation close to target to allow lerp
+             // We need to account for multiple rotations (2PI)
+             // normalize current rotation to 0..2PI relative to target?
+             // Simple hack: Reset rotation to target + small offset, let lerp finish it.
+             // Or just snap Y rotation to something nice.
+             
+             // Force closest 2PI multiple for smoothness
+             const snap = (val, target) => {
+                 const current = val % (Math.PI*2);
+                 const diff = target - current;
+                 return val + diff;
+             };
+             
+             // Actually, just setting it directly to target + N*2PI is hard.
+             // Let's just set it to target immediately for this demo to ensure correctness
+             obj.mesh.rotation.x = obj.targetRot.x;
+             obj.mesh.rotation.z = obj.targetRot.z;
+             obj.mesh.rotation.y = (Math.random()-0.5) * 0.5; // Random Yaw
+          }
+        }
+        
+        obj.mesh.position.y = obj.yPos;
+        obj.mesh.position.x += obj.vel.x;
+        obj.mesh.position.z += obj.vel.z;
+        
+        if(!obj.settled) {
+            obj.mesh.rotation.x += obj.rotVel.x;
+            obj.mesh.rotation.y += obj.rotVel.y;
+            obj.mesh.rotation.z += obj.rotVel.z;
+        }
+      });
+      
+      if(toysRenderer && toysScene && toysCamera) {
+        toysRenderer.render(toysScene, toysCamera);
+      }
+    }
+
+    /* ====== 6. Timer Logic ====== */
+    let timerInterval;
+    let timeLeft = 1500; 
+    let isRunning = false;
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+    function updateTimerDisplay() { document.getElementById('timer-val').innerText = formatTime(timeLeft); }
+    
+    function setTimer(min) {
+      stopTimer(); timeLeft = min * 60;
+      updateInputs(min, 0);
+      updateTimerDisplay();
+    }
+    function setCustomTimer() {
+      stopTimer();
+      const m = parseInt(document.getElementById('timer-input-min').value) || 0;
+      const s = parseInt(document.getElementById('timer-input-sec').value) || 0;
+      timeLeft = m * 60 + s;
+      updateTimerDisplay();
+    }
+    function updateInputs(m, s) {
+        document.getElementById('timer-input-min').value = m;
+        document.getElementById('timer-input-sec').value = s;
+    }
+
+    function toggleTimer() { if(isRunning) stopTimer(); else startTimer(); }
+    function startTimer() {
+      isRunning = true; document.getElementById('timer-btn').innerText = "PAUSE";
+      timerInterval = setInterval(() => {
+        if(timeLeft > 0) { timeLeft--; updateTimerDisplay(); } 
+        else { stopTimer(); alert("Time is up!"); }
+      }, 1000);
+    }
+    function stopTimer() { isRunning = false; document.getElementById('timer-btn').innerText = "START"; clearInterval(timerInterval); }
+    function resetTimer() { stopTimer(); timeLeft = 1500; updateInputs(25, 0); updateTimerDisplay(); }
+
+  </script>
+</body>
+</html>
