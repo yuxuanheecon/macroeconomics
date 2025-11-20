@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VIP Nexus v2.2 | Earth Macro</title>
+  <title>VIP Nexus v2.3 | Earth Macro</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=JetBrains+Mono:wght@300;500;700&display=swap" rel="stylesheet">
   <!-- 引入 Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
@@ -15,6 +15,7 @@
       --gold-primary: #d4af37;
       --gold-dim: #8a7035;
       --gold-bright: #ffd700;
+      --neon-green: #00ff9d;
       --text-main: #e0e0e0;
       --glass-panel: rgba(20, 20, 20, 0.85);
       --glass-border: rgba(212, 175, 55, 0.3);
@@ -44,6 +45,7 @@
       padding: 30px 50px; display: flex; justify-content: space-between; align-items: center;
       border-bottom: 1px solid rgba(212, 175, 55, 0.1);
       background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+      position: relative; z-index: 10;
     }
     .vip-logo {
       font-family: 'Cinzel', serif; font-size: 1.8rem; color: var(--gold-primary);
@@ -53,8 +55,9 @@
     .back-link {
       color: var(--gold-dim); text-decoration: none; font-size: 0.8rem;
       border: 1px solid var(--gold-dim); padding: 8px 20px; border-radius: 50px; transition: all 0.3s;
+      cursor: pointer; position: relative; z-index: 20;
     }
-    .back-link:hover { color: var(--bg-deep); background: var(--gold-primary); border-color: var(--gold-primary); }
+    .back-link:hover { color: var(--bg-deep); background: var(--gold-primary); border-color: var(--gold-primary); box-shadow: 0 0 15px var(--gold-primary); }
 
     /* 主内容区 */
     main { max-width: 1200px; margin: 0 auto; padding: 40px 20px 140px; }
@@ -196,29 +199,93 @@
     }
     .timer-custom { display: flex; justify-content: center; gap: 5px; margin-bottom: 20px; }
     .timer-custom input { width: 60px; text-align: center; font-size: 1.2rem; padding: 5px; }
+
+    /* ====== 入场/出场动画层 ====== */
+    .reveal-layer {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; z-index: 9999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      pointer-events: auto;
+    }
+    .reveal-content { position: relative; width: 300px; height: 300px; display: flex; justify-content: center; align-items: center; }
+    .scan-circle {
+      position: absolute; width: 100%; height: 100%; border: 2px solid #333; border-radius: 50%;
+      border-top-color: var(--gold-primary); animation: spin 2s linear infinite;
+    }
+    .scan-inner {
+      position: absolute; width: 70%; height: 70%; border: 1px solid #333; border-radius: 50%;
+      border-bottom-color: var(--gold-primary); animation: spin 1.5s linear infinite reverse;
+    }
+    .scan-text {
+      font-family: 'JetBrains Mono'; color: var(--gold-primary); font-size: 0.9rem; letter-spacing: 2px;
+      margin-top: 30px; text-align: center;
+    }
+    .scan-grid {
+      position: absolute; width: 100%; height: 100%; 
+      background: linear-gradient(rgba(212, 175, 55, 0.1) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(212, 175, 55, 0.1) 1px, transparent 1px);
+      background-size: 20px 20px; opacity: 0.3;
+      mask-image: radial-gradient(circle, black 40%, transparent 70%);
+      -webkit-mask-image: radial-gradient(circle, black 40%, transparent 70%);
+    }
+    .access-granted {
+      color: var(--neon-green); font-size: 1.5rem; font-weight: bold; letter-spacing: 3px; 
+      text-shadow: 0 0 10px var(--neon-green); display: none; animation: blink 0.5s infinite;
+    }
+
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+    /* 离场黑屏 */
+    .exit-layer {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; z-index: 9998; opacity: 0; pointer-events: none;
+      transition: opacity 1s ease; display: flex; justify-content: center; align-items: center;
+      color: #444; font-family: 'JetBrains Mono'; letter-spacing: 3px;
+    }
+    .exit-layer.active { opacity: 1; pointer-events: auto; }
+
   </style>
 </head>
 <body>
 
+  <!-- 入场动画层 -->
+  <div class="reveal-layer" id="intro-layer">
+    <div class="reveal-content">
+      <div class="scan-grid"></div>
+      <div class="scan-circle"></div>
+      <div class="scan-inner"></div>
+      <div style="font-size:3rem;">💎</div>
+    </div>
+    <div class="scan-text" id="intro-text">INITIALIZING SECURE CONNECTION...</div>
+    <div class="access-granted" id="granted-text">ACCESS GRANTED</div>
+  </div>
+
+  <!-- 离场动画层 -->
+  <div class="exit-layer" id="outro-layer">TERMINATING SESSION...</div>
+
+  <!-- 全局背景 Three.js Canvas -->
   <canvas id="bg-canvas"></canvas>
 
+  <!-- 全屏时钟层 -->
   <div id="full-clock" onclick="toggleClockMode()">
     <div class="clock-time" id="clock-time-display">00:00:00</div>
     <div class="clock-date" id="clock-date-display">MONDAY, JAN 01</div>
     <div class="clock-hint">CLICK ANYWHERE TO EXIT</div>
   </div>
 
-  <div id="ui-container">
+  <!-- 主界面 UI 容器 -->
+  <div id="ui-container" style="opacity:0"> <!-- Initial hidden for intro -->
     <header>
-      <div class="vip-logo">VIP NEXUS v2.2</div>
-      <a href="index.html" class="back-link">EXIT SECURE SPACE</a>
+      <div class="vip-logo">VIP NEXUS v2.3</div>
+      <a onclick="exitVip()" class="back-link">EXIT SECURE SPACE</a>
     </header>
 
     <main>
       <section>
         <h2><span style="color:var(--gold-primary)">01.</span> KNOWLEDGE VAULT</h2>
         <div class="grid-vault">
-          <!-- 新增重磅文章 -->
+          <!-- 重磅文章 -->
           <div class="vault-card" style="border-color: var(--gold-bright); background: rgba(255, 215, 0, 0.05);" onclick="window.open('习近平和他的情人们（重置版）.pdf', '_blank')">
             <div class="vault-icon">🔥</div>
             <div class="vault-title">习近平和他的情人们（重置版）</div>
@@ -232,8 +299,8 @@
           </div>
           <div class="vault-card" onclick="window.open('commodityinvestment.pdf', '_blank')">
             <div class="vault-icon">⚖️</div>
-            <div class="vault-title">大类资产配置</div>
-            <div class="vault-desc">美林时钟的变体应用。</div>
+            <div class="vault-title">大类资产配置逻辑</div>
+            <div class="vault-desc">美林时钟的变体应用。寻找 Alpha 收益。</div>
           </div>
           <div class="vault-card" onclick="window.open('Wedge.pdf', '_blank')">
             <div class="vault-icon">🧩</div>
@@ -300,7 +367,7 @@
     <div class="history-box" id="rng-history"></div>
   </div>
 
-  <!-- Tool 2: Toys (3D Version with Visuals) -->
+  <!-- Tool 2: Toys (3D Version) -->
   <div id="modal-toys" class="tool-modal">
     <div class="tool-header">
       <div class="tool-title">FATE CASTER 3D</div>
@@ -344,6 +411,40 @@
   </div>
 
   <script>
+    /* ====== 0. 入场动画逻辑 ====== */
+    window.onload = () => {
+      const introLayer = document.getElementById('intro-layer');
+      const introText = document.getElementById('intro-text');
+      const grantedText = document.getElementById('granted-text');
+      const ui = document.getElementById('ui-container');
+      
+      // Sequence
+      setTimeout(() => { introText.innerText = "VERIFYING BIOMETRICS..."; }, 800);
+      setTimeout(() => { introText.innerText = "DECRYPTING SECURE CHANNEL..."; }, 1800);
+      setTimeout(() => { 
+        introText.style.display = 'none';
+        grantedText.style.display = 'block';
+      }, 2800);
+      
+      setTimeout(() => {
+        introLayer.style.opacity = '0';
+        introLayer.style.pointerEvents = 'none'; // Allow clicks through
+        ui.style.opacity = '1';
+        
+        // Init background
+        animateBg();
+        updateClock();
+      }, 3500);
+    };
+
+    function exitVip() {
+      const outro = document.getElementById('outro-layer');
+      outro.classList.add('active');
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 1500);
+    }
+
     /* ====== 1. Global BG ====== */
     const bgScene = new THREE.Scene();
     const bgCamera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -367,7 +468,6 @@
       bgParticles.rotation.x = mouseY * 0.1; bgParticles.rotation.y += mouseX * 0.1;
       bgRenderer.render(bgScene, bgCamera);
     }
-    animateBg();
     window.addEventListener('resize', () => {
       bgCamera.aspect = window.innerWidth/window.innerHeight; bgCamera.updateProjectionMatrix();
       bgRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -380,7 +480,7 @@
       document.getElementById('clock-time-display').innerText = now.toLocaleTimeString('en-GB');
       document.getElementById('clock-date-display').innerText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: '2-digit' });
     }
-    setInterval(updateClock, 1000); updateClock();
+    setInterval(updateClock, 1000);
 
     /* ====== 3. Tools Modal Logic ====== */
     function openTool(id) {
@@ -395,7 +495,7 @@
       if(toysAnimFrameId) cancelAnimationFrame(toysAnimFrameId);
     }
 
-    /* ====== 4. RNG ====== */
+    /* ====== 4. RNG Logic ====== */
     function generateRNG() {
       const min = parseInt(document.getElementById('rng-min').value)||0;
       const max = parseInt(document.getElementById('rng-max').value)||100;
@@ -425,62 +525,9 @@
     }
     function copyRNG() { navigator.clipboard.writeText(document.getElementById('rng-display').innerText).then(() => alert('Copied!')); }
 
-    /* ====== 5. Toys 3D (Rigged Physics with Visuals) ====== */
+    /* ====== 5. Toys 3D (Rigged Physics) ====== */
     let toysScene, toysCamera, toysRenderer, toysAnimFrameId;
     let toyObjects = [];
-    let textureCache = {};
-
-    // Helper to create dynamic canvas texture for Dice dots
-    function createDiceTexture(number, color) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 128; canvas.height = 128;
-      const ctx = canvas.getContext('2d');
-      // Background
-      ctx.fillStyle = color;
-      ctx.fillRect(0, 0, 128, 128);
-      // Border
-      ctx.strokeStyle = "#fff"; ctx.lineWidth = 10;
-      ctx.strokeRect(0,0,128,128);
-      
-      // Dots logic
-      ctx.fillStyle = 'white';
-      const dotSize = 14;
-      const drawDot = (x, y) => {
-        ctx.beginPath(); ctx.arc(x, y, dotSize, 0, Math.PI*2); ctx.fill();
-      };
-      // 1: Center
-      if(number % 2 !== 0) drawDot(64, 64);
-      // 2,3,4,5,6: Corners
-      if(number > 1) { drawDot(30, 30); drawDot(98, 98); }
-      if(number > 3) { drawDot(30, 98); drawDot(98, 30); }
-      if(number === 6) { drawDot(30, 64); drawDot(98, 64); }
-      
-      const tex = new THREE.CanvasTexture(canvas);
-      return new THREE.MeshStandardMaterial({ map: tex });
-    }
-    
-    // Helper for Coin Texture
-    function createCoinMaterial(text) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 128; canvas.height = 128;
-      const ctx = canvas.getContext('2d');
-      // Gold bg
-      const grad = ctx.createRadialGradient(64,64,10,64,64,64);
-      grad.addColorStop(0, '#ffd700'); grad.addColorStop(1, '#b8860b');
-      ctx.fillStyle = grad; ctx.fillRect(0, 0, 128, 128);
-      // Text
-      ctx.fillStyle = '#5a4a10';
-      ctx.font = 'bold 80px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(text, 64, 64);
-      // Ring
-      ctx.lineWidth = 5; ctx.strokeStyle = '#5a4a10';
-      ctx.beginPath(); ctx.arc(64,64,55,0,Math.PI*2); ctx.stroke();
-      
-      const tex = new THREE.CanvasTexture(canvas);
-      return new THREE.MeshStandardMaterial({ map: tex, metalness: 0.8, roughness: 0.3 });
-    }
 
     function initToys3D() {
       const container = document.getElementById('toys-canvas-container');
@@ -512,30 +559,48 @@
     function createCoinGeometry() {
       const geo = new THREE.CylinderGeometry(1.2, 1.2, 0.15, 32);
       const matSide = new THREE.MeshStandardMaterial({ color: 0xdaa520 });
-      const matHead = createCoinMaterial("$"); // Heads
-      const matTail = createCoinMaterial("1"); // Tails
-      // Cylinder materials index: 0:side, 1:top, 2:bottom
-      const mesh = new THREE.Mesh(geo, [matSide, matHead, matTail]);
-      // Default Cylinder is standing up (Y axis). Top is +Y. Bottom is -Y.
-      return mesh;
+      const matHead = createCoinMaterial("$"); 
+      const matTail = createCoinMaterial("1"); 
+      return new THREE.Mesh(geo, [matSide, matHead, matTail]);
+    }
+    function createCoinMaterial(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128; canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      const grad = ctx.createRadialGradient(64,64,10,64,64,64);
+      grad.addColorStop(0, '#ffd700'); grad.addColorStop(1, '#b8860b');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, 128, 128);
+      ctx.fillStyle = '#5a4a10'; ctx.font = 'bold 80px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 64, 64);
+      ctx.lineWidth = 5; ctx.strokeStyle = '#5a4a10'; ctx.beginPath(); ctx.arc(64,64,55,0,Math.PI*2); ctx.stroke();
+      const tex = new THREE.CanvasTexture(canvas);
+      return new THREE.MeshStandardMaterial({ map: tex, metalness: 0.8, roughness: 0.3 });
     }
     
     function createDiceGeometry() {
         const geo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-        // Dice standard face mapping: 1 opp 6, 2 opp 5, 3 opp 4
-        // ThreeBox mapping: 0:Right, 1:Left, 2:Top, 3:Bottom, 4:Front, 5:Back
-        // Lets map: Top=1, Front=2, Right=3, Left=4, Back=5, Bottom=6
-        const m1 = createDiceTexture(1, '#d00'); // Top? No index 2
-        const m2 = createDiceTexture(2, '#00d'); // Front? No index 4
-        const m3 = createDiceTexture(3, '#0d0'); // Right? Index 0
-        const m4 = createDiceTexture(4, '#d0d'); // Left? Index 1
-        const m5 = createDiceTexture(5, '#dd0'); // Back? Index 5
-        const m6 = createDiceTexture(6, '#0dd'); // Bottom? Index 3
-        
-        // Map to ThreeJS Box indices
-        // 0:Right(3), 1:Left(4), 2:Top(1), 3:Bottom(6), 4:Front(2), 5:Back(5)
+        const m1 = createDiceTexture(1, '#d00'); 
+        const m2 = createDiceTexture(2, '#00d'); 
+        const m3 = createDiceTexture(3, '#0d0'); 
+        const m4 = createDiceTexture(4, '#d0d'); 
+        const m5 = createDiceTexture(5, '#dd0'); 
+        const m6 = createDiceTexture(6, '#0dd'); 
         const materials = [m3, m4, m1, m6, m2, m5];
         return new THREE.Mesh(geo, materials);
+    }
+    function createDiceTexture(number, color) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128; canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = color; ctx.fillRect(0, 0, 128, 128);
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 10; ctx.strokeRect(0,0,128,128);
+      ctx.fillStyle = 'white'; const dotSize = 14;
+      const drawDot = (x, y) => { ctx.beginPath(); ctx.arc(x, y, dotSize, 0, Math.PI*2); ctx.fill(); };
+      if(number%2!==0) drawDot(64,64);
+      if(number>1) { drawDot(30,30); drawDot(98,98); }
+      if(number>3) { drawDot(30,98); drawDot(98,30); }
+      if(number===6) { drawDot(30,64); drawDot(98,64); }
+      const tex = new THREE.CanvasTexture(canvas);
+      return new THREE.MeshStandardMaterial({ map: tex });
     }
 
     function throwObjects(type) {
@@ -544,39 +609,16 @@
       let results = [];
       
       for(let i=0; i<qty; i++) {
-        let mesh, targetRot;
-        let res;
-
+        let mesh, targetRot, res;
         if(type === 'coin') {
           res = Math.random() > 0.5 ? "HEADS" : "TAILS";
           mesh = createCoinGeometry();
-          // Top(1)=Heads. Bottom(2)=Tails.
-          // Default orientation: Top is +Y. 
-          // If Heads, we want Top up. Rot(0,0,0) works. But let's add random Yaw.
-          // If Tails, we want Bottom up. Rot(PI, 0, 0).
-          // Also coin usually lies flat on XZ plane. Cylinder stands on Y.
-          // So to lie flat: Rotate X by 90deg (PI/2).
-          // Top face is now +Z. Bottom face is -Z. 
-          // "Up" in world is Y.
-          // Let's keep cylinder logic simple: it lands flat on floor (Y=0). 
-          // So its local Y axis should be parallel to World Y.
-          // Heads(Top): +Y up. Rotation (0, rand, 0).
-          // Tails(Bottom): -Y up. Rotation (PI, rand, 0).
           const baseRotX = res === "HEADS" ? 0 : Math.PI;
           targetRot = { x: baseRotX, z: 0 };
         } else {
-          // Dice
           const val = Math.floor(Math.random() * 6) + 1; 
           res = val.toString();
           mesh = createDiceGeometry();
-          // Target: Which face is Up (+Y)?
-          // 0:Right(3), 1:Left(4), 2:Top(1), 3:Bottom(6), 4:Front(2), 5:Back(5)
-          // 1 Up: (0,0,0)
-          // 6 Up: (PI,0,0)
-          // 2 Up: (-PI/2, 0, 0)
-          // 5 Up: (PI/2, 0, 0)
-          // 3 Up: (0, 0, PI/2)
-          // 4 Up: (0, 0, -PI/2)
           if(val===1) targetRot = {x:0, z:0};
           if(val===6) targetRot = {x:Math.PI, z:0};
           if(val===2) targetRot = {x:-Math.PI/2, z:0};
@@ -584,121 +626,61 @@
           if(val===3) targetRot = {x:0, z:Math.PI/2};
           if(val===4) targetRot = {x:0, z:-Math.PI/2};
         }
-        
         results.push(res);
-
-        // Init State
         mesh.position.set((Math.random()-0.5)*4, 7 + Math.random()*2, (Math.random()-0.5)*2);
         mesh.rotation.set(Math.random()*Math.PI*2, Math.random()*Math.PI*2, Math.random()*Math.PI*2);
-        
         toysScene.add(mesh);
-        
         toyObjects.push({
-          mesh: mesh,
-          targetRot: targetRot,
+          mesh: mesh, targetRot: targetRot,
           vel: new THREE.Vector3((Math.random()-0.5)*0.15, 0, (Math.random()-0.5)*0.15),
           rotVel: new THREE.Vector3(Math.random()+0.5, Math.random()+0.5, Math.random()+0.5),
           yVel: 0, yPos: mesh.position.y, settled: false
         });
       }
-      
       document.getElementById('toys-result').innerText = "RESULT: " + results.join(", ");
     }
 
     function animateToys() {
       toysAnimFrameId = requestAnimationFrame(animateToys);
-      
       toyObjects.forEach(obj => {
         if (obj.settled) {
-            // Smooth correct orientation
             obj.mesh.rotation.x += (obj.targetRot.x - obj.mesh.rotation.x) * 0.1;
             obj.mesh.rotation.z += (obj.targetRot.z - obj.mesh.rotation.z) * 0.1;
-            // obj.mesh.rotation.y can drift, it's fine
             return;
         }
-        
-        obj.yVel -= 0.02; 
-        obj.yPos += obj.yVel;
-        
-        // Floor logic (Y=0 is floor, object pivot is center)
-        // Coin H=1.2, H/2 = 0.6. Dice H=1.5, H/2 = 0.75. Avg ~0.7
-        let floorOffset = 0.7;
-        
-        if(obj.yPos <= floorOffset) {
-          obj.yPos = floorOffset;
-          obj.yVel *= -0.5; 
-          obj.rotVel.multiplyScalar(0.8);
-          
+        obj.yVel -= 0.02; obj.yPos += obj.yVel;
+        if(obj.yPos <= 0.7) {
+          obj.yPos = 0.7; obj.yVel *= -0.5; obj.rotVel.multiplyScalar(0.8);
           if(Math.abs(obj.yVel) < 0.05) {
              obj.settled = true;
-             // Snap physics rotation to target logic
-             // We need to find N*2PI closest to current rot
-             const snap = (val, target) => {
-                 let cycles = Math.round(val / (Math.PI*2));
-                 return target + cycles * Math.PI * 2;
-             };
-             // Overwrite targetRot with closest cycle
+             const snap = (val, target) => { let cycles = Math.round(val / (Math.PI*2)); return target + cycles * Math.PI * 2; };
              obj.targetRot.x = snap(obj.mesh.rotation.x, obj.targetRot.x);
              obj.targetRot.z = snap(obj.mesh.rotation.z, obj.targetRot.z);
           }
         }
-        
         obj.mesh.position.y = obj.yPos;
         obj.mesh.position.x += obj.vel.x;
         obj.mesh.position.z += obj.vel.z;
-        
         if(!obj.settled) {
             obj.mesh.rotation.x += obj.rotVel.x;
             obj.mesh.rotation.y += obj.rotVel.y;
             obj.mesh.rotation.z += obj.rotVel.z;
         }
       });
-      
-      if(toysRenderer && toysScene && toysCamera) {
-        toysRenderer.render(toysScene, toysCamera);
-      }
+      if(toysRenderer && toysScene && toysCamera) toysRenderer.render(toysScene, toysCamera);
     }
 
     /* ====== 6. Timer Logic ====== */
-    let timerInterval;
-    let timeLeft = 1500; 
-    let isRunning = false;
-
-    function formatTime(sec) {
-      const m = Math.floor(sec / 60).toString().padStart(2, '0');
-      const s = (sec % 60).toString().padStart(2, '0');
-      return `${m}:${s}`;
-    }
+    let timerInterval; let timeLeft = 1500; let isRunning = false;
+    function formatTime(sec) { return `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`; }
     function updateTimerDisplay() { document.getElementById('timer-val').innerText = formatTime(timeLeft); }
-    
-    function setTimer(min) {
-      stopTimer(); timeLeft = min * 60;
-      updateInputs(min, 0);
-      updateTimerDisplay();
-    }
-    function setCustomTimer() {
-      stopTimer();
-      const m = parseInt(document.getElementById('timer-input-min').value) || 0;
-      const s = parseInt(document.getElementById('timer-input-sec').value) || 0;
-      timeLeft = m * 60 + s;
-      updateTimerDisplay();
-    }
-    function updateInputs(m, s) {
-        document.getElementById('timer-input-min').value = m;
-        document.getElementById('timer-input-sec').value = s;
-    }
-
+    function setTimer(min) { stopTimer(); timeLeft = min * 60; updateInputs(min, 0); updateTimerDisplay(); }
+    function setCustomTimer() { stopTimer(); const m = parseInt(document.getElementById('timer-input-min').value)||0; const s = parseInt(document.getElementById('timer-input-sec').value)||0; timeLeft = m*60+s; updateTimerDisplay(); }
+    function updateInputs(m, s) { document.getElementById('timer-input-min').value = m; document.getElementById('timer-input-sec').value = s; }
     function toggleTimer() { if(isRunning) stopTimer(); else startTimer(); }
-    function startTimer() {
-      isRunning = true; document.getElementById('timer-btn').innerText = "PAUSE";
-      timerInterval = setInterval(() => {
-        if(timeLeft > 0) { timeLeft--; updateTimerDisplay(); } 
-        else { stopTimer(); alert("Time is up!"); }
-      }, 1000);
-    }
+    function startTimer() { isRunning = true; document.getElementById('timer-btn').innerText = "PAUSE"; timerInterval = setInterval(() => { if(timeLeft > 0) { timeLeft--; updateTimerDisplay(); } else { stopTimer(); alert("Time is up!"); } }, 1000); }
     function stopTimer() { isRunning = false; document.getElementById('timer-btn').innerText = "START"; clearInterval(timerInterval); }
     function resetTimer() { stopTimer(); timeLeft = 1500; updateInputs(25, 0); updateTimerDisplay(); }
-
   </script>
 </body>
 </html>
