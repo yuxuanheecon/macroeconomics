@@ -57,7 +57,7 @@
     }
     .nav-brand { font-family: "JetBrains Mono"; font-weight: 700; font-size: 1.2rem; letter-spacing: -1px; }
     .nav-brand span { color: var(--neon-cyan); }
-    .nav-links { display: flex; gap: 40px; }
+    .nav-links { display: flex; gap: 30px; } /* 间距稍微调小以容纳更多链接 */
     .nav-links a { font-size: 0.9rem; color: var(--text-gray); transition: color 0.3s; position: relative; }
     .nav-links a:hover { color: var(--text-white); }
     .nav-btn {
@@ -82,9 +82,14 @@
     .gradient-text-1 { background: linear-gradient(90deg, #fff, var(--neon-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .gradient-text-2 { background: linear-gradient(90deg, var(--neon-purple), var(--neon-pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .hero p { color: var(--text-gray); font-size: 1.1rem; max-width: 600px; margin: 0 auto 40px; line-height: 1.6; }
-    .hero-btns { display: flex; gap: 20px; }
-    .btn-primary { padding: 12px 32px; background: var(--text-white); color: #000; font-weight: 700; border-radius: 8px; transition: transform 0.2s; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .hero-btns { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+    
+    .btn-primary { padding: 12px 32px; background: var(--text-white); color: #000; font-weight: 700; border-radius: 8px; transition: transform 0.2s; display: flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none; }
     .btn-primary:hover { transform: translateY(-2px); }
+    
+    .btn-game { padding: 12px 32px; background: var(--neon-purple); color: white; font-weight: 700; border-radius: 8px; transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none; border: none; box-shadow: 0 0 20px rgba(189, 52, 254, 0.4); }
+    .btn-game:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(189, 52, 254, 0.6); }
+
     .btn-glass { padding: 12px 32px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-white); border-radius: 8px; backdrop-filter: blur(10px); transition: background 0.2s; display: flex; align-items: center; gap: 8px; cursor: pointer; }
     .btn-glass:hover { background: rgba(255,255,255,0.1); }
 
@@ -252,6 +257,7 @@
     <div class="nav-brand">EARTH<span>MACRO</span></div>
     <div class="nav-links">
       <a onclick="scrollToSection('hero')">首页</a>
+      <a href="game.html" style="color:var(--neon-yellow); font-weight:bold;">Alpha Game</a> <!-- 新增游戏入口 -->
       <a onclick="scrollToSection('fortune-lab')">运势实验室</a>
       <a onclick="scrollToSection('core-values')">核心价值</a>
       <a onclick="scrollToSection('content')">精选内容</a>
@@ -269,8 +275,9 @@
     </h1>
     <p>以数据驱动的视角，穿透市场噪音。<br>Earth Macro 带你探索全球经济的前沿边界...</p>
     <div class="hero-btns">
+      <a href="game.html" class="btn-game">🎮 进入交易模拟</a> <!-- 新增游戏按钮 -->
       <a onclick="scrollToSection('fortune-lab')" class="btn-primary">🎲 测算今日财运</a>
-      <a onclick="scrollToSection('content')" class="btn-glass">阅读研报 -></a>
+      <!-- <a onclick="scrollToSection('content')" class="btn-glass">阅读研报 -></a> -->
     </div>
   </section>
 
@@ -380,7 +387,7 @@
       <a href="articles.html" class="content-card">
         <div class="card-image">
           <span class="card-tag tag-cyan">实战教程</span>
-          <img src="https://images.unsplash.com/photo-1611974765270-ca1258634369?auto=format&fit=crop&w=600&q=80" alt="Clock">
+          <img src="https://wallhaven.cc/w/yqxzqx" alt="Clock">
         </div>
         <div class="card-body">
           <div class="card-date">2025-01-10</div>
@@ -390,7 +397,7 @@
       <a href="articles.html" class="content-card">
         <div class="card-image">
           <span class="card-tag tag-pink">行业洞察</span>
-          <img src="https://images.unsplash.com/photo-1565514020176-dbf2277f260e?auto=format&fit=crop&w=600&q=80" alt="Bank">
+          <img src="https://th.wallhaven.cc/lg/k8/k881zd.jpg" alt="Bank">
         </div>
         <div class="card-body">
           <div class="card-date">2025-01-05</div>
@@ -497,10 +504,10 @@
     
     // 1. Data Source (Expanded to 20 items as requested)
     const assets = [
-        "比特币 (BTC)", "现货黄金 (XAU)", "纳斯达克100", "10年期美债", "30年期美债", 
+        "比特币 (BTC)", "黄金 (GOLD)", "纳斯达克100", "10年期美债", "30年期美债", 
         "现金为王", "英伟达 (NVDA)", "以太坊 (ETH)", "沪深300", "日元 (JPY)", 
         "Meme币", "房产REITs", "科创50", "德国DAX", "英国富时100", 
-        "印度SENSEX", "越南VN30", "欧元 (EUR)", "原油期货", "Solana (SOL)"
+        "印度SENSEX", "谷歌（GOOGL）", "欧元 (EUR)", "原油期货", "苹果（AAPL）"
     ];
     const dos = [
         "全仓梭哈", "静观其变", "定投买入", "获利了结", "去晒太阳", 
@@ -509,13 +516,13 @@
         "模拟盘练习", "学习宏观", "抄底", "逃顶", "睡觉"
     ];
     const comments = [
-        "// 波动率有点大，系好安全带。",
-        "// 财神爷正在看着你。",
-        "// 相信周期，做时间的朋友。",
-        "// 别人恐惧我贪婪...",
-        "// 今天适合躺平，不要操作。",
-        "// 你的 Alpha 正在路上。",
-        "// 这是一个击球的好机会。"
+        "波动率有点大，系好安全带。",
+        "财神爷正在看着你。",
+        "相信周期，做时间的朋友。",
+        "别人恐惧我贪婪...",
+        "今天适合躺平，不要操作。",
+        "你的 Alpha 正在路上。",
+        "这是一个击球的好机会。"
     ];
 
     // 2. Helper: Generate Reel Content (Creating the long strip)
