@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Macro Defender 4.6 | Earth Macro</title>
+  <title>Macro Defender 4.7 | Earth Macro</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     /* ====== 基础样式 ====== */
@@ -30,7 +30,7 @@
     .hud-left { display: flex; gap: 15px; }
     .hud-right { display: flex; gap: 10px; pointer-events: auto; }
 
-    .stat-box { text-shadow: 0 0 10px currentColor; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 4px; border: 1px solid #333; }
+    .stat-box { text-shadow: 0 0 10px currentColor; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 4px; border: 1px solid #333; backdrop-filter: blur(4px); }
     .label { font-size: 0.7rem; color: #888; display: block; letter-spacing: 1px; margin-bottom: 2px; }
     .value { font-family: 'Share Tech Mono'; font-size: 1.5rem; font-weight: bold; }
     #score-val { color: #00ff9d; }
@@ -125,7 +125,7 @@
     .char-selection-area { display: flex; gap: 20px; flex: 1; width: 100%; overflow: hidden; }
     .char-list { 
       flex: 2; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
-      grid-auto-rows: 150px; gap: 10px; overflow-y: auto; align-content: start; padding-right: 5px;
+      grid-auto-rows: 160px; gap: 10px; overflow-y: auto; align-content: start; padding-right: 5px;
       border: 1px solid #333; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;
     }
     .char-detail-panel { flex: 1; background: rgba(10,15,20,0.95); border: 1px solid #00f3ff; padding: 20px; overflow-y: auto; min-width: 320px; display:flex; flex-direction:column; align-items:center; border-radius: 12px; }
@@ -133,7 +133,7 @@
     .char-mini-card { background: rgba(255,255,255,0.05); border: 1px solid #444; padding: 10px; cursor: pointer; text-align: center; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s; }
     .char-mini-card:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
     .char-mini-card.selected { border-color: #ffee00; background: rgba(255,238,0,0.15); box-shadow: inset 0 0 10px rgba(255,238,0,0.2); }
-    .mini-avatar { width: 60px; height: 60px; border-radius: 50%; margin-bottom: 10px; background: #000; object-fit: cover; }
+    .mini-avatar { width: 60px; height: 60px; border-radius: 50%; margin-bottom: 10px; background: #000; object-fit: cover; border: 2px solid #333; }
     .mini-name { font-size: 0.7rem; font-weight: bold; color: #eee; line-height: 1.2; }
 
     .stat-bar { height: 4px; background: #333; width: 100%; margin-top: 3px; border-radius: 2px; }
@@ -149,7 +149,7 @@
     .skill-header { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
     .skill-name-txt { color: #fff; font-weight: bold; font-size: 0.9rem; }
     .skill-desc-txt { font-size: 0.7rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .key-badge { display: inline-block; background: #333; color: #00f3ff; padding: 1px 4px; border-radius: 2px; font-size: 0.7rem; font-family: monospace; min-width: 18px; text-align: center; border: 1px solid #555; }
+    .key-badge { display: inline-block; background: #333; color: #00f3ff; padding: 1px 4px; border-radius: 2px; font-size: 0.7rem; margin-right: 5px; font-weight: bold; font-family: monospace; border:1px solid #555; }
 
     /* 商店 */
     #shop-menu h1 { border-bottom: 2px solid #333; width: 100%; text-align: center; padding-bottom: 10px; }
@@ -245,7 +245,7 @@
   <!-- 1. 规则/难度 -->
   <div id="screen-rules" class="modal">
     <div class="modal-content" style="justify-content:center;">
-      <h1>MACRO DEFENDER 4.6</h1>
+      <h1>MACRO DEFENDER 4.7</h1>
       <p class="subtitle">Global Economy Defense Initiative</p>
       <div class="rules-box">
         <h3>🔰 任务简报 (Briefing)</h3>
@@ -292,6 +292,7 @@
           </div>
 
           <div class="skill-list">
+            <!-- Skills with tooltip triggers -->
             <div class="skill-item" onmouseenter="showSelectTooltip(this, 'q')" onmouseleave="hideTooltip()">
               <div class="skill-header"><span class="key-badge">Q</span> <span id="skill-q-name" class="skill-name-txt">-</span></div>
               <div id="skill-q-desc" class="skill-desc-txt">-</div>
@@ -343,67 +344,34 @@
   </div>
 
   <script>
-    /* ====== 数据中心 (53 Chars) ====== */
+    /* ====== 数据中心 (Complete Roster) ====== */
     const CHARACTERS = {
       // 1. Bankers
-      'powell': { cat: 'banker', name: 'Jerome Powell (鲍威尔)', title: 'Fed Chair', hp: 7, atk: 4, spd: 5, rate: 8, color: '#00f3ff', q:'Hawk Shot', w:'Rate Shield', e:'Pivot Dash', r:'Infinite QE', qDesc:'鹰派三连射', wDesc:'加息护盾', eDesc:'政策转向', rDesc:'无限印钞', qInfo:'Dmg: Med | CD: 3s', wInfo:'Shield | CD: 8s', eInfo:'Dash | CD: 4s', rInfo:'Full Screen | CD: 30s' },
-      'yellen': { cat: 'banker', name: 'Janet Yellen (耶伦)', title: 'Treasury Sec', hp: 6, atk: 5, spd: 5, rate: 7, color: '#0099ff', q:'Soft Landing', w:'Debt Ceiling', e:'Treasury Run', r:'Bailout', qDesc:'软着陆弹幕', wDesc:'债务上限防御塔', eDesc:'国债疾跑', rDesc:'全员回血', qInfo:'Slow | CD: 4s', wInfo:'Block | CD: 10s', eInfo:'Speed | CD: 5s', rInfo:'Heal | CD: 40s' },
-      'bernanke': { cat: 'banker', name: 'Ben Bernanke (伯南克)', title: 'Ex-Fed Chair', hp: 6, atk: 3, spd: 4, rate: 9, color: '#00cc99', q:'Helicopter', w:'Stress Test', e:'QE Dash', r:'QE1', qDesc:'直升机撒钱散射', wDesc:'压力测试护盾', eDesc:'量化冲刺', rDesc:'量化宽松轰炸', qInfo:'AoE | CD: 5s', wInfo:'Def | CD: 12s', eInfo:'Dash | CD: 6s', rInfo:'Dmg | CD: 35s' },
-      'greenspan': { cat: 'banker', name: 'Alan Greenspan (格林斯潘)', title: 'Maestro', hp: 5, atk: 6, spd: 3, rate: 6, color: '#aaaaaa', q:'Fed Put', w:'Exuberance', e:'Bubble Ride', r:'Moderation', qDesc:'看跌期权护盾', wDesc:'非理性繁荣加速', eDesc:'泡沫漂移', rDesc:'大缓和定身', qInfo:'Shield | CD: 8s', wInfo:'Buff | CD: 15s', eInfo:'Move | CD: 5s', rInfo:'Stun | CD: 40s' },
-      'lagarde': { cat: 'banker', name: 'Christine Lagarde (拉加德)', title: 'ECB President', hp: 6, atk: 5, spd: 5, rate: 6, color: '#3366cc', q:'Euro Bond', w:'Fragment', e:'Unity Dash', r:'Whatever it takes', qDesc:'欧元回旋镖', wDesc:'反分裂立场', eDesc:'统一冲刺', rDesc:'强力全屏震荡', qInfo:'Return | CD: 4s', wInfo:'AoE Push | CD: 10s', eInfo:'Dash | CD: 5s', rInfo:'Massive Dmg | CD: 45s' },
-      'draghi': { cat: 'banker', name: 'Mario Draghi (德拉吉)', title: 'Super Mario', hp: 7, atk: 6, spd: 6, rate: 7, color: '#0055a4', q:'Bazooka', w:'Euro Shield', e:'Techocrate', r:'Save the Euro', qDesc:'火箭筒重击', wDesc:'欧元盾', eDesc:'技术官僚位移', rDesc:'拯救欧元全屏清场', qInfo:'Explode | CD: 5s', wInfo:'Shield | CD: 12s', eInfo:'Dash | CD: 4s', rInfo:'Wipe | CD: 50s' },
-      'kuroda': { cat: 'banker', name: 'Haruhiko Kuroda (黑田东彦)', title: 'Ex-BOJ Gov', hp: 5, atk: 3, spd: 7, rate: 10, color: '#ff6600', q:'YCC Control', w:'Negative Rate', e:'Yen Slide', r:'Super Ease', qDesc:'YCC定身', wDesc:'负利率力场', eDesc:'日元滑坡', rDesc:'超级宽松弹幕雨', qInfo:'Stun | CD: 6s', wInfo:'AoE Slow | CD: 12s', eInfo:'Speed | CD: 5s', rInfo:'Barrage | CD: 30s' },
-      'ueda': { cat: 'banker', name: 'Kazuo Ueda (植田和男)', title: 'BOJ Gov', hp: 6, atk: 4, spd: 6, rate: 8, color: '#ff9933', q:'Rate Hike', w:'YCC End', e:'Normal Path', r:'Exit', qDesc:'加息单点', wDesc:'YCC终结', eDesc:'正常化路径', rDesc:'退出宽松', qInfo:'Dmg | CD: 2s', wInfo:'Slow | CD: 10s', eInfo:'Dash | CD: 5s', rInfo:'Burst | CD: 40s' },
-      'carney': { cat: 'banker', name: 'Mark Carney (卡尼)', title: 'Ex-BOE Gov', hp: 6, atk: 5, spd: 5, rate: 7, color: '#6600cc', q:'Forward Guidance', w:'Climate Risk', e:'Net Zero', r:'Horizon', qDesc:'前瞻指引', wDesc:'气候风险迷雾', eDesc:'净零排放', rDesc:'地平线冲击', qInfo:'Buff | CD: 8s', wInfo:'Blind | CD: 12s', eInfo:'Dash | CD: 6s', rInfo:'Wave | CD: 45s' },
-      'bailey': { cat: 'banker', name: 'Andrew Bailey (贝利)', title: 'BOE Gov', hp: 6, atk: 5, spd: 4, rate: 7, color: '#9933ff', q:'Gilt Market', w:'Intervention', e:'Pivot', r:'Stability', qDesc:'国债冲击', wDesc:'干预护盾', eDesc:'政策转向', rDesc:'金融稳定', qInfo:'Dmg | CD: 4s', wInfo:'Shield | CD: 15s', eInfo:'Dash | CD: 5s', rInfo:'Heal | CD: 50s' },
-      'yigang': { cat: 'banker', name: 'Yi Gang (易纲)', title: 'Ex-PBOC Gov', hp: 7, atk: 5, spd: 5, rate: 7, color: '#cc0000', q:'Prudent Policy', w:'FX Reserve', e:'Reform', r:'Structural', qDesc:'稳健政策', wDesc:'外汇储备盾', eDesc:'改革步伐', rDesc:'结构性工具', qInfo:'Dmg | CD: 3s', wInfo:'Block | CD: 10s', eInfo:'Move | CD: 5s', rInfo:'Buff | CD: 40s' },
-      'pan': { cat: 'banker', name: 'Pan Gongsheng (潘功胜)', title: 'PBOC Gov', hp: 8, atk: 5, spd: 5, rate: 8, color: '#ff3333', q:'RRR Cut', w:'Swap Line', e:'Cross-Border', r:'Flood', qDesc:'降准冲击波', wDesc:'互换通护盾', eDesc:'跨境穿梭', rDesc:'流动性洪流', qInfo:'AoE | CD: 5s', wInfo:'Reflect | CD: 12s', eInfo:'Teleport | CD: 6s', rInfo:'High Dmg | CD: 35s' },
-
+      'powell': { cat: 'banker', name: 'Jerome Powell', title: 'Fed Chair', hp: 7, atk: 4, spd: 5, rate: 8, color: '#00f3ff', q:'Hawk Shot', w:'Rate Shield', e:'Pivot Dash', r:'Infinite QE', qDesc:'鹰派三连射', wDesc:'加息护盾', eDesc:'政策转向', rDesc:'无限印钞', qInfo:'Dmg: Med | CD: 3s', wInfo:'Shield | CD: 8s', eInfo:'Dash | CD: 4s', rInfo:'Full Screen | CD: 30s' },
+      'yellen': { cat: 'banker', name: 'Janet Yellen', title: 'Treasury Sec', hp: 6, atk: 5, spd: 5, rate: 7, color: '#0099ff', q:'Soft Landing', w:'Debt Ceiling', e:'Treasury Run', r:'Bailout', qDesc:'软着陆弹幕', wDesc:'债务上限防御塔', eDesc:'国债疾跑', rDesc:'全员回血', qInfo:'Slow | CD: 4s', wInfo:'Block | CD: 10s', eInfo:'Speed | CD: 5s', rInfo:'Heal | CD: 40s' },
+      'bernanke': { cat: 'banker', name: 'Ben Bernanke', title: 'Ex-Fed Chair', hp: 6, atk: 3, spd: 4, rate: 9, color: '#00cc99', q:'Helicopter', w:'Stress Test', e:'QE Dash', r:'QE1', qDesc:'直升机撒钱散射', wDesc:'压力测试护盾', eDesc:'量化冲刺', rDesc:'量化宽松轰炸', qInfo:'AoE | CD: 5s', wInfo:'Def | CD: 12s', eInfo:'Dash | CD: 6s', rInfo:'Dmg | CD: 35s' },
+      'pan': { cat: 'banker', name: 'Pan Gongsheng', title: 'PBOC Gov', hp: 8, atk: 5, spd: 5, rate: 8, color: '#ff3333', q:'RRR Cut', w:'Swap Line', e:'Cross-Border', r:'Flood', qDesc:'降准冲击波', wDesc:'互换通护盾', eDesc:'跨境穿梭', rDesc:'流动性洪流', qInfo:'AoE | CD: 5s', wInfo:'Reflect | CD: 12s', eInfo:'Teleport | CD: 6s', rInfo:'High Dmg | CD: 35s' },
+      'greenspan': { cat: 'banker', name: 'Alan Greenspan', title: 'Maestro', hp: 5, atk: 6, spd: 3, rate: 6, color: '#aaaaaa', q:'Fed Put', w:'Exuberance', e:'Bubble Ride', r:'Moderation', qDesc:'看跌期权', wDesc:'非理性繁荣', eDesc:'泡沫漂移', rDesc:'大缓和定身', qInfo:'Shield | CD: 8s', wInfo:'Buff | CD: 15s', eInfo:'Move | CD: 5s', rInfo:'Stun | CD: 40s' },
+      'lagarde': { cat: 'banker', name: 'Christine Lagarde', title: 'ECB President', hp: 6, atk: 5, spd: 5, rate: 6, color: '#3366cc', q:'Euro Bond', w:'Fragment', e:'Unity Dash', r:'Whatever it takes', qDesc:'欧元回旋镖', wDesc:'反分裂立场', eDesc:'统一冲刺', rDesc:'强力全屏震荡', qInfo:'Return | CD: 4s', wInfo:'AoE Push | CD: 10s', eInfo:'Dash | CD: 5s', rInfo:'Massive Dmg | CD: 45s' },
+      
       // 2. Politicians
-      'biden': { cat: 'politician', name: 'Joe Biden (拜登)', title: 'US President', hp: 9, atk: 6, spd: 3, rate: 5, color: '#0000cc', q:'Inflation Act', w:'Alliance', e:'Air Force 1', r:'Chips Ban', qDesc:'通胀法案重击', wDesc:'盟友召唤', eDesc:'空军一号', rDesc:'芯片禁令全屏减速', qInfo:'Heavy Dmg | CD: 4s', wInfo:'Summon | CD: 20s', eInfo:'Fly | CD: 8s', rInfo:'Slow All | CD: 50s' },
-      'trump': { cat: 'politician', name: 'Donald Trump (特朗普)', title: 'Former Pres', hp: 8, atk: 9, spd: 5, rate: 6, color: '#ff0000', q:'Twitter Storm', w:'Tariff Wall', e:'Golf Cart', r:'Trade War', qDesc:'推特声波', wDesc:'关税墙', eDesc:'高尔夫冲刺', rDesc:'贸易战核弹', qInfo:'Cone Dmg | CD: 2s', wInfo:'Wall | CD: 15s', eInfo:'Stun Dash | CD: 8s', rInfo:'Screen Wipe | CD: 60s' },
-      'obama': { cat: 'politician', name: 'Barack Obama (奥巴马)', title: 'Former President', hp: 8, atk: 5, spd: 6, rate: 7, color: '#0066cc', q:'Stimulus', w:'Obamacare', e:'Yes We Can', r:'Hope', qDesc:'刺激计划', wDesc:'医保回血', eDesc:'竞选冲刺', rDesc:'希望之光', qInfo:'Buff | CD: 10s', wInfo:'Heal | CD: 15s', eInfo:'Dash | CD: 5s', rInfo:'Light | CD: 40s' },
-      'xi': { cat: 'politician', name: 'Xi Jinping (习近平)', title: 'President', hp: 10, atk: 7, spd: 4, rate: 6, color: '#ffcc00', q:'Dual Circle', w:'Prosperity', e:'Steady Step', r:'Belt & Road', qDesc:'双循环环绕', wDesc:'共同富裕', eDesc:'稳健步伐', rDesc:'一带一路', qInfo:'Spin Dmg | CD: 6s', wInfo:'Heal | CD: 15s', eInfo:'Armor Dash | CD: 10s', rInfo:'Charge | CD: 45s' },
-      'liqiang': { cat: 'politician', name: 'Li Qiang (李强)', title: 'Premier', hp: 8, atk: 6, spd: 6, rate: 7, color: '#ff9900', q:'Open Up', w:'Service', e:'Efficiency', r:'High Quality', qDesc:'开放门户', wDesc:'服务型防御', eDesc:'效率冲刺', rDesc:'高质量发展', qInfo:'Portal | CD: 8s', wInfo:'Shield | CD: 12s', eInfo:'Speed | CD: 5s', rInfo:'Buff | CD: 40s' },
-      'putin': { cat: 'politician', name: 'Vladimir Putin (普京)', title: 'Russian Pres', hp: 9, atk: 9, spd: 2, rate: 4, color: '#fff', q:'Energy Cut', w:'Iron Curtain', e:'KGB Dash', r:'Special Op', qDesc:'能源切断', wDesc:'铁幕防御', eDesc:'特工突袭', rDesc:'特种行动', qInfo:'Freeze | CD: 5s', wInfo:'Block All | CD: 15s', eInfo:'Stealth | CD: 8s', rInfo:'Explosion | CD: 50s' },
-      'macron': { cat: 'politician', name: 'Emmanuel Macron (马克龙)', title: 'French Pres', hp: 7, atk: 6, spd: 6, rate: 7, color: '#0055a4', q:'Reform', w:'Autonomy', e:'Diplomacy', r:'Euro Army', qDesc:'改革穿透', wDesc:'战略自主盾', eDesc:'外交斡旋', rDesc:'欧洲军团', qInfo:'Pierce | CD: 3s', wInfo:'Absorb | CD: 10s', eInfo:'Invuln | CD: 5s', rInfo:'Summon | CD: 40s' },
-      'scholz': { cat: 'politician', name: 'Olaf Scholz (朔尔茨)', title: 'German Chancellor', hp: 8, atk: 5, spd: 4, rate: 6, color: '#000000', q:'Zeitenwende', w:'Industry', e:'Hesitate', r:'Budget', qDesc:'时代转折', wDesc:'工业护盾', eDesc:'审慎移动', rDesc:'预算大炮', qInfo:'Turn | CD: 10s', wInfo:'Def | CD: 12s', eInfo:'Slow Dash | CD: 6s', rInfo:'Blast | CD: 45s' },
-      'modi': { cat: 'politician', name: 'Narendra Modi (莫迪)', title: 'Indian PM', hp: 8, atk: 6, spd: 5, rate: 7, color: '#ff9933', q:'Made in India', w:'Yoga', e:'Tech Hub', r:'Digital India', qDesc:'印度制造', wDesc:'瑜伽回血', eDesc:'科技瞬移', rDesc:'数字印度激光', qInfo:'Build | CD: 5s', wInfo:'Heal | CD: 15s', eInfo:'Teleport | CD: 8s', rInfo:'Laser | CD: 40s' },
-      'kishida': { cat: 'politician', name: 'Fumio Kishida (岸田文雄)', title: 'Japanese PM', hp: 6, atk: 5, spd: 5, rate: 7, color: '#cc0033', q:'New Capitalism', w:'Defense', e:'Step Up', r:'Invest', qDesc:'新资本主义', wDesc:'防卫增税', eDesc:'阶梯步', rDesc:'投资未来', qInfo:'Coin | CD: 3s', wInfo:'Tax Shield | CD: 10s', eInfo:'Dash | CD: 5s', rInfo:'Gold Rain | CD: 40s' },
-      'trudeau': { cat: 'politician', name: 'Justin Trudeau (特鲁多)', title: 'Canadian PM', hp: 7, atk: 5, spd: 6, rate: 7, color: '#ff0000', q:'Carbon Tax', w:'Multicultural', e:'Ski', r:'Emergency', qDesc:'碳税打击', wDesc:'多元文化', eDesc:'滑雪冲刺', rDesc:'紧急状态', qInfo:'DoT | CD: 4s', wInfo:'Absorb | CD: 12s', eInfo:'Fast | CD: 6s', rInfo:'Lockdown | CD: 50s' },
-      'sunak': { cat: 'politician', name: 'Rishi Sunak (苏纳克)', title: 'UK Ex-PM', hp: 6, atk: 6, spd: 6, rate: 7, color: '#0000ff', q:'Math', w:'Finance', e:'Tech Bro', r:'Windsor', qDesc:'数学计算', wDesc:'金融城护盾', eDesc:'科技步伐', rDesc:'温莎框架', qInfo:'Calc | CD: 3s', wInfo:'Shield | CD: 10s', eInfo:'Dash | CD: 5s', rInfo:'Agreement | CD: 40s' },
+      'trump': { cat: 'politician', name: 'Donald Trump', title: 'Former Pres', hp: 8, atk: 9, spd: 5, rate: 6, color: '#ff0000', q:'Twitter Storm', w:'Tariff Wall', e:'Golf Cart', r:'Trade War', qDesc:'推特声波', wDesc:'关税墙', eDesc:'高尔夫冲刺', rDesc:'贸易战核弹', qInfo:'Cone Dmg | CD: 2s', wInfo:'Wall | CD: 15s', eInfo:'Stun Dash | CD: 8s', rInfo:'Screen Wipe | CD: 60s' },
+      'xi': { cat: 'politician', name: 'Xi Jinping', title: 'President', hp: 10, atk: 7, spd: 4, rate: 6, color: '#ffcc00', q:'Dual Circle', w:'Prosperity', e:'Steady Step', r:'Belt & Road', qDesc:'双循环环绕', wDesc:'共同富裕', eDesc:'稳健步伐', rDesc:'一带一路', qInfo:'Spin Dmg | CD: 6s', wInfo:'Heal | CD: 15s', eInfo:'Armor Dash | CD: 10s', rInfo:'Charge | CD: 45s' },
+      'macron': { cat: 'politician', name: 'Emmanuel Macron', title: 'French Pres.', hp: 7, atk: 6, spd: 6, rate: 7, color: '#0055a4', q:'Reform Strike', w:'Autonomy', e:'Diplomacy', r:'Euro Army', qDesc:'改革穿透弹', wDesc:'战略自主盾', eDesc:'外交斡旋位移', rDesc:'欧洲军团召唤', qInfo:'Pierce | CD: 3s', wInfo:'Absorb | CD: 10s', eInfo:'Invuln | CD: 5s', rInfo:'Summon | CD: 40s' },
+      'biden': { cat: 'politician', name: 'Joe Biden', title: 'US President', hp: 9, atk: 6, spd: 3, rate: 5, color: '#0000cc', q:'Inflation Act', w:'Alliance', e:'Air Force 1', r:'Chips Ban', qDesc:'通胀法案重击', wDesc:'盟友召唤', eDesc:'空军一号', rDesc:'芯片禁令全屏减速', qInfo:'Heavy Dmg | CD: 4s', wInfo:'Summon | CD: 20s', eInfo:'Fly | CD: 8s', rInfo:'Slow All | CD: 50s' },
 
       // 3. Investors
-      'buffett': { cat: 'investor', name: 'Warren Buffett (巴菲特)', title: 'Oracle', hp: 6, atk: 10, spd: 2, rate: 4, color: '#339933', q:'Value Shot', w:'Moat', e:'Compound', r:'Snowball', qDesc:'价值狙击', wDesc:'护城河', eDesc:'复利位移', rDesc:'滚雪球', qInfo:'Crit | CD: 5s', wInfo:'Invuln | CD: 20s', eInfo:'Short Dash | CD: 2s', rInfo:'Grow Dmg | CD: 50s' },
-      'munger': { cat: 'investor', name: 'Charlie Munger (芒格)', title: 'Architect', hp: 5, atk: 10, spd: 1, rate: 3, color: '#555555', q:'Wisdom', w:'Patience', e:'Sit', r:'Lollapalooza', qDesc:'智慧箴言', wDesc:'耐心等待', eDesc:'坐看云起', rDesc:'效应叠加', qInfo:'Stun | CD: 8s', wInfo:'Def Up | CD: 10s', eInfo:'Regen | CD: 0s', rInfo:'Combo | CD: 60s' },
-      'dalio': { cat: 'investor', name: 'Ray Dalio (达利欧)', title: 'Bridgewater', hp: 7, atk: 6, spd: 5, rate: 8, color: '#6600cc', q:'All Weather', w:'Deleverage', e:'Cycle Surf', r:'Big Cycle', qDesc:'全天候散射', wDesc:'去杠杆', eDesc:'周期冲浪', rDesc:'大周期重置', qInfo:'Spread | CD: 3s', wInfo:'Push | CD: 8s', eInfo:'Speed | CD: 5s', rInfo:'Reset | CD: 60s' },
-      'marks': { cat: 'investor', name: 'Howard Marks (马克斯)', title: 'Oaktree', hp: 6, atk: 7, spd: 4, rate: 6, color: '#996633', q:'Memo', w:'Risk Control', e:'Pendulum', r:'Distressed', qDesc:'投资备忘录', wDesc:'风险控制', eDesc:'钟摆摆动', rDesc:'困境反转', qInfo:'Buff | CD: 10s', wInfo:'Shield | CD: 12s', eInfo:'Swing | CD: 4s', rInfo:'Revive | CD: 60s' },
-      'tepper': { cat: 'investor', name: 'David Tepper (泰珀)', title: 'Appaloosa', hp: 6, atk: 9, spd: 6, rate: 7, color: '#003366', q:'Bullish', w:'Fed Put', e:'Jump', r:'Buy Everything', qDesc:'牛市冲击', wDesc:'联储看跌', eDesc:'抄底跳跃', rDesc:'买入一切', qInfo:'Charge | CD: 5s', wInfo:'Shield | CD: 15s', eInfo:'Jump | CD: 6s', rInfo:'Magnet | CD: 45s' },
-      'griffin': { cat: 'investor', name: 'Ken Griffin (格里芬)', title: 'Citadel', hp: 8, atk: 8, spd: 8, rate: 9, color: '#000099', q:'HFT', w:'Market Maker', e:'Algo Dash', r:'Dominance', qDesc:'高频交易', wDesc:'做市商', eDesc:'算法冲刺', rDesc:'算法统治', qInfo:'Rapid | CD: 1s', wInfo:'Wall | CD: 8s', eInfo:'Dash | CD: 3s', rInfo:'Auto Aim | CD: 40s' },
-      'ackman': { cat: 'investor', name: 'Bill Ackman (阿克曼)', title: 'Pershing Sq', hp: 6, atk: 8, spd: 7, rate: 7, color: '#999999', q:'Activist', w:'Hedge', e:'Media', r:'Big Short', qDesc:'激进投资', wDesc:'对冲保护', eDesc:'媒体曝光', rDesc:'世纪空头', qInfo:'Crit | CD: 4s', wInfo:'Shield | CD: 10s', eInfo:'Teleport | CD: 8s', rInfo:'Crash | CD: 50s' },
-      'soros': { cat: 'investor', name: 'George Soros (索罗斯)', title: 'Quantum', hp: 5, atk: 9, spd: 6, rate: 6, color: '#333', q:'Short Sell', w:'Reflexivity', e:'Attack Run', r:'Crash', qDesc:'做空暴击', wDesc:'反身性', eDesc:'突袭', rDesc:'制造崩盘', qInfo:'High Dmg | CD: 4s', wInfo:'Dodge | CD: 10s', eInfo:'Dash | CD: 4s', rInfo:'Life Steal | CD: 45s' },
-      'druckenmiller': { cat: 'investor', name: 'Stanley Druckenmiller', title: 'Duquesne', hp: 6, atk: 9, spd: 7, rate: 7, color: '#000000', q:'Macro Bet', w:'Flexibility', e:'Shift', r:'Top Down', qDesc:'宏观押注', wDesc:'灵活配置', eDesc:'仓位转换', rDesc:'自上而下', qInfo:'Snipe | CD: 5s', wInfo:'Dodge | CD: 8s', eInfo:'Swap | CD: 3s', rInfo:'Global | CD: 40s' },
-      'schwarzman': { cat: 'investor', name: 'Steve Schwarzman', title: 'Blackstone', hp: 8, atk: 7, spd: 5, rate: 6, color: '#000000', q:'Private Eq', w:'Real Estate', e:'Network', r:'Capital', qDesc:'私募股权', wDesc:'不动产盾', eDesc:'人脉网络', rDesc:'资本洪流', qInfo:'Lock | CD: 6s', wInfo:'Block | CD: 12s', eInfo:'Dash | CD: 5s', rInfo:'Flood | CD: 45s' },
-      'kravis': { cat: 'investor', name: 'Henry Kravis (克拉维斯)', title: 'KKR', hp: 7, atk: 8, spd: 5, rate: 6, color: '#cc0000', q:'LBO', w:'Management', e:'Takeover', r:'Buyout', qDesc:'杠杆收购', wDesc:'管理优化', eDesc:'接管位移', rDesc:'收购全场', qInfo:'Drain | CD: 5s', wInfo:'Heal | CD: 15s', eInfo:'Dash | CD: 6s', rInfo:'Convert | CD: 50s' },
-      'simons': { cat: 'investor', name: 'Jim Simons (西蒙斯)', title: 'Renaissance', hp: 6, atk: 8, spd: 9, rate: 10, color: '#006600', q:'Algo Beam', w:'Black Box', e:'Data Jump', r:'Medallion', qDesc:'算法光束', wDesc:'黑箱防御', eDesc:'数据跳跃', rDesc:'大奖章收益', qInfo:'Beam | CD: 2s', wInfo:'Shield | CD: 12s', eInfo:'Teleport | CD: 3s', rInfo:'Gold Rain | CD: 40s' },
+      'buffett': { cat: 'investor', name: 'Warren Buffett', title: 'Oracle', hp: 6, atk: 10, spd: 2, rate: 4, color: '#339933', q:'Value Sniper', w:'Moat', e:'Compound', r:'Snowball', qDesc:'价值狙击', wDesc:'护城河', eDesc:'复利短位移', rDesc:'复利滚雪球', qInfo:'Crit | CD: 5s', wInfo:'Invuln | CD: 20s', eInfo:'CD: 1s', rInfo:'Grow Dmg | CD: 50s' },
+      'musk': { cat: 'tech', name: 'Elon Musk', title: 'Technoking', hp: 6, atk: 8, spd: 9, rate: 9, color: '#999999', q:'Doge Meme', w:'Starshield', e:'Hyperloop', r:'Mars Colony', qDesc:'狗狗币攻击', wDesc:'星舰护盾', eDesc:'真空管道瞬移', rDesc:'火星殖民轰炸', qInfo:'Random | CD: 1s', wInfo:'Reflect | CD: 8s', eInfo:'Range: Max | CD: 4s', rInfo:'AoE: Huge | CD: 30s' },
+      'dalio': { cat: 'investor', name: 'Ray Dalio', title: 'Bridgewater', hp: 7, atk: 6, spd: 5, rate: 8, color: '#6600cc', q:'All Weather', w:'Deleverage', e:'Cycle Surf', r:'Big Cycle', qDesc:'全天候散射', wDesc:'去杠杆', eDesc:'周期冲浪', rDesc:'大周期重置', qInfo:'Spread | CD: 3s', wInfo:'Push | CD: 8s', eInfo:'Speed | CD: 5s', rInfo:'Reset | CD: 60s' },
+      'soros': { cat: 'investor', name: 'George Soros', title: 'Quantum', hp: 5, atk: 9, spd: 6, rate: 6, color: '#333', q:'Short Sell', w:'Reflexivity', e:'Attack Run', r:'Crash', qDesc:'做空暴击', wDesc:'反身性', eDesc:'突袭', rDesc:'制造崩盘', qInfo:'High Dmg | CD: 4s', wInfo:'Dodge | CD: 10s', eInfo:'Dash | CD: 4s', rInfo:'Life Steal | CD: 45s' },
 
-      // 4. Tech
-      'musk': { cat: 'tech', name: 'Elon Musk (马斯克)', title: 'Technoking', hp: 6, atk: 8, spd: 9, rate: 9, color: '#999', q:'Doge Rocket', w:'Starshield', e:'Hyperloop', r:'Mars Colony', qDesc:'狗狗币火箭', wDesc:'星链力场', eDesc:'真空管道', rDesc:'火星殖民', qInfo:'Random | CD: 1s', wInfo:'Reflect | CD: 8s', eInfo:'Max Spd | CD: 4s', rInfo:'Bombard | CD: 30s' },
-      'bezos': { cat: 'tech', name: 'Jeff Bezos (贝索斯)', title: 'Amazon', hp: 7, atk: 7, spd: 6, rate: 8, color: '#ff9900', q:'Prime', w:'Cloud', e:'Blue Origin', r:'Logistic', qDesc:'Prime飞弹', wDesc:'云盾', eDesc:'蓝色起源', rDesc:'物流网络', qInfo:'Homing | CD: 3s', wInfo:'Block | CD: 10s', eInfo:'Fly | CD: 6s', rInfo:'Drone Swarm | CD: 40s' },
-      'cook': { cat: 'tech', name: 'Tim Cook (库克)', title: 'Apple', hp: 8, atk: 6, spd: 5, rate: 7, color: '#aaaaaa', q:'Supply Chain', w:'Privacy', e:'One More Thing', r:'Ecosystem', qDesc:'供应链打击', wDesc:'隐私盾', eDesc:'惊喜发布', rDesc:'生态围墙', qInfo:'Link | CD: 5s', wInfo:'Stealth | CD: 12s', eInfo:'Dash | CD: 8s', rInfo:'Trap | CD: 45s' },
-      'zuckerberg': { cat: 'tech', name: 'Mark Zuckerberg (扎克伯格)', title: 'Meta', hp: 6, atk: 7, spd: 7, rate: 8, color: '#0066ff', q:'Metaverse', w:'Connect', e:'VR Step', r:'Virtual', qDesc:'元宇宙波', wDesc:'连接', eDesc:'VR步', rDesc:'虚拟世界', qInfo:'Wave | CD: 3s', wInfo:'Link | CD: 10s', eInfo:'Teleport | CD: 5s', rInfo:'Confuse | CD: 40s' },
-      'nadella': { cat: 'tech', name: 'Satya Nadella (纳德拉)', title: 'Microsoft', hp: 8, atk: 7, spd: 6, rate: 8, color: '#00a1f1', q:'Copilot', w:'Enterprise', e:'Azure', r:'Cloud AI', qDesc:'副驾驶射击', wDesc:'企业级护盾', eDesc:'云端传输', rDesc:'云端AI降临', qInfo:'Assist | CD: 2s', wInfo:'Shield | CD: 12s', eInfo:'Teleport | CD: 6s', rInfo:'Global Dmg | CD: 45s' },
-      'huang': { cat: 'tech', name: 'Jensen Huang (黄仁勋)', title: 'NVIDIA', hp: 5, atk: 10, spd: 8, rate: 10, color: '#76b900', q:'CUDA', w:'Ray Tracing', e:'Tensor', r:'Singularity', qDesc:'CUDA弹幕', wDesc:'光追反射', eDesc:'张量加速', rDesc:'AI奇点', qInfo:'Split | CD: 2s', wInfo:'Mirror | CD: 12s', eInfo:'Dash | CD: 6s', rInfo:'Black Hole | CD: 45s' },
-      'ponyma': { cat: 'tech', name: 'Pony Ma (马化腾)', title: 'Tencent', hp: 7, atk: 7, spd: 6, rate: 9, color: '#33ccff', q:'WeChat', w:'Social', e:'Link', r:'Game Empire', qDesc:'微信连接', wDesc:'社交网络', eDesc:'链接跳转', rDesc:'游戏帝国', qInfo:'Beam | CD: 3s', wInfo:'Web | CD: 10s', eInfo:'Dash | CD: 5s', rInfo:'Summon | CD: 40s' },
-      'jackma': { cat: 'tech', name: 'Jack Ma (马云)', title: 'Alibaba', hp: 6, atk: 8, spd: 7, rate: 8, color: '#ff6600', q:'E-Commerce', w:'Payment', e:'Logistics', r:'Data Cloud', qDesc:'电商洪流', wDesc:'支付盾', eDesc:'物流速递', rDesc:'数据云爆破', qInfo:'Rapid | CD: 2s', wInfo:'Shield | CD: 12s', eInfo:'Speed | CD: 4s', rInfo:'AoE | CD: 40s' },
-      'robinli': { cat: 'tech', name: 'Robin Li (李彦宏)', title: 'Baidu', hp: 6, atk: 6, spd: 6, rate: 7, color: '#0033cc', q:'Search', w:'Auto', e:'Map', r:'Ernie Bot', qDesc:'搜索索引', wDesc:'自动驾驶', eDesc:'地图导航', rDesc:'文心一言', qInfo:'Lock | CD: 4s', wInfo:'Dodge | CD: 10s', eInfo:'Teleport | CD: 6s', rInfo:'Smart Bomb | CD: 45s' },
+      // 4. Tech (More)
+      'huang': { cat: 'tech', name: 'Jensen Huang', title: 'NVIDIA', hp: 5, atk: 10, spd: 8, rate: 10, color: '#76b900', q:'CUDA Core', w:'Ray Tracing', e:'Tensor Flow', r:'Singularity', qDesc:'算力弹幕', wDesc:'光追反射', eDesc:'张量流加速', rDesc:'奇点爆发', qInfo:'Split | CD: 2s', wInfo:'Mirror | CD: 12s', eInfo:'Spd | CD: 6s', rInfo:'Black Hole | CD: 45s' },
+      'zuckerberg': { cat: 'tech', name: 'Mark Zuckerberg', title: 'Meta', hp: 6, atk: 7, spd: 7, rate: 8, color: '#0066ff', q:'Metaverse', w:'Connect', e:'VR Step', r:'Virtual World', qDesc:'元宇宙波', wDesc:'连接', eDesc:'VR步', rDesc:'虚拟世界', qInfo:'Wave | CD: 3s', wInfo:'Link | CD: 10s', eInfo:'Teleport | CD: 5s', rInfo:'Confuse | CD: 40s' },
 
       // 5. Org
-      'georgieva': { cat: 'org', name: 'Kristalina Georgieva (格奥尔基耶娃)', title: 'IMF', hp: 8, atk: 4, spd: 5, rate: 6, color: '#003399', q:'SDR', w:'Austerity', e:'Rescue', r:'Global Fund', qDesc:'SDR支援', wDesc:'紧缩立场', eDesc:'救援位移', rDesc:'全球基金', qInfo:'Support | CD: 4s', wInfo:'Slow | CD: 10s', eInfo:'Heal Self | CD: 15s', rInfo:'Full Heal | CD: 60s' },
-      'banga': { cat: 'org', name: 'Ajay Banga (彭安杰)', title: 'World Bank', hp: 8, atk: 4, spd: 5, rate: 6, color: '#0099cc', q:'Development', w:'Poverty', e:'Project', r:'Infrastructure', qDesc:'发展援助', wDesc:'消除贫困', eDesc:'项目落地', rDesc:'基建狂魔', qInfo:'Build | CD: 5s', wInfo:'Heal | CD: 12s', eInfo:'Dash | CD: 6s', rInfo:'Fortress | CD: 50s' },
-      'okonjo': { cat: 'org', name: 'Ngozi Okonjo-Iweala (伊维拉)', title: 'WTO', hp: 7, atk: 4, spd: 5, rate: 6, color: '#00cc00', q:'Trade Flow', w:'Dispute', e:'Customs', r:'Global Market', qDesc:'贸易流', wDesc:'争端解决', eDesc:'快速通关', rDesc:'全球市场', qInfo:'Flow | CD: 3s', wInfo:'Block | CD: 10s', eInfo:'Pass | CD: 5s', rInfo:'Open | CD: 45s' },
-      'guterres': { cat: 'org', name: 'António Guterres (古特雷斯)', title: 'UN SG', hp: 9, atk: 2, spd: 4, rate: 5, color: '#3399ff', q:'Resolution', w:'Peace', e:'Mission', r:'Humanity', qDesc:'决议', wDesc:'维和部队', eDesc:'外交出访', rDesc:'人类命运', qInfo:'Stun | CD: 8s', wInfo:'Peace | CD: 20s', eInfo:'Move | CD: 10s', rInfo:'Stop War | CD: 60s' },
-      'stoltenberg': { cat: 'org', name: 'Jens Stoltenberg (斯托尔滕贝格)', title: 'NATO SG', hp: 7, atk: 8, spd: 6, rate: 6, color: '#003366', q:'Article 5', w:'Defense', e:'Deploy', r:'Alliance', qDesc:'第五条款', wDesc:'共同防御', eDesc:'快速部署', rDesc:'军事联盟', qInfo:'Call | CD: 10s', wInfo:'Armor | CD: 15s', eInfo:'Drop | CD: 5s', rInfo:'Strike | CD: 50s' }
+      'georgieva': { cat: 'org', name: 'Kristalina Georgieva', title: 'IMF', hp: 8, atk: 4, spd: 5, rate: 6, color: '#003399', q:'SDR', w:'Austerity', e:'Rescue', r:'Global Fund', qDesc:'SDR支援', wDesc:'紧缩立场', eDesc:'救援位移', rDesc:'全球基金回血', qInfo:'Support | CD: 4s', wInfo:'Slow Area | CD: 10s', eInfo:'Heal Self | CD: 15s', rInfo:'Full Heal | CD: 60s' }
     };
 
     // 装备数据库
@@ -412,11 +380,9 @@
       'hft_chip': { type: 'attack', name: 'HFT Chip', cost: 1200, icon: '💾', stats: { rate: 0.6 }, desc: '高频交易芯片，射速翻倍', passive: 'Rapid Fire' },
       'bull_horn': { type: 'attack', name: 'Bull Horn', cost: 2000, icon: '🐂', stats: { dmg: 3 }, desc: '牛市之角，伤害极高', passive: 'Knockback' },
       'invisible_hand': { type: 'attack', name: 'Invisible Hand', cost: 2500, icon: '🖐️', stats: { dmg: 1 }, desc: '【被动】子弹自动追踪敌人', passive: 'homing' },
-      
       'gold_armor': { type: 'defense', name: 'Gold Reserve', cost: 1000, icon: '🥇', stats: { maxHp: 50 }, desc: '增加 50 点生命上限', passive: 'Armor' },
       'fed_put': { type: 'defense', name: 'Fed Put', cost: 1800, icon: '📉', stats: { hpRegen: 0.2 }, desc: '美联储看跌期权，每秒回血', passive: 'hpRegen' },
       'bretton_shield': { type: 'defense', name: 'Bretton Shield', cost: 2200, icon: '🛡️', stats: { maxHp: 30 }, desc: '【被动】每10秒生成一个抵挡伤害的护盾', passive: 'shield' },
-      
       'rocket_boots': { type: 'utility', name: 'Liquidity Boots', cost: 800, icon: '👢', stats: { spd: 2 }, desc: '增加移动速度', passive: 'Speed' },
       'comp_interest': { type: 'utility', name: 'Compound Int.', cost: 1500, icon: '📈', stats: {}, desc: '【被动】每秒获得 5 GDP', passive: 'income' },
       'helicopter': { type: 'utility', name: 'Helicopter', cost: 3000, icon: '🚁', stats: { spd: 3 }, desc: '【被动】移动时留下伤害路径', passive: 'trail' }
@@ -446,11 +412,8 @@
       resize();
       window.addEventListener('resize', resize);
       
-      // 默认进入选将，方便调试
-      goToCharSelect(); 
-      
-      // 开始渲染循环（为了背景）
-      loop();
+      // 动态背景循环
+      bgLoop();
     };
 
     function resize() { 
@@ -458,18 +421,64 @@
       height = canvas.height = window.innerHeight; 
     }
 
-    function loop() {
-      requestAnimationFrame(loop);
-      if (state.screen === 'playing') {
-        update();
-        render();
-        state.frame++;
+    // 背景循环
+    let bgFrame = 0;
+    function bgLoop() {
+      requestAnimationFrame(bgLoop);
+      if (state.screen !== 'playing') {
+        drawCyberBackground();
       } else {
-        render(); // Just render background
+        // In game loop handles render
+        gameLoop(); 
+      }
+      bgFrame++;
+    }
+    
+    // 游戏循环 (被 bgLoop 调用或独立调用)
+    function gameLoop() {
+      update();
+      render();
+      state.frame++;
+    }
+
+    function drawCyberBackground() {
+      // 动态网格背景 (Synthwave)
+      ctx.fillStyle = '#050505';
+      ctx.fillRect(0,0,width,height);
+      
+      const pY = (bgFrame * 2) % 100;
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      
+      // Horizon
+      let horizonY = height * 0.3;
+      
+      // Vertical lines (Perspective)
+      for(let i = -width; i < width*2; i+=100) {
+        ctx.moveTo(i, height);
+        ctx.lineTo(width/2 + (i-width/2)*0.1, horizonY);
+      }
+      // Horizontal lines (Moving)
+      for(let i = 0; i < height; i+=40) {
+        let y = i + pY;
+        if(y > horizonY && y < height) {
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+        }
+      }
+      ctx.stroke();
+      
+      // Distant Stars
+      ctx.fillStyle = '#fff';
+      for(let i=0; i<50; i++) {
+        let x = (Math.sin(i)*width + bgFrame*0.5) % width;
+        let y = (Math.cos(i)*horizonY) % horizonY;
+        ctx.fillRect(x, y, 1, 1);
       }
     }
 
-    /* ====== 选人逻辑 (Consolidated) ====== */
+    /* ====== 选人逻辑 ====== */
     function goToCharSelect() {
       document.getElementById('screen-rules').classList.add('hidden');
       document.getElementById('screen-char').classList.remove('hidden');
@@ -492,12 +501,12 @@
         if (data.cat === cat) {
           const div = document.createElement('div');
           div.className = `char-mini-card ${id === state.selectedChar ? 'selected' : ''}`;
-          div.id = `card-${id}`; // Add ID for easier selection update
+          div.id = `card-${id}`; 
           div.onclick = () => selectChar(id);
           
           div.innerHTML = `
             <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=${data.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9" class="mini-avatar">
-            <div class="mini-name">${data.name}</div>
+            <div class="mini-name">${data.name.split(' ')[0]}</div>
           `;
           container.appendChild(div);
         }
@@ -506,11 +515,9 @@
 
     function selectChar(id) {
       state.selectedChar = id;
-      // Update visual selection
       document.querySelectorAll('.char-mini-card').forEach(c => c.classList.remove('selected'));
       const card = document.getElementById(`card-${id}`);
       if(card) card.classList.add('selected');
-      
       updateDetailPanel(id);
     }
 
@@ -527,7 +534,7 @@
       document.getElementById('bar-spd').style.width = (d.spd * 10) + '%';
       document.getElementById('bar-rate').style.width = (d.rate * 8) + '%';
       
-      // Safely update skills with fallback
+      // Update skills text
       const updateSkill = (key) => {
         const nameEl = document.getElementById(`skill-${key}-name`);
         const descEl = document.getElementById(`skill-${key}-desc`);
@@ -535,10 +542,7 @@
         if(descEl) descEl.innerText = d[key+'Desc'] || 'Special Ability';
       };
       
-      updateSkill('q');
-      updateSkill('w');
-      updateSkill('e');
-      updateSkill('r');
+      updateSkill('q'); updateSkill('w'); updateSkill('e'); updateSkill('r');
     }
 
     function startGame() {
@@ -546,16 +550,10 @@
       
       state.player = {
         x: width/2, y: height/2,
-        // Store base stats separately
-        baseHp: d.hp * 20, 
+        baseHp: d.hp * 20, hp: d.hp * 20, maxHp: d.hp * 20,
         baseSpd: d.spd * 0.8 + 2,
         baseDmg: d.atk * 0.8 + 1,
         baseRate: Math.max(4, 40 - (d.rate * 3)),
-        
-        // Current stats (will be modified by update())
-        hp: d.hp * 20, 
-        maxHp: d.hp * 20,
-        
         color: d.color, r: 20, moving: false, targetX: 0, targetY: 0,
         cd: {q:0, w:0, e:0, r:0},
         img: new Image()
@@ -568,7 +566,26 @@
       
       document.getElementById('screen-char').classList.add('hidden');
       document.getElementById('ui-layer').classList.remove('hidden');
+      
+      // Init Shop
+      const shopContainer = document.getElementById('shop-items-container');
+      shopContainer.innerHTML = '';
+      for(const [id, item] of Object.entries(ITEMS)) {
+        shopContainer.innerHTML += `
+          <div class="shop-item-card" onclick="buyItem('${id}')">
+            <div style="font-size:2rem">${item.icon}</div>
+            <div class="shop-item-name">${item.name}</div>
+            <div class="shop-item-cost">$${item.cost}</div>
+            <div class="shop-item-desc">${item.desc}</div>
+            <span class="shop-item-type">${item.type}</span>
+          </div>
+        `;
+      }
+
       state.screen = 'playing';
+      
+      // Button focus clear
+      document.activeElement.blur();
     }
 
     /* ====== 游戏逻辑 ====== */
@@ -576,10 +593,9 @@
       const p = state.player;
       if (!p || p.hp <= 0) return;
 
-      // 1. Recalculate Stats from Inventory
+      // Recalculate Stats
       let spdMod = 0, dmgMod = 0, hpMod = 0, rateMod = 1;
       let passives = [];
-      
       state.inventory.forEach(itemId => {
         const item = ITEMS[itemId];
         if(item.stats.spd) spdMod += item.stats.spd;
@@ -588,17 +604,14 @@
         if(item.stats.rate) rateMod *= item.stats.rate;
         if(item.passive) passives.push(item.passive);
       });
-
-      // Apply
-      const currentMaxHp = p.baseHp + hpMod;
+      
+      p.maxHp = p.baseHp + hpMod; 
       const currentSpd = p.baseSpd + spdMod;
       const currentDmg = p.baseDmg + dmgMod;
       const currentRate = p.baseRate * rateMod;
-      
-      p.maxHp = currentMaxHp; // Update max
 
-      // Passive effects
-      if(state.frame % 60 === 0 && passives.includes('income')) { state.score += 5; spawnFloatingText(p.x, p.y-20, "+5", "#ffee00"); }
+      // Passive Ticks
+      if(state.frame % 60 === 0 && passives.includes('income')) { state.score += 5; spawnFloatingText(p.x, p.y-20, "+5 GDP", "#ffee00"); }
       if(state.frame % 60 === 0 && passives.includes('hpRegen')) p.hp = Math.min(p.hp+0.5, p.maxHp);
       if(state.frame % 600 === 0 && passives.includes('shield')) { p.shield = true; spawnFloatingText(p.x, p.y, "SHIELD", "#00ff9d"); }
 
@@ -630,8 +643,13 @@
       for(let i=state.bullets.length-1; i>=0; i--) {
         let b = state.bullets[i];
         if(b.homing && state.enemies.length>0) {
-           let target = state.enemies[0];
-           let angle = Math.atan2(target.y-b.y, target.x-b.x);
+           let nearest = state.enemies[0];
+           let minD = 9999;
+           state.enemies.forEach(e => {
+             let d = Math.hypot(e.x - b.x, e.y - b.y);
+             if(d < minD) { minD = d; nearest = e; }
+           });
+           let angle = Math.atan2(nearest.y - b.y, nearest.x - b.x);
            b.vx = b.vx*0.9 + Math.cos(angle)*2; b.vy = b.vy*0.9 + Math.sin(angle)*2;
         }
         b.x += b.vx; b.y += b.vy; b.life--;
@@ -647,7 +665,7 @@
         let angle = Math.atan2(p.y - e.y, p.x - e.x);
         e.x += Math.cos(angle)*e.speed; e.y += Math.sin(angle)*e.speed;
 
-        // Player Hit
+        // Hit Player
         if(Math.hypot(p.x-e.x, p.y-e.y) < p.r+e.r) {
           if(p.shield) { 
              p.shield = false; spawnFloatingText(p.x, p.y, "BLOCKED", "#fff"); 
@@ -663,11 +681,11 @@
         for(let j=state.bullets.length-1; j>=0; j--) {
           let b = state.bullets[j];
           if(Math.hypot(b.x-e.x, b.y-e.y) < e.r+5) {
-            e.hp -= b.dmg; state.bullets.splice(j,1);
-            if(e.hp<=0) {
+             e.hp -= b.dmg; state.bullets.splice(j,1);
+             if(e.hp<=0) {
                state.score += e.val; spawnFloatingText(e.x, e.y, `+$${e.val}`, "#00ff9d");
                state.enemies.splice(i,1); createParticles(e.x, e.y, e.color, 8); break;
-            }
+             }
           }
         }
       }
@@ -675,34 +693,38 @@
     }
 
     function render() {
-      ctx.fillStyle = 'rgba(5,5,10,0.3)'; ctx.fillRect(0,0,width,height);
-      const p = state.player;
-      
-      // If shop or menu, just render BG
-      if(state.screen !== 'playing' && state.screen !== 'shop' && state.screen !== 'over') return;
-      
-      if(p) {
-        if(p.moving) {
-          ctx.strokeStyle='#00ff00'; ctx.beginPath();
-          ctx.moveTo(p.targetX-5, p.targetY-5); ctx.lineTo(p.targetX+5, p.targetY+5);
-          ctx.moveTo(p.targetX+5, p.targetY-5); ctx.lineTo(p.targetX-5, p.targetY+5);
-          ctx.stroke();
-        }
+      // Background handled by bgLoop when not playing, but in playing we draw on top
+      // Draw Cyber Grid Background
+      ctx.fillStyle = '#050505'; ctx.fillRect(0,0,width,height);
+      const pY = (state.frame * 2) % 100;
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.1)'; ctx.lineWidth = 1; ctx.beginPath();
+      for(let i=0; i<width; i+=100) { ctx.moveTo(i,0); ctx.lineTo(i,height); } // Vertical
+      for(let i=0; i<height; i+=40) { let y = (i + pY) % height; ctx.moveTo(0,y); ctx.lineTo(width,y); } // Horizontal moving
+      ctx.stroke();
 
-        ctx.save(); ctx.translate(p.x, p.y);
-        if(p.shield) { ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,25,0,Math.PI*2); ctx.stroke(); }
-        if(p.img && p.img.complete) {
-          ctx.save(); ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.clip();
-          ctx.drawImage(p.img, -20, -20, 40, 40); ctx.restore();
-          ctx.strokeStyle=p.color; ctx.lineWidth=2; ctx.stroke();
-        } else {
-          ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
-        }
-        // Health Bar
-        ctx.fillStyle="red"; ctx.fillRect(-20, 25, 40, 4);
-        ctx.fillStyle="#00ff00"; ctx.fillRect(-20, 25, 40*(Math.max(0,p.hp)/p.maxHp), 4);
-        ctx.restore();
+      const p = state.player;
+      if(!p) return;
+
+      if(p.moving) {
+        ctx.strokeStyle='#00ff00'; ctx.beginPath(); 
+        ctx.moveTo(p.targetX-5, p.targetY-5); ctx.lineTo(p.targetX+5, p.targetY+5);
+        ctx.moveTo(p.targetX+5, p.targetY-5); ctx.lineTo(p.targetX-5, p.targetY+5);
+        ctx.stroke();
       }
+
+      ctx.save(); ctx.translate(p.x, p.y);
+      if(p.shield) { ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,25,0,Math.PI*2); ctx.stroke(); }
+      if(p.img && p.img.complete) {
+        ctx.save(); ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.clip();
+        ctx.drawImage(p.img, -20, -20, 40, 40); ctx.restore();
+        ctx.strokeStyle=p.color; ctx.lineWidth=2; ctx.stroke();
+      } else {
+        ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+      }
+      // HP Bar
+      ctx.fillStyle="red"; ctx.fillRect(-20, 25, 40, 4);
+      ctx.fillStyle="#00ff00"; ctx.fillRect(-20, 25, 40*(Math.max(0,p.hp)/p.maxHp), 4);
+      ctx.restore();
 
       state.enemies.forEach(e=>{ ctx.fillStyle=e.color; ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill(); });
       state.bullets.forEach(b=>{ ctx.fillStyle=b.color; ctx.beginPath(); ctx.arc(b.x,b.y,4,0,Math.PI*2); ctx.fill(); });
@@ -713,30 +735,110 @@
     }
 
     /* ====== Helpers ====== */
+    // Input handling
+    window.addEventListener('keydown', e => {
+      if(e.key.toLowerCase() === 'a') input.mouseDown = true;
+      if(state.screen === 'playing') {
+         if('qwer'.includes(e.key.toLowerCase())) useSkill(e.key.toLowerCase());
+         if(e.key.toLowerCase() === 'b') toggleShop();
+         if(e.key === 'Escape') togglePause();
+      } else if(state.screen === 'shop' && e.key.toLowerCase() === 'b') toggleShop();
+    });
+    window.addEventListener('keyup', e => { if(e.key.toLowerCase() === 'a') input.mouseDown = false; });
+    window.addEventListener('mousemove', e => { input.mouse.x = e.clientX; input.mouse.y = e.clientY; });
+    window.addEventListener('mousedown', e => { if(e.button===0) input.mouseDown = true; if(e.button===2 && state.player) {
+      state.player.moving = true; state.player.targetX = e.clientX; state.player.targetY = e.clientY;
+    }});
+    window.addEventListener('mouseup', () => input.mouseDown = false);
+    window.addEventListener('contextmenu', e => e.preventDefault());
+
+    function setDifficulty(val, el) {
+      state.difficulty = val;
+      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+    function togglePause() {
+      if(state.screen === 'playing') { state.screen = 'paused'; document.getElementById('pause-menu').classList.remove('hidden'); }
+      else if(state.screen === 'paused') { state.screen = 'playing'; document.getElementById('pause-menu').classList.add('hidden'); }
+    }
+    function toggleShop() {
+      if(state.screen === 'playing') { state.screen = 'shop'; document.getElementById('shop-menu').classList.remove('hidden'); document.getElementById('shop-current-gdp').innerText=state.score; }
+      else if(state.screen === 'shop') { state.screen = 'playing'; document.getElementById('shop-menu').classList.add('hidden'); }
+    }
+    function gameOver() {
+      state.screen = 'over';
+      document.getElementById('game-over').classList.remove('hidden');
+      document.getElementById('final-score').innerText = state.score;
+    }
+    
+    /* ====== Skill & Inventory ====== */
     function spawnEnemy() {
-      let angle = Math.random()*Math.PI*2;
-      let r = Math.max(width, height)/2 + 50;
+      let angle = Math.random() * Math.PI * 2;
+      let r = Math.max(width, height) / 2 + 50;
       state.enemies.push({
-        x: width/2+Math.cos(angle)*r, y: height/2+Math.sin(angle)*r,
-        hp: 10*state.difficulty, speed: 2, r: 15, color: '#ff0055', val: 50
+        x: width/2 + Math.cos(angle)*r, y: height/2 + Math.sin(angle)*r,
+        hp: 10 * (state.difficulty || 1), speed: 2, r: 15, color: '#ff0055', val: 50
       });
     }
     function shootBullet(p, dmg, homing) {
-      state.bullets.push({ x:p.x, y:p.y, vx:Math.cos(p.angle)*15, vy:Math.sin(p.angle)*15, life:60, color:p.color, dmg, homing });
+      state.bullets.push({
+        x: p.x, y: p.y,
+        vx: Math.cos(p.angle) * 15, vy: Math.sin(p.angle) * 15,
+        life: 60, color: p.color, dmg: dmg, homing: homing
+      });
     }
     function useSkill(key) {
       const p = state.player;
       if(p.cd[key]>0) return;
+      p.cd[key] = key==='q'?120 : key==='w'?300 : key==='e'?180 : 900;
       
-      // Basic Skill Logic for all
-      // In a full version, these would switch based on selectedCharId
-      if(key==='e') { p.x+=Math.cos(p.angle)*200; p.y+=Math.sin(p.angle)*200; p.targetX=p.x; p.cd[key]=180; }
-      if(key==='q') { for(let i=-0.5;i<=0.5;i+=0.25) shootBullet(p, 10, false); p.cd[key]=120; }
-      if(key==='w') { state.enemies.forEach(e=>{if(Math.hypot(p.x-e.x, p.y-e.y)<200) e.x-=100;}); p.cd[key]=300; }
-      if(key==='r') { state.enemies=[]; spawnFloatingText(width/2, height/2, "ULTIMATE!", "#ffee00"); p.cd[key]=900; }
+      if(key === 'e') { // Dash
+        p.x += Math.cos(p.angle)*200; p.y += Math.sin(p.angle)*200; p.targetX = p.x;
+        createParticles(p.x, p.y, '#fff', 10);
+      } else if(key === 'q') { // Burst
+        for(let i=-0.5; i<=0.5; i+=0.2) shootBullet({...p, angle: p.angle+i}, p.baseDmg*1.5, false);
+      } else if(key === 'w') { // Shield/AoE
+        state.enemies.forEach(e => { if(Math.hypot(p.x-e.x, p.y-e.y)<200) { e.x -= Math.cos(Math.atan2(p.y-e.y, p.x-e.x))*150; } });
+        createParticles(p.x, p.y, '#00f3ff', 20);
+      } else if(key === 'r') { // Ult
+        state.enemies = [];
+        spawnFloatingText(width/2, height/2, "ULTIMATE!", "#ffee00");
+      }
+    }
+    function buyItem(id) {
+      const item = ITEMS[id];
+      if(state.score >= item.cost) {
+        if(state.inventory.length < 6) {
+          state.score -= item.cost;
+          state.inventory.push(id);
+          document.getElementById('shop-current-gdp').innerText = '$' + state.score;
+          spawnFloatingText(width/2, height/2, "PURCHASED!", "#00ff9d");
+        } else { alert("Inventory Full!"); }
+      } else { alert("Not enough GDP!"); }
+    }
+    
+    function updateHUD() {
+      const p = state.player;
+      if(!p) return;
+      document.getElementById('score-val').innerText = Math.floor(state.score);
+      document.getElementById('health-val').innerText = Math.floor(p.hp);
+      ['q','w','e','r'].forEach(k => {
+         let cd = p.cd[k];
+         let el = document.querySelector(`#skill-${k} .cooldown-overlay`);
+         if(cd > 0) { el.style.height = "100%"; el.querySelector('span').innerText = Math.ceil(cd/60); }
+         else { el.style.height = "0%"; el.querySelector('span').innerText = ""; }
+      });
+      const slots = document.querySelectorAll('.item-slot');
+      state.inventory.forEach((id, i) => {
+        if(slots[i].classList.contains('empty')) {
+           const item = ITEMS[id];
+           slots[i].innerHTML = item.icon;
+           slots[i].classList.remove('empty');
+        }
+      });
     }
 
-    /* ====== Tooltip & Interaction ====== */
+    /* ====== Tooltip Logic (Unified) ====== */
     function showSelectTooltip(el, key) {
       const d = CHARACTERS[state.selectedChar];
       showTooltipBase(el, d[key]||key, d[key+'Desc'], d[key+'Info']);
@@ -756,88 +858,6 @@
     }
     function hideTooltip() { document.getElementById('global-tooltip').style.display = 'none'; }
 
-    function updateHUD() {
-      const p = state.player;
-      if(!p) return;
-      document.getElementById('score-val').innerText = Math.floor(state.score);
-      document.getElementById('health-val').innerText = Math.max(0, Math.floor(p.hp));
-      ['q','w','e','r'].forEach(k => {
-         let cd = p.cd[k];
-         let el = document.querySelector(`#skill-${k} .cooldown-overlay`);
-         if(cd > 0) { el.style.height="100%"; el.querySelector('span').innerText = Math.ceil(cd/60); }
-         else { el.style.height="0%"; el.querySelector('span').innerText=""; }
-      });
-      
-      // Inventory
-      const slots = document.querySelectorAll('.item-slot');
-      state.inventory.forEach((id, i) => {
-        if(slots[i].classList.contains('empty')) {
-           const item = ITEMS[id];
-           slots[i].innerHTML = item.icon;
-           slots[i].classList.remove('empty');
-           // Add tooltip
-           slots[i].onmouseenter = (e) => showTooltipBase(e.target, item.name, item.desc, '');
-           slots[i].onmouseleave = hideTooltip;
-        }
-      });
-    }
-
-    /* ====== Controls ====== */
-    window.onkeydown = e => {
-      if(e.key.toLowerCase() === 'a') input.mouseDown = true;
-      if(state.screen === 'playing') {
-         if('qwer'.includes(e.key.toLowerCase())) useSkill(e.key.toLowerCase());
-         if(e.key.toLowerCase()==='b') toggleShop();
-         if(e.key==='Escape') togglePause();
-      } else if(state.screen==='shop' && e.key.toLowerCase()==='b') toggleShop();
-    };
-    window.onkeyup = e => { if(e.key.toLowerCase()==='a') input.mouseDown=false; };
-    window.onmousemove = e => { input.mouse.x=e.clientX; input.mouse.y=e.clientY; };
-    window.onmousedown = e => { if(e.button===0) input.mouseDown=true; if(e.button===2 && state.player) {
-      state.player.moving=true; state.player.targetX=e.clientX; state.player.targetY=e.clientY;
-    }};
-    window.onmouseup = () => input.mouseDown=false;
-    window.oncontextmenu = e => e.preventDefault();
-
-    function setDifficulty(v, el) { 
-      state.difficulty=v; 
-      document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active')); 
-      el.classList.add('active'); 
-    }
-    function togglePause() {
-      if(state.screen==='playing') { state.screen='paused'; document.getElementById('pause-menu').classList.remove('hidden'); }
-      else if(state.screen==='paused') { state.screen='playing'; document.getElementById('pause-menu').classList.add('hidden'); loop(); }
-    }
-    function toggleShop() {
-      if(state.screen==='playing') { state.screen='shop'; document.getElementById('shop-menu').classList.remove('hidden'); document.getElementById('shop-current-gdp').innerText=state.score; filterShop('attack'); }
-      else if(state.screen==='shop') { state.screen='playing'; document.getElementById('shop-menu').classList.add('hidden'); loop(); }
-    }
-    function filterShop(type) {
-      document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
-      const c = document.getElementById('shop-items-container'); c.innerHTML='';
-      for(const [id, it] of Object.entries(ITEMS)) {
-        if(it.type===type) {
-          c.innerHTML += `<div class="shop-item-card" onclick="buyItem('${id}')">
-            <div class="shop-item-icon">${it.icon}</div><div class="shop-item-name">${it.name}</div>
-            <div class="shop-item-cost">$${it.cost}</div><div class="shop-item-desc">${it.desc}</div>
-            <div class="shop-buy-btn btn">BUY</div></div>`;
-        }
-      }
-    }
-    function buyItem(id) {
-      const it = ITEMS[id];
-      if(state.score >= it.cost && state.inventory.length < 6) {
-        state.score -= it.cost; state.inventory.push(id);
-        document.getElementById('shop-current-gdp').innerText = '$'+state.score;
-        spawnFloatingText(width/2, height/2, "BOUGHT!", "#00ff9d");
-      } else alert("Funds!");
-    }
-    function gameOver() {
-      state.screen='over';
-      document.getElementById('game-over').classList.remove('hidden');
-      document.getElementById('final-score').innerText=state.score;
-    }
     function createParticles(x,y,c,n) { for(let i=0;i<n;i++) state.particles.push({x,y,vx:(Math.random()-.5)*10,vy:(Math.random()-.5)*10,life:30,color:c,size:Math.random()*3}); }
     function spawnFloatingText(x,y,t,c='#fff') { state.texts.push({x,y,text:t,color:c,life:60}); }
     function updateParticles() { 
@@ -845,6 +865,8 @@
       for(let i=state.texts.length-1;i>=0;i--){ let t=state.texts[i]; t.y--; t.life--; if(t.life<=0) state.texts.splice(i,1); }
     }
 
+    // Init
+    goToCharSelect();
   </script>
 </body>
 </html>
