@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Macro Defender 4.1 | Earth Macro</title>
+  <title>Macro Defender 4.5 | Earth Macro</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     /* ====== 基础样式 ====== */
@@ -28,7 +28,7 @@
     /* 顶部 HUD */
     .hud-top { display: flex; justify-content: space-between; align-items: flex-start; }
     .hud-left { display: flex; gap: 15px; }
-    .hud-right { display: flex; gap: 10px; pointer-events: auto; } /* 允许点击按钮 */
+    .hud-right { display: flex; gap: 10px; pointer-events: auto; }
 
     .stat-box { text-shadow: 0 0 10px currentColor; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 4px; border: 1px solid #333; }
     .label { font-size: 0.7rem; color: #888; display: block; letter-spacing: 1px; margin-bottom: 2px; }
@@ -44,10 +44,10 @@
     }
     .hud-btn:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,0.1); }
 
-    /* 底部 HUD (技能 + 装备) */
-    .hud-bottom { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; pointer-events: auto; }
+    /* 底部 HUD */
+    .hud-bottom { display: flex; justify-content: center; align-items: flex-end; width: 100%; pointer-events: auto; position: relative; }
     
-    .skill-panel { display: flex; gap: 10px; align-items: center; }
+    .skill-panel { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
     .skill-slot {
       width: 60px; height: 60px; border: 2px solid #444; background: rgba(0,0,0,0.7);
       position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -64,30 +64,32 @@
     .cooldown-text { color: white; font-weight: bold; font-size: 1rem; font-family: 'Share Tech Mono'; }
 
     /* 装备栏 */
-    .inventory-panel { display: flex; gap: 5px; background: rgba(0,0,0,0.6); padding: 5px; border: 1px solid #333; border-radius: 6px; }
+    .inventory-panel { display: flex; gap: 5px; background: rgba(0,0,0,0.6); padding: 5px; border: 1px solid #333; border-radius: 6px; margin-left: 20px; margin-bottom: 10px; }
     .item-slot {
-      width: 40px; height: 40px; border: 1px solid #444; background: rgba(0,0,0,0.8);
-      display: flex; justify-content: center; align-items: center; font-size: 1.2rem; position: relative;
-      cursor: help;
+      width: 45px; height: 45px; border: 1px solid #444; background: rgba(0,0,0,0.8);
+      display: flex; justify-content: center; align-items: center; font-size: 1.5rem; position: relative;
+      cursor: help; transition: border-color 0.2s;
     }
-    .item-slot img { width: 100%; height: 100%; object-fit: cover; }
+    .item-slot:hover { border-color: #fff; }
     .item-slot.empty { color: #222; font-size: 0.8rem; }
 
-    .shop-hint { margin-left: 15px; color: #ffee00; border: 1px solid #ffee00; padding: 8px; font-size: 0.8rem; animation: pulse 2s infinite; cursor: pointer; }
+    .shop-hint { position: absolute; right: 20px; bottom: 20px; color: #ffee00; border: 1px solid #ffee00; padding: 8px; font-size: 0.8rem; animation: pulse 2s infinite; cursor: pointer; }
     @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-    /* Tooltip */
-    .tooltip {
-      position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
-      background: rgba(12, 18, 24, 0.98); border: 1px solid var(--neon-blue);
-      padding: 15px; border-radius: 8px; width: 320px; pointer-events: none;
-      display: none; text-align: left; box-shadow: 0 0 30px rgba(0,0,0,0.8); z-index: 100;
+    /* Tooltip - 修复了层级问题 */
+    #global-tooltip {
+      position: absolute; top: 0; left: 0;
+      background: rgba(5, 10, 15, 0.98); border: 1px solid var(--neon-blue);
+      padding: 15px; border-radius: 8px; width: 280px; pointer-events: none;
+      display: none; text-align: left; box-shadow: 0 0 30px rgba(0,0,0,1); z-index: 9999; /* 确保最高层级 */
     }
-    .tooltip h4 { margin: 0 0 8px 0; color: #00f3ff; font-size: 1rem; font-family: 'Share Tech Mono'; border-bottom: 1px solid #333; padding-bottom: 5px; }
-    .tooltip p { margin: 0 0 8px 0; color: #ccc; font-size: 0.8rem; line-height: 1.4; }
-    .tooltip .stats { color: #888; font-size: 0.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-    .tooltip .stats span { color: #fff; }
-    .tooltip .passive { color: #ffee00; font-size: 0.75rem; margin-top: 8px; font-style: italic; }
+    #tt-header { border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    #tt-title { color: #00f3ff; font-size: 1rem; font-family: 'Share Tech Mono'; margin: 0; font-weight: bold; }
+    #tt-cost { color: #ffee00; font-size: 0.8rem; font-family: 'Share Tech Mono'; }
+    #tt-desc { color: #ccc; font-size: 0.8rem; line-height: 1.5; margin-bottom: 8px; }
+    #tt-info { color: #888; font-size: 0.75rem; display: grid; grid-template-columns: 1fr; gap: 3px; }
+    #tt-info span { color: #aaa; }
+    #tt-info b { color: #fff; }
 
     /* ====== 模态窗口 ====== */
     .modal {
@@ -95,12 +97,13 @@
       background: rgba(5,5,8,0.98); display: flex; flex-direction: column;
       z-index: 100; pointer-events: auto; overflow-y: auto;
     }
-    .hidden { display: none !important; }
+    .modal.hidden { display: none !important; }
+    
     .modal-content { width: 100%; max-width: 1200px; margin: 0 auto; padding: 30px; display: flex; flex-direction: column; height: 100%; align-items: center; }
 
     h1 { font-family: 'Share Tech Mono'; font-size: 2.5rem; color: #00f3ff; text-shadow: 0 0 20px #00f3ff; margin: 10px 0; }
-    
-    /* 通用按钮 */
+    p.subtitle { color: #888; margin-bottom: 20px; font-size: 0.9rem; text-align: center; }
+
     .btn {
       background: transparent; border: 2px solid #00ff9d; color: #00ff9d;
       padding: 10px 25px; font-size: 1rem; font-family: 'Share Tech Mono';
@@ -111,20 +114,7 @@
     .btn-red { border-color: #ff0055; color: #ff0055; }
     .btn-red:hover { background: #ff0055; color: white; }
 
-    /* 规则页 */
-    .rules-box {
-      background: rgba(255,255,255,0.05); padding: 30px; border-radius: 8px; border: 1px solid #333;
-      max-width: 800px; width: 100%; margin-bottom: 30px; text-align: left; line-height: 1.8;
-    }
-    .rules-box h3 { color: #ffee00; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
-    .key-tag { background: #333; border: 1px solid #666; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; color: #fff; font-family: monospace; margin: 0 3px; }
-    
-    .diff-select { display: flex; gap: 10px; margin-bottom: 30px; justify-content: center; width: 100%; }
-    .diff-btn { padding: 10px 30px; border: 1px solid #555; color: #555; cursor: pointer; font-family: 'JetBrains Mono'; border-radius: 4px; }
-    .diff-btn:hover { border-color: #fff; color: #fff; }
-    .diff-btn.active { border-color: #00f3ff; color: #00f3ff; box-shadow: 0 0 10px #00f3ff; background: rgba(0, 243, 255, 0.1); font-weight: bold; }
-
-    /* 选人页 */
+    /* 选人界面 */
     .category-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; width: 100%; }
     .tab-btn {
       padding: 8px 20px; background: rgba(255,255,255,0.05); border: 1px solid #444; color: #888;
@@ -132,56 +122,73 @@
       border-radius: 4px;
     }
     .tab-btn:hover { border-color: #fff; color: #fff; }
-    .tab-btn.active { background: rgba(0, 243, 255, 0.15); border-color: #00f3ff; color: #00f3ff; font-weight: bold; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); }
+    .tab-btn.active { background: rgba(0, 243, 255, 0.15); border-color: #00f3ff; color: #00f3ff; font-weight: bold; }
 
     .char-selection-area { display: flex; gap: 20px; flex: 1; width: 100%; overflow: hidden; }
     .char-list { 
       flex: 2; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
-      gap: 10px; overflow-y: auto; align-content: start; padding-right: 5px;
+      grid-auto-rows: 150px; gap: 10px; overflow-y: auto; align-content: start; padding-right: 5px;
       border: 1px solid #333; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;
     }
-    .char-detail-panel { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid #444; padding: 20px; overflow-y: auto; min-width: 300px; display:flex; flex-direction:column; align-items:center; }
+    .char-detail-panel { flex: 1; background: rgba(10,15,20,0.95); border: 1px solid #00f3ff; padding: 20px; overflow-y: auto; min-width: 320px; display:flex; flex-direction:column; align-items:center; border-radius: 12px; }
     
-    .char-mini-card { background: rgba(255,255,255,0.05); border: 1px solid #444; padding: 10px; cursor: pointer; text-align: center; border-radius: 8px; }
+    .char-mini-card { background: rgba(255,255,255,0.05); border: 1px solid #444; padding: 10px; cursor: pointer; text-align: center; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s; }
     .char-mini-card:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
     .char-mini-card.selected { border-color: #ffee00; background: rgba(255,238,0,0.15); box-shadow: inset 0 0 10px rgba(255,238,0,0.2); }
-    .mini-avatar { width: 50px; height: 50px; border-radius: 50%; margin-bottom: 5px; background: #000; object-fit: cover; }
+    .mini-avatar { width: 60px; height: 60px; border-radius: 50%; margin-bottom: 10px; background: #000; object-fit: cover; }
     .mini-name { font-size: 0.7rem; font-weight: bold; color: #eee; line-height: 1.2; }
 
-    .stat-bar { height: 4px; background: #333; width: 100%; margin-top: 3px; }
-    .stat-fill { height: 100%; background: #00f3ff; }
+    .stat-bar { height: 4px; background: #333; width: 100%; margin-top: 3px; border-radius: 2px; }
+    .stat-fill { height: 100%; background: #00f3ff; border-radius: 2px; }
     
-    .skill-list { width: 100%; text-align: left; font-size: 0.85rem; margin-top: 20px; }
-    .skill-item { margin-bottom: 12px; border-bottom: 1px solid #333; padding-bottom: 8px; }
-    .skill-item strong { color: #fff; font-size: 0.9rem; display: block; margin-bottom: 2px; }
-    .skill-item span { font-size: 0.75rem; color: #888; }
-    .key-badge { display: inline-block; background: #333; color: #fff; padding: 1px 4px; border-radius: 2px; font-size: 0.7rem; margin-right: 5px; }
+    .skill-list { width: 100%; text-align: left; font-size: 0.85rem; margin-top: 10px; flex: 1; }
+    .skill-item { 
+      margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 8px; 
+      cursor: help; position: relative; transition: background 0.2s; padding: 5px; border-radius: 4px;
+      display: flex; flex-direction: column;
+    }
+    .skill-item:hover { background: rgba(255,255,255,0.05); border-color: #00f3ff; }
+    .skill-header { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+    .skill-name-txt { color: #fff; font-weight: bold; font-size: 0.9rem; }
+    .skill-desc-txt { font-size: 0.7rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .key-badge { display: inline-block; background: #333; color: #00f3ff; padding: 1px 4px; border-radius: 2px; font-size: 0.7rem; font-family: monospace; min-width: 18px; text-align: center; border: 1px solid #555; }
 
-    /* 商店界面 */
+    /* 商店 */
     #shop-menu h1 { border-bottom: 2px solid #333; width: 100%; text-align: center; padding-bottom: 10px; }
-    .shop-container { display: flex; width: 100%; height: 100%; gap: 20px; overflow: hidden; }
-    .shop-tabs { display: flex; flex-direction: column; gap: 10px; width: 150px; }
-    .shop-tab { padding: 15px; background: #111; color: #666; cursor: pointer; border-left: 3px solid transparent; transition: 0.2s; font-family: 'JetBrains Mono'; }
-    .shop-tab:hover { color: #fff; background: #222; }
-    .shop-tab.active { border-left-color: #00f3ff; color: #00f3ff; background: #1a1a2a; font-weight: bold; }
-    .shop-items { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; overflow-y: auto; align-content: start; padding: 10px; }
-    .shop-item-card { background: rgba(255,255,255,0.05); border: 1px solid #444; padding: 15px; display: flex; flex-direction: column; align-items: center; text-align: center; transition: 0.2s; position: relative; cursor: pointer; }
+    .shop-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; width: 100%; max-height: 60vh; overflow-y: auto; }
+    .shop-item-card { background: rgba(255,255,255,0.05); border: 1px solid #444; padding: 15px; display: flex; flex-direction: column; align-items: center; text-align: center; transition: 0.2s; cursor: pointer; position: relative; }
     .shop-item-card:hover { border-color: #00f3ff; transform: translateY(-3px); background: rgba(255,255,255,0.08); }
-    .shop-item-icon { font-size: 2rem; margin-bottom: 10px; }
-    .shop-item-name { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; color: #fff; }
-    .shop-item-cost { color: #ffee00; font-size: 0.9rem; font-family: 'Share Tech Mono'; margin-bottom: 10px; }
-    .shop-item-desc { font-size: 0.7rem; color: #888; line-height: 1.3; height: 40px; overflow: hidden; }
-    .shop-buy-btn { margin-top: 10px; width: 100%; padding: 5px; font-size: 0.8rem; }
-    .shop-inventory { width: 100%; border-top: 1px solid #333; padding-top: 15px; display: flex; justify-content: space-between; align-items: center; }
-
+    .shop-item-type { position: absolute; top: 5px; right: 5px; font-size: 0.6rem; color: #666; text-transform: uppercase; }
+    
     .floating-text { position: absolute; font-weight: bold; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 20; text-shadow: 1px 1px 2px black; font-size: 0.9rem; }
     @keyframes floatUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-30px); opacity: 0; } }
+    
+    /* 修复规则页 */
+    .rules-box { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; width: 100%; margin-bottom: 20px; line-height: 1.6; }
+    .key-tag { background: #333; padding: 2px 5px; border-radius: 3px; color: #fff; font-family: monospace; }
+    .diff-select { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+    .diff-btn { padding: 8px 20px; border: 1px solid #555; cursor: pointer; color: #888; }
+    .diff-btn.active { border-color: #00f3ff; color: #00f3ff; font-weight: bold; }
+
+    @media (max-width: 900px) {
+      .char-selection-area { flex-direction: column; }
+    }
   </style>
 </head>
 <body>
 
   <canvas id="gameCanvas"></canvas>
   <div class="scanlines"></div>
+
+  <!-- 全局 Tooltip (Z-Index 9999) -->
+  <div id="global-tooltip">
+    <div id="tt-header">
+      <div id="tt-title">Title</div>
+      <div id="tt-cost"></div>
+    </div>
+    <div id="tt-desc">Description</div>
+    <div id="tt-info"></div>
+  </div>
 
   <!-- 游戏内 HUD (Start hidden) -->
   <div id="ui-layer" class="hidden">
@@ -193,43 +200,36 @@
       </div>
       <div class="hud-right">
         <div class="hud-btn" onclick="togglePause()">⏸️ PAUSE</div>
-        <div class="hud-btn" onclick="location.reload()">🔄 RESTART</div>
+        <div class="hud-btn" onclick="location.reload()">🔄 ABORT</div>
       </div>
     </div>
 
     <div class="hud-bottom">
-      <!-- 技能提示框 (Tooltip) -->
-      <div id="tooltip" class="tooltip">
-        <h4 id="tt-title">Skill Name</h4>
-        <p id="tt-desc">Description</p>
-        <div class="stats" id="tt-stats"></div>
-        <div class="passive" id="tt-passive"></div>
-      </div>
-
-      <div style="display:flex; align-items:flex-end; gap:20px; width:100%; justify-content:center;">
+      <div style="display:flex; align-items:flex-end; gap:20px; justify-content:center;">
         <div class="skill-panel">
           <div class="skill-slot" style="--color:#fff; border-color:#fff;">
             <span class="skill-key">A</span><span class="skill-icon">🔫</span>
           </div>
-          <div class="skill-slot" id="skill-q" style="--color:#00f3ff" onmouseenter="showSkillTooltip('q')" onmouseleave="hideTooltip()">
+          <!-- Skills with Tooltips -->
+          <div class="skill-slot" id="skill-q" style="--color:#00f3ff" onmouseenter="showGameTooltip(this, 'q')" onmouseleave="hideTooltip()">
             <span class="skill-key">Q</span><span class="skill-icon">💠</span>
             <div class="cooldown-overlay"><span class="cooldown-text"></span></div>
           </div>
-          <div class="skill-slot" id="skill-w" style="--color:#00ff9d" onmouseenter="showSkillTooltip('w')" onmouseleave="hideTooltip()">
+          <div class="skill-slot" id="skill-w" style="--color:#00ff9d" onmouseenter="showGameTooltip(this, 'w')" onmouseleave="hideTooltip()">
             <span class="skill-key">W</span><span class="skill-icon">🛡️</span>
             <div class="cooldown-overlay"><span class="cooldown-text"></span></div>
           </div>
-          <div class="skill-slot" id="skill-e" style="--color:#ffee00" onmouseenter="showSkillTooltip('e')" onmouseleave="hideTooltip()">
+          <div class="skill-slot" id="skill-e" style="--color:#ffee00" onmouseenter="showGameTooltip(this, 'e')" onmouseleave="hideTooltip()">
             <span class="skill-key">E</span><span class="skill-icon">⚡</span>
             <div class="cooldown-overlay"><span class="cooldown-text"></span></div>
           </div>
-          <div class="skill-slot" id="skill-r" style="--color:#ff0055" onmouseenter="showSkillTooltip('r')" onmouseleave="hideTooltip()">
+          <div class="skill-slot" id="skill-r" style="--color:#ff0055" onmouseenter="showGameTooltip(this, 'r')" onmouseleave="hideTooltip()">
             <span class="skill-key">R</span><span class="skill-icon">☢️</span>
             <div class="cooldown-overlay"><span class="cooldown-text"></span></div>
           </div>
         </div>
         
-        <!-- 装备栏 -->
+        <!-- 装备栏 (Interactive) -->
         <div class="inventory-panel" id="inventory-display">
           <div class="item-slot empty" data-idx="0"></div>
           <div class="item-slot empty" data-idx="1"></div>
@@ -244,78 +244,71 @@
     </div>
   </div>
 
-  <!-- 1. 规则/难度界面 -->
+  <!-- 1. 规则/难度 -->
   <div id="screen-rules" class="modal">
     <div class="modal-content" style="justify-content:center;">
-      <h1>MACRO DEFENDER 4.1</h1>
+      <h1>MACRO DEFENDER 4.5</h1>
       <p class="subtitle">Global Economy Defense Initiative</p>
-
       <div class="rules-box">
-        <h3>🔰 任务简报 (Mission Briefing)</h3>
+        <h3>🔰 任务简报 (Briefing)</h3>
         <p>
           1. <strong>选择领袖</strong>：从央行、政界、华尔街或科技界选择你的英雄。<br>
-          2. <strong>操作方式</strong>：<span class="key-tag">鼠标右键</span> 移动，<span class="key-tag">A</span> 键普攻，<span class="key-tag">QWER</span> 释放技能。<br>
-          3. <strong>防御目标</strong>：击退通胀恶魔与资产泡沫，保护全球流动性(HP)。<br>
-          4. <strong>经济系统</strong>：击杀敌人获得 GDP，按 <span class="key-tag">B</span> 键购买强化装备。
+          2. <strong>操作</strong>：<span class="key-tag">右键</span>移动，<span class="key-tag">A</span>键射击，<span class="key-tag">QWER</span>释放技能。<br>
+          3. <strong>防御</strong>：击退通胀恶魔与资产泡沫，保护流动性(HP)不归零。<br>
+          4. <strong>成长</strong>：击杀获 GDP，按 <span class="key-tag">B</span> 键购买强化装备。
         </p>
       </div>
-
-      <p style="margin-bottom:10px; color:#fff;">SELECT DIFFICULTY</p>
+      <p>SELECT DIFFICULTY</p>
       <div class="diff-select">
         <div class="diff-btn" onclick="setDifficulty(0.8, this)">EASY (简单)</div>
         <div class="diff-btn active" onclick="setDifficulty(1, this)">NORMAL (普通)</div>
         <div class="diff-btn" onclick="setDifficulty(1.5, this)">HARD (困难)</div>
       </div>
-
-      <button class="btn" style="width:300px; margin-top:20px;" onclick="goToCharSelect()">NEXT: SELECT HERO</button>
+      <button class="btn" style="width:300px;" onclick="goToCharSelect()">NEXT: SELECT HERO</button>
     </div>
   </div>
 
   <!-- 2. 选人界面 -->
   <div id="screen-char" class="modal hidden">
     <div class="modal-content">
-      <h1>SELECT YOUR HERO</h1>
-      
-      <!-- 分类 Tab -->
-      <div class="category-tabs" id="category-tabs">
-        <div class="tab-btn active" onclick="filterChars('banker')">🏛️ 央行当局</div>
-        <div class="tab-btn" onclick="filterChars('politician')">🦅 国家领袖</div>
-        <div class="tab-btn" onclick="filterChars('investor')">💼 华尔街</div>
-        <div class="tab-btn" onclick="filterChars('tech')">🚀 科技巨头</div>
-        <div class="tab-btn" onclick="filterChars('org')">🌍 国际组织</div>
+      <h1>SELECT HERO</h1>
+      <div class="category-tabs">
+        <div class="tab-btn active" onclick="filterChars('banker')">🏛️ 央行</div>
+        <div class="tab-btn" onclick="filterChars('politician')">🦅 政要</div>
+        <div class="tab-btn" onclick="filterChars('investor')">💼 资本</div>
+        <div class="tab-btn" onclick="filterChars('tech')">🚀 科技</div>
+        <div class="tab-btn" onclick="filterChars('org')">🌍 组织</div>
       </div>
-
       <div class="char-selection-area">
-        <!-- 左侧列表 -->
-        <div class="char-list" id="char-list-container">
-          <!-- JS 生成 -->
-        </div>
-
-        <!-- 右侧详情 -->
+        <div class="char-list" id="char-list-container"></div>
         <div class="char-detail-panel">
           <img id="detail-avatar" class="detail-avatar" src="" alt="Avatar">
-          <div id="detail-name" class="detail-name">Select a Hero</div>
-          <div id="detail-title" class="detail-title">--</div>
+          <div id="detail-name" class="detail-name">Name</div>
+          <div id="detail-title" class="detail-title">Title</div>
           
           <div class="stats-grid" style="width:100%; font-size:0.8rem;">
             <div class="stat-row"><span class="stat-label">HP</span><div class="stat-track"><div class="stat-bar" id="bar-hp" style="width:0%"></div></div></div>
             <div class="stat-row"><span class="stat-label">ATK</span><div class="stat-track"><div class="stat-bar" id="bar-atk" style="width:0%"></div></div></div>
             <div class="stat-row"><span class="stat-label">SPD</span><div class="stat-track"><div class="stat-bar" id="bar-spd" style="width:0%"></div></div></div>
-            <div class="stat-row"><span class="stat-label">RATE</span><div class="stat-track"><div class="stat-bar" id="bar-rate" style="width:0%"></div></div></div>
           </div>
 
           <div class="skill-list">
-            <div class="skill-item">
-              <strong><span class="key-badge">Q</span> <span id="skill-q-name">-</span></strong>
-              <span id="skill-q-desc">-</span>
+            <!-- Skills with tooltip triggers -->
+            <div class="skill-item" onmouseenter="showSelectTooltip(this, 'q')" onmouseleave="hideTooltip()">
+              <div class="skill-header"><span class="key-badge">Q</span> <span id="skill-q-name" class="skill-name-txt">-</span></div>
+              <div id="skill-q-desc" class="skill-desc-txt">-</div>
             </div>
-            <div class="skill-item">
-              <strong><span class="key-badge">W</span> <span id="skill-w-name">-</span></strong>
-              <span id="skill-w-desc">-</span>
+            <div class="skill-item" onmouseenter="showSelectTooltip(this, 'w')" onmouseleave="hideTooltip()">
+              <div class="skill-header"><span class="key-badge">W</span> <span id="skill-w-name" class="skill-name-txt">-</span></div>
+              <div id="skill-w-desc" class="skill-desc-txt">-</div>
             </div>
-            <div class="skill-item">
-              <strong><span class="key-badge">R</span> <span id="skill-r-name">-</span></strong>
-              <span id="skill-r-desc">-</span>
+            <div class="skill-item" onmouseenter="showSelectTooltip(this, 'e')" onmouseleave="hideTooltip()">
+              <div class="skill-header"><span class="key-badge">E</span> <span id="skill-e-name" class="skill-name-txt">-</span></div>
+              <div id="skill-e-desc" class="skill-desc-txt">-</div>
+            </div>
+            <div class="skill-item" onmouseenter="showSelectTooltip(this, 'r')" onmouseleave="hideTooltip()">
+              <div class="skill-header"><span class="key-badge">R</span> <span id="skill-r-name" class="skill-name-txt">-</span></div>
+              <div id="skill-r-desc" class="skill-desc-txt">-</div>
             </div>
           </div>
 
@@ -332,58 +325,50 @@
     <button class="btn btn-red" onclick="location.reload()">ABORT MISSION</button>
   </div>
 
-  <!-- 4. 商店界面 -->
+  <!-- 4. 商店 -->
   <div id="shop-menu" class="modal hidden">
     <div class="modal-content">
       <h1>GDP STORE</h1>
-      <div class="shop-container">
-        <div class="shop-tabs">
-          <div class="shop-tab active" onclick="filterShop('attack')">⚔️ 进攻</div>
-          <div class="shop-tab" onclick="filterShop('defense')">🛡️ 防御</div>
-          <div class="shop-tab" onclick="filterShop('utility')">⚡ 功能</div>
-        </div>
-        <div class="shop-items" id="shop-items-container">
-          <!-- JS 生成 -->
-        </div>
+      <p>Current GDP: <span id="shop-gdp" style="color:#00ff9d">$0</span></p>
+      <div class="shop-container" id="shop-items-container">
+        <!-- Items generated by JS -->
       </div>
-      <div class="shop-inventory">
-        <div style="color:#fff">Your GDP: <span id="shop-current-gdp" style="color:#00ff9d">$0</span></div>
-        <button class="btn btn-red" onclick="toggleShop()">CLOSE [B]</button>
-      </div>
+      <button class="btn btn-red" style="margin-top:20px" onclick="toggleShop()">CLOSE [B]</button>
     </div>
   </div>
 
+  <!-- 5. 游戏结束 -->
   <div id="game-over" class="modal hidden">
     <h1 style="color:#ff0055">MARKET CRASH</h1>
-    <p>Liquidity Dried Up. Final GDP: <span id="final-score">0</span></p>
+    <p>Final GDP: <span id="final-score">0</span></p>
     <button class="btn" onclick="location.reload()">REBOOT</button>
   </div>
 
   <script>
-    /* ====== 数据中心 (40+ Chars) ====== */
+    /* ====== 数据中心 (Data) ====== */
     const CHARACTERS = {
       // 1. Bankers
-      'powell': { cat: 'banker', name: 'Jerome Powell', title: 'Fed Chair', hp: 7, atk: 4, spd: 5, rate: 8, color: '#00f3ff', q:'Hawk Shot', w:'Rate Shield', r:'Infinite QE', qDesc:'鹰派三连射', wDesc:'加息护盾击退', rDesc:'无限印钞全屏激光' },
-      'yellen': { cat: 'banker', name: 'Janet Yellen', title: 'Treasury Secretary', hp: 6, atk: 5, spd: 5, rate: 7, color: '#0099ff', q:'Soft Landing', w:'Debt Ceiling', r:'Bailout', qDesc:'减速弹幕', wDesc:'债务上限防御塔', rDesc:'全员回血' },
-      'bernanke': { cat: 'banker', name: 'Ben Bernanke', title: 'Ex-Fed Chair', hp: 6, atk: 3, spd: 4, rate: 9, color: '#00cc99', q:'Helicopter', w:'Stress Test', r:'QE1', qDesc:'直升机撒钱散射', wDesc:'压力测试护盾', rDesc:'量化宽松轰炸' },
-      'greenspan': { cat: 'banker', name: 'Alan Greenspan', title: 'The Maestro', hp: 5, atk: 6, spd: 3, rate: 6, color: '#aaaaaa', q:'Fed Put', w:'Irrational Exub', r:'Great Moderation', qDesc:'看跌期权护盾', wDesc:'非理性繁荣加速', rDesc:'大缓和定身' },
-      'lagarde': { cat: 'banker', name: 'Christine Lagarde', title: 'ECB President', hp: 6, atk: 5, spd: 5, rate: 6, color: '#3366cc', q:'Euro Bond', w:'Fragmentation', r:'Whatever it takes', qDesc:'欧元回旋镖', wDesc:'反分裂立场', rDesc:'强力全屏震荡' },
+      'powell': { cat: 'banker', name: 'Jerome Powell (鲍威尔)', title: 'Fed Chair', hp: 7, atk: 4, spd: 5, rate: 8, color: '#00f3ff', q:'Hawk Shot', w:'Rate Shield', e:'Pivot Dash', r:'Infinite QE', qDesc:'鹰派三连射', wDesc:'加息护盾', eDesc:'政策转向', rDesc:'无限印钞', qInfo:'Dmg: Med | CD: 3s', wInfo:'Shield | CD: 8s', eInfo:'Dash | CD: 4s', rInfo:'Full Screen | CD: 30s' },
+      'yellen': { cat: 'banker', name: 'Janet Yellen (耶伦)', title: 'Treasury Sec', hp: 6, atk: 5, spd: 5, rate: 7, color: '#0099ff', q:'Soft Landing', w:'Debt Ceiling', e:'Treasury Run', r:'Bailout', qDesc:'软着陆弹幕', wDesc:'债务上限防御塔', eDesc:'国债疾跑', rDesc:'全员回血', qInfo:'Slow | CD: 4s', wInfo:'Block | CD: 10s', eInfo:'Speed | CD: 5s', rInfo:'Heal | CD: 40s' },
+      'bernanke': { cat: 'banker', name: 'Ben Bernanke (伯南克)', title: 'Ex-Fed Chair', hp: 6, atk: 3, spd: 4, rate: 9, color: '#00cc99', q:'Helicopter', w:'Stress Test', e:'QE Dash', r:'QE1', qDesc:'直升机撒钱散射', wDesc:'压力测试护盾', eDesc:'量化冲刺', rDesc:'量化宽松轰炸', qInfo:'AoE | CD: 5s', wInfo:'Def | CD: 12s', eInfo:'Dash | CD: 6s', rInfo:'Dmg | CD: 35s' },
+      'greenspan': { cat: 'banker', name: 'Alan Greenspan (格林斯潘)', title: 'Maestro', hp: 5, atk: 6, spd: 3, rate: 6, color: '#aaaaaa', q:'Fed Put', w:'Exuberance', e:'Bubble Ride', r:'Moderation', qDesc:'看跌期权', wDesc:'非理性繁荣', eDesc:'泡沫漂移', rDesc:'大缓和定身', qInfo:'Shield | CD: 8s', wInfo:'Buff | CD: 15s', eInfo:'Move | CD: 5s', rInfo:'Stun | CD: 40s' },
+      'lagarde': { cat: 'banker', name: 'Christine Lagarde (拉加德)', title: 'ECB President', hp: 6, atk: 5, spd: 5, rate: 6, color: '#3366cc', q:'Euro Bond', w:'Fragment', e:'Unity Dash', r:'Whatever it takes', qDesc:'欧元回旋镖', wDesc:'反分裂立场', eDesc:'统一冲刺', rDesc:'强力全屏震荡', qInfo:'Return | CD: 4s', wInfo:'AoE Push | CD: 10s', eInfo:'Dash | CD: 5s', rInfo:'Massive Dmg | CD: 45s' },
       'draghi': { cat: 'banker', name: 'Mario Draghi', title: 'Super Mario', hp: 7, atk: 6, spd: 6, rate: 7, color: '#0055a4', q:'Bazooka', w:'Euro Shield', r:'Save the Euro', qDesc:'火箭筒重击', wDesc:'欧元盾', rDesc:'拯救欧元全屏清场' },
-      'kuroda': { cat: 'banker', name: 'Haruhiko Kuroda', title: 'Ex-BOJ Gov', hp: 5, atk: 3, spd: 7, rate: 10, color: '#ff6600', q:'YCC Control', w:'Negative Rate', r:'Super Ease', qDesc:'YCC定身', wDesc:'负利率力场', rDesc:'超级宽松弹幕雨' },
-      'ueda': { cat: 'banker', name: 'Kazuo Ueda', title: 'BOJ Gov', hp: 6, atk: 4, spd: 6, rate: 8, color: '#ff9933', q:'Rate Hike', w:'Review', r:'Normalization', qDesc:'加息单点', wDesc:'政策检讨减速', rDesc:'正常化光束' },
+      'kuroda': { cat: 'banker', name: 'Haruhiko Kuroda', title: 'Ex-BOJ Gov', hp: 5, atk: 3, spd: 7, rate: 10, color: '#ff6600', q:'YCC Control', w:'Negative Rate', e:'Yen Slide', r:'Super Ease', qDesc:'YCC定身', wDesc:'负利率力场', eDesc:'日元滑坡', rDesc:'超级宽松弹幕雨', qInfo:'Stun | CD: 6s', wInfo:'AoE Slow | CD: 12s', eInfo:'Speed | CD: 5s', rInfo:'Barrage | CD: 30s' },
+      'ueda': { cat: 'banker', name: 'Kazuo Ueda (植田和男)', title: 'BOJ Gov', hp: 6, atk: 4, spd: 6, rate: 8, color: '#ff9933', q:'Rate Hike', w:'YCC End', e:'Normal Path', r:'Exit', qDesc:'加息单点', wDesc:'YCC终结', eDesc:'正常化路径', rDesc:'退出宽松', qInfo:'Dmg | CD: 2s', wInfo:'Slow | CD: 10s', eInfo:'Dash | CD: 5s', rInfo:'Burst | CD: 40s' },
       'carney': { cat: 'banker', name: 'Mark Carney', title: 'Ex-BOE Gov', hp: 6, atk: 5, spd: 5, rate: 7, color: '#6600cc', q:'Forward Guidance', w:'Climate Risk', r:'Horizon', qDesc:'前瞻指引', wDesc:'气候风险迷雾', rDesc:'地平线冲击' },
       'bailey': { cat: 'banker', name: 'Andrew Bailey', title: 'BOE Gov', hp: 6, atk: 5, spd: 4, rate: 7, color: '#9933ff', q:'Gilt Market', w:'Intervention', r:'Stability', qDesc:'国债冲击', wDesc:'干预护盾', rDesc:'金融稳定' },
       'yigang': { cat: 'banker', name: 'Yi Gang', title: 'Ex-PBOC Gov', hp: 7, atk: 5, spd: 5, rate: 7, color: '#cc0000', q:'Prudent Policy', w:'FX Reserve', r:'Structural', qDesc:'稳健政策', wDesc:'外汇储备盾', rDesc:'结构性工具' },
-      'pan': { cat: 'banker', name: 'Pan Gongsheng', title: 'PBOC Gov', hp: 8, atk: 5, spd: 5, rate: 8, color: '#ff3333', q:'RRR Cut', w:'Swap Line', r:'Cross-Border', qDesc:'降准冲击波', wDesc:'互换通护盾', rDesc:'跨境支付洪流' },
+      'pan': { cat: 'banker', name: 'Pan Gongsheng (潘功胜)', title: 'PBOC Gov', hp: 8, atk: 5, spd: 5, rate: 8, color: '#ff3333', q:'RRR Cut', w:'Swap Line', e:'Cross-Border', r:'Flood', qDesc:'降准冲击波', wDesc:'互换通护盾', eDesc:'跨境穿梭', rDesc:'流动性洪流', qInfo:'AoE | CD: 5s', wInfo:'Reflect | CD: 12s', eInfo:'Teleport | CD: 6s', rInfo:'High Dmg | CD: 35s' },
 
       // 2. Politicians
-      'biden': { cat: 'politician', name: 'Joe Biden', title: 'US President', hp: 9, atk: 6, spd: 3, rate: 5, color: '#0000cc', q:'Inflation Act', w:'Alliance', r:'Chips Ban', qDesc:'通胀法案重击', wDesc:'盟友召唤', rDesc:'芯片禁令全屏减速' },
-      'trump': { cat: 'politician', name: 'Donald Trump', title: 'Former President', hp: 8, atk: 9, spd: 5, rate: 6, color: '#ff0000', q:'Tariff Wall', w:'Twitter Storm', r:'Trade War', qDesc:'关税墙阻挡', wDesc:'推特声波攻击', rDesc:'贸易战核弹清屏' },
+      'biden': { cat: 'politician', name: 'Joe Biden (拜登)', title: 'US President', hp: 9, atk: 6, spd: 3, rate: 5, color: '#0000cc', q:'Inflation Act', w:'Alliance', e:'Air Force 1', r:'Chips Ban', qDesc:'通胀法案重击', wDesc:'盟友召唤', eDesc:'空军一号', rDesc:'芯片禁令全屏减速', qInfo:'Heavy Dmg | CD: 4s', wInfo:'Summon | CD: 20s', eInfo:'Fly | CD: 8s', rInfo:'Slow All | CD: 50s' },
+      'trump': { cat: 'politician', name: 'Donald Trump (特朗普)', title: 'Former Pres', hp: 8, atk: 9, spd: 5, rate: 6, color: '#ff0000', q:'Twitter Storm', w:'Tariff Wall', e:'Golf Cart', r:'Trade War', qDesc:'推特声波', wDesc:'关税墙', eDesc:'高尔夫冲刺', rDesc:'贸易战核弹', qInfo:'Cone Dmg | CD: 2s', wInfo:'Wall | CD: 15s', eInfo:'Stun Dash | CD: 8s', rInfo:'Screen Wipe | CD: 60s' },
       'obama': { cat: 'politician', name: 'Barack Obama', title: 'Former President', hp: 8, atk: 5, spd: 6, rate: 7, color: '#0066cc', q:'Stimulus', w:'Obamacare', r:'Hope', qDesc:'刺激计划', wDesc:'医保回血', rDesc:'希望之光' },
-      'xi': { cat: 'politician', name: 'Xi Jinping', title: 'President of PRC', hp: 10, atk: 7, spd: 4, rate: 6, color: '#ffcc00', q:'Dual Circulation', w:'Common Prosperity', r:'Belt & Road', qDesc:'双循环环绕弹', wDesc:'共同富裕回血', rDesc:'一带一路强力冲锋' },
+      'xi': { cat: 'politician', name: 'Xi Jinping (习近平)', title: 'President', hp: 10, atk: 7, spd: 4, rate: 6, color: '#ffcc00', q:'Dual Circle', w:'Prosperity', e:'Steady Step', r:'Belt & Road', qDesc:'双循环环绕', wDesc:'共同富裕', eDesc:'稳健步伐', rDesc:'一带一路', qInfo:'Spin Dmg | CD: 6s', wInfo:'Heal | CD: 15s', eInfo:'Armor Dash | CD: 10s', rInfo:'Charge | CD: 45s' },
       'liqiang': { cat: 'politician', name: 'Li Qiang', title: 'Premier', hp: 8, atk: 6, spd: 6, rate: 7, color: '#ff9900', q:'Open Up', w:'Service', r:'High Quality', qDesc:'开放门户', wDesc:'服务型防御', rDesc:'高质量发展' },
-      'putin': { cat: 'politician', name: 'Vladimir Putin', title: 'Russian President', hp: 9, atk: 9, spd: 3, rate: 4, color: '#ffffff', q:'Energy Cut', w:'Iron Curtain', r:'Special Op', qDesc:'能源切断冻结', wDesc:'铁幕防御', rDesc:'特种行动高爆弹' },
-      'macron': { cat: 'politician', name: 'Emmanuel Macron', title: 'French President', hp: 7, atk: 6, spd: 6, rate: 7, color: '#0055a4', q:'Reform Strike', w:'Autonomy', r:'Euro Army', qDesc:'改革穿透弹', wDesc:'战略自主盾', rDesc:'欧洲军团召唤' },
+      'putin': { cat: 'politician', name: 'Vladimir Putin (普京)', title: 'Russian Pres', hp: 9, atk: 9, spd: 2, rate: 4, color: '#fff', q:'Energy Cut', w:'Iron Curtain', e:'KGB Dash', r:'Special Op', qDesc:'能源切断', wDesc:'铁幕防御', eDesc:'特工突袭', rDesc:'特种行动', qInfo:'Freeze | CD: 5s', wInfo:'Block All | CD: 15s', eInfo:'Stealth | CD: 8s', rInfo:'Explosion | CD: 50s' },
+      'macron': { cat: 'politician', name: 'Emmanuel Macron (马克龙)', title: 'French Pres', hp: 7, atk: 6, spd: 6, rate: 7, color: '#0055a4', q:'Reform', w:'Autonomy', e:'Diplomacy', r:'Euro Army', qDesc:'改革穿透', wDesc:'战略自主盾', eDesc:'外交斡旋', rDesc:'欧洲军团', qInfo:'Pierce | CD: 3s', wInfo:'Absorb | CD: 10s', eInfo:'Invuln | CD: 5s', rInfo:'Summon | CD: 40s' },
       'scholz': { cat: 'politician', name: 'Olaf Scholz', title: 'German Chancellor', hp: 8, atk: 5, spd: 4, rate: 6, color: '#000000', q:'Zeitenwende', w:'Industry', r:'Budget', qDesc:'时代转折', wDesc:'工业护盾', rDesc:'预算大炮' },
       'modi': { cat: 'politician', name: 'Narendra Modi', title: 'Indian PM', hp: 8, atk: 6, spd: 5, rate: 7, color: '#ff9933', q:'Made in India', w:'Yoga', r:'Digital India', qDesc:'印度制造', wDesc:'瑜伽回血', rDesc:'数字印度激光' },
       'kishida': { cat: 'politician', name: 'Fumio Kishida', title: 'Japanese PM', hp: 6, atk: 5, spd: 5, rate: 7, color: '#cc0033', q:'New Capitalism', w:'Defense', r:'Invest', qDesc:'新资本主义', wDesc:'防卫增税', rDesc:'投资未来' },
@@ -391,75 +376,66 @@
       'sunak': { cat: 'politician', name: 'Rishi Sunak', title: 'UK Ex-PM', hp: 6, atk: 6, spd: 6, rate: 7, color: '#0000ff', q:'Math', w:'Finance', r:'Windsor', qDesc:'数学计算', wDesc:'金融城护盾', rDesc:'温莎框架' },
 
       // 3. Investors
-      'buffett': { cat: 'investor', name: 'Warren Buffett', title: 'Oracle of Omaha', hp: 6, atk: 10, spd: 2, rate: 4, color: '#339933', q:'Value Pick', w:'Moat', r:'Compound Interest', qDesc:'价值狙击(高伤)', wDesc:'护城河(无敌)', rDesc:'复利滚雪球(全屏)' },
+      'buffett': { cat: 'investor', name: 'Warren Buffett (巴菲特)', title: 'Oracle', hp: 6, atk: 10, spd: 2, rate: 4, color: '#339933', q:'Value Shot', w:'Moat', e:'Compound', r:'Snowball', qDesc:'价值狙击', wDesc:'护城河', eDesc:'复利位移', rDesc:'滚雪球', qInfo:'Crit | CD: 5s', wInfo:'Invuln | CD: 20s', eInfo:'Short Dash | CD: 2s', rInfo:'Grow Dmg | CD: 50s' },
       'munger': { cat: 'investor', name: 'Charlie Munger', title: 'The Architect', hp: 5, atk: 10, spd: 1, rate: 3, color: '#555555', q:'Wisdom', w:'Patience', r:'Lollapalooza', qDesc:'智慧箴言', wDesc:'耐心等待', rDesc:'效应叠加' },
-      'dalio': { cat: 'investor', name: 'Ray Dalio', title: 'Bridgewater', hp: 7, atk: 6, spd: 5, rate: 8, color: '#6600cc', q:'All Weather', w:'Deleveraging', r:'Big Cycle', qDesc:'全天候散射', wDesc:'去杠杆推推乐', rDesc:'大周期重置' },
+      'dalio': { cat: 'investor', name: 'Ray Dalio (达利欧)', title: 'Bridgewater', hp: 7, atk: 6, spd: 5, rate: 8, color: '#6600cc', q:'All Weather', w:'Deleverage', e:'Cycle Surf', r:'Big Cycle', qDesc:'全天候散射', wDesc:'去杠杆', eDesc:'周期冲浪', rDesc:'大周期重置', qInfo:'Spread | CD: 3s', wInfo:'Push | CD: 8s', eInfo:'Speed | CD: 5s', rInfo:'Reset | CD: 60s' },
       'marks': { cat: 'investor', name: 'Howard Marks', title: 'Oaktree', hp: 6, atk: 7, spd: 4, rate: 6, color: '#996633', q:'Cycle Memo', w:'Risk Control', r:'Distressed', qDesc:'备忘录', wDesc:'风控', rDesc:'困境反转' },
       'tepper': { cat: 'investor', name: 'David Tepper', title: 'Appaloosa', hp: 6, atk: 9, spd: 6, rate: 7, color: '#003366', q:'Bullish', w:'Fed Put', r:'Buy Everything', qDesc:'牛市冲击', wDesc:'联储看跌', rDesc:'买入一切' },
       'griffin': { cat: 'investor', name: 'Ken Griffin', title: 'Citadel', hp: 8, atk: 8, spd: 8, rate: 9, color: '#000099', q:'HFT', w:'Market Maker', r:'Algo Dominance', qDesc:'高频交易', wDesc:'做市商', rDesc:'算法统治' },
       'ackman': { cat: 'investor', name: 'Bill Ackman', title: 'Pershing Square', hp: 6, atk: 8, spd: 7, rate: 7, color: '#999999', q:'Activist', w:'Hedge', r:'Big Short', qDesc:'激进投资', wDesc:'对冲', rDesc:'大空头' },
-      'soros': { cat: 'investor', name: 'George Soros', title: 'Quantum Fund', hp: 5, atk: 9, spd: 6, rate: 6, color: '#333333', q:'Short Sell', w:'Reflexivity', r:'Breaking Bank', qDesc:'做空暴击', wDesc:'反身性闪避', rDesc:'击穿央行' },
+      'soros': { cat: 'investor', name: 'George Soros (索罗斯)', title: 'Quantum', hp: 5, atk: 9, spd: 6, rate: 6, color: '#333', q:'Short Sell', w:'Reflexivity', e:'Attack Run', r:'Crash', qDesc:'做空暴击', wDesc:'反身性', eDesc:'突袭', rDesc:'制造崩盘', qInfo:'High Dmg | CD: 4s', wInfo:'Dodge | CD: 10s', eInfo:'Dash | CD: 4s', rInfo:'Life Steal | CD: 45s' },
       'druckenmiller': { cat: 'investor', name: 'Stanley Druckenmiller', title: 'Duquesne', hp: 6, atk: 9, spd: 7, rate: 7, color: '#000000', q:'Macro Bet', w:'Flexibility', r:'Top Down', qDesc:'宏观押注', wDesc:'灵活配置', rDesc:'自上而下' },
       'schwarzman': { cat: 'investor', name: 'Stephen Schwarzman', title: 'Blackstone', hp: 8, atk: 7, spd: 5, rate: 6, color: '#000000', q:'Private Equity', w:'Real Estate', r:'Capital', qDesc:'私募股权', wDesc:'不动产', rDesc:'资本洪流' },
       'kravis': { cat: 'investor', name: 'Henry Kravis', title: 'KKR', hp: 7, atk: 8, spd: 5, rate: 6, color: '#cc0000', q:'LBO', w:'Management', r:'Buyout', qDesc:'杠杆收购', wDesc:'管理优化', rDesc:'收购全场' },
-      'simons': { cat: 'investor', name: 'Jim Simons', title: 'Renaissance', hp: 6, atk: 8, spd: 9, rate: 10, color: '#006600', q:'Quant Model', w:'Black Box', r:'Medallion', qDesc:'量化模型', wDesc:'黑箱防御', rDesc:'大奖章收益' },
+      'simons': { cat: 'investor', name: 'Jim Simons (西蒙斯)', title: 'Renaissance', hp: 6, atk: 8, spd: 9, rate: 10, color: '#006600', q:'Algo Beam', w:'Black Box', e:'Data Jump', r:'Medallion', qDesc:'算法光束', wDesc:'黑箱防御', eDesc:'数据跳跃', rDesc:'大奖章收益', qInfo:'Beam | CD: 2s', wInfo:'Shield | CD: 12s', eInfo:'Teleport | CD: 3s', rInfo:'Gold Rain | CD: 40s' },
 
       // 4. Tech
-      'musk': { cat: 'tech', name: 'Elon Musk', title: 'Technoking', hp: 6, atk: 8, spd: 9, rate: 9, color: '#999999', q:'Doge Meme', w:'Starship', r:'Mars Colony', qDesc:'狗狗币攻击', wDesc:'星舰护盾', rDesc:'火星殖民轰炸' },
+      'musk': { cat: 'tech', name: 'Elon Musk (马斯克)', title: 'Technoking', hp: 6, atk: 8, spd: 9, rate: 9, color: '#999', q:'Doge Rocket', w:'Starshield', e:'Hyperloop', r:'Mars Colony', qDesc:'狗狗币火箭', wDesc:'星链力场', eDesc:'真空管道', rDesc:'火星殖民', qInfo:'Random | CD: 1s', wInfo:'Reflect | CD: 8s', eInfo:'Max Spd | CD: 4s', rInfo:'Bombard | CD: 30s' },
       'bezos': { cat: 'tech', name: 'Jeff Bezos', title: 'Amazon', hp: 7, atk: 7, spd: 6, rate: 8, color: '#ff9900', q:'Prime', w:'Cloud', r:'Logistic', qDesc:'Prime飞弹', wDesc:'云盾', rDesc:'物流网络' },
       'cook': { cat: 'tech', name: 'Tim Cook', title: 'Apple', hp: 8, atk: 6, spd: 5, rate: 7, color: '#aaaaaa', q:'Supply Chain', w:'Privacy', r:'Ecosystem', qDesc:'供应链', wDesc:'隐私盾', rDesc:'生态围墙' },
-      'zuckerberg': { cat: 'tech', name: 'Mark Zuckerberg', title: 'Meta', hp: 6, atk: 7, spd: 7, rate: 8, color: '#0066ff', q:'Metaverse', w:'Connect', r:'VR World', qDesc:'元宇宙波', wDesc:'连接', rDesc:'虚拟世界' },
+      'zuckerberg': { cat: 'tech', name: 'Mark Zuckerberg (扎克伯格)', title: 'Meta', hp: 6, atk: 7, spd: 7, rate: 8, color: '#0066ff', q:'Metaverse', w:'Connect', e:'VR Step', r:'Virtual World', qDesc:'元宇宙波', wDesc:'连接', eDesc:'VR步', rDesc:'虚拟世界', qInfo:'Wave | CD: 3s', wInfo:'Link | CD: 10s', eInfo:'Teleport | CD: 5s', rInfo:'Confuse | CD: 40s' },
       'nadella': { cat: 'tech', name: 'Satya Nadella', title: 'Microsoft', hp: 8, atk: 7, spd: 6, rate: 8, color: '#00a1f1', q:'Copilot', w:'Enterprise', r:'Cloud AI', qDesc:'副驾驶', wDesc:'企业级', rDesc:'云端AI' },
-      'huang': { cat: 'tech', name: 'Jensen Huang', title: 'NVIDIA', hp: 5, atk: 10, spd: 8, rate: 10, color: '#76b900', q:'CUDA', w:'Ray Tracing', r:'Singularity', qDesc:'算力弹幕', wDesc:'光追反射', rDesc:'奇点爆发' },
+      'huang': { cat: 'tech', name: 'Jensen Huang (黄仁勋)', title: 'NVIDIA', hp: 5, atk: 10, spd: 8, rate: 10, color: '#76b900', q:'CUDA', w:'Ray Tracing', e:'Tensor', r:'Singularity', qDesc:'CUDA弹幕', wDesc:'光追反射', eDesc:'张量加速', rDesc:'AI奇点', qInfo:'Split | CD: 2s', wInfo:'Mirror | CD: 12s', eInfo:'Dash | CD: 6s', rInfo:'Black Hole | CD: 45s' },
       'ponyma': { cat: 'tech', name: 'Pony Ma', title: 'Tencent', hp: 7, atk: 7, spd: 6, rate: 9, color: '#33ccff', q:'WeChat', w:'Social', r:'Game Empire', qDesc:'微信连接', wDesc:'社交网络', rDesc:'游戏帝国' },
       'jackma': { cat: 'tech', name: 'Jack Ma', title: 'Alibaba', hp: 6, atk: 8, spd: 7, rate: 8, color: '#ff6600', q:'E-Commerce', w:'Payment', r:'Data', qDesc:'电商洪流', wDesc:'支付盾', rDesc:'数据云' },
       'robinli': { cat: 'tech', name: 'Robin Li', title: 'Baidu', hp: 6, atk: 6, spd: 6, rate: 7, color: '#0033cc', q:'Search', w:'Auto', r:'Ernie Bot', qDesc:'搜索索引', wDesc:'自动驾驶', rDesc:'文心一言' },
 
       // 5. Org
-      'georgieva': { cat: 'org', name: 'Kristalina Georgieva', title: 'IMF', hp: 8, atk: 4, spd: 5, rate: 6, color: '#003399', q:'SDR', w:'Austerity', r:'Rescue', qDesc:'SDR支援', wDesc:'紧缩', rDesc:'全球救援' },
+      'georgieva': { cat: 'org', name: 'Kristalina Georgieva', title: 'IMF', hp: 8, atk: 4, spd: 5, rate: 6, color: '#003399', q:'SDR', w:'Austerity', e:'Rescue', r:'Global Fund', qDesc:'SDR支援', wDesc:'紧缩', eDesc:'救援位移', rDesc:'全球基金', qInfo:'Support | CD: 4s', wInfo:'Slow | CD: 10s', eInfo:'Heal Self | CD: 15s', rInfo:'Full Heal | CD: 60s' },
       'banga': { cat: 'org', name: 'Ajay Banga', title: 'World Bank', hp: 8, atk: 4, spd: 5, rate: 6, color: '#0099cc', q:'Development', w:'Poverty', r:'Infrastructure', qDesc:'发展援助', wDesc:'扶贫', rDesc:'基建狂魔' },
       'okonjo': { cat: 'org', name: 'Ngozi Okonjo-Iweala', title: 'WTO', hp: 7, atk: 4, spd: 5, rate: 6, color: '#00cc00', q:'Trade Flow', w:'Dispute', r:'Global Market', qDesc:'贸易流', wDesc:'争端解决', rDesc:'全球市场' },
       'guterres': { cat: 'org', name: 'António Guterres', title: 'UN SG', hp: 9, atk: 2, spd: 4, rate: 5, color: '#3399ff', q:'Resolution', w:'Peace', r:'Humanity', qDesc:'决议', wDesc:'维和', rDesc:'人类命运' },
       'stoltenberg': { cat: 'org', name: 'Jens Stoltenberg', title: 'NATO SG', hp: 7, atk: 8, spd: 6, rate: 6, color: '#003366', q:'Article 5', w:'Defense', r:'Alliance', qDesc:'第五条款', wDesc:'共同防御', rDesc:'军事联盟' }
     };
 
-    // 装备数据库
+    // 装备数据
     const ITEMS = {
-      'inf_sword': { type: 'attack', name: 'Infinity Ledger', cost: 1500, icon: '⚔️', stats: { dmg: 2, rate: 0.8 }, desc: '攻击力大幅提升，射速加快' },
-      'hft_chip': { type: 'attack', name: 'HFT Chip', cost: 1200, icon: '💾', stats: { rate: 0.6 }, desc: '高频交易芯片，射速翻倍' },
-      'bull_horn': { type: 'attack', name: 'Bull Horn', cost: 2000, icon: '🐂', stats: { dmg: 3 }, desc: '牛市之角，伤害极高' },
-      'invisible_hand': { type: 'attack', name: 'Invisible Hand', cost: 2500, icon: '🖐️', stats: { dmg: 1 }, passive: 'homing', desc: '【被动】子弹自动追踪敌人' },
-      'gold_armor': { type: 'defense', name: 'Gold Reserve', cost: 1000, icon: '🥇', stats: { maxHp: 50 }, desc: '增加 50 点生命上限' },
-      'fed_put': { type: 'defense', name: 'Fed Put', cost: 1800, icon: '📉', stats: { hpRegen: 0.2 }, desc: '美联储看跌期权，每秒回血' },
-      'bretton_shield': { type: 'defense', name: 'Bretton Shield', cost: 2200, icon: '🛡️', stats: { maxHp: 30 }, passive: 'shield', desc: '【被动】每10秒生成一个抵挡伤害的护盾' },
-      'rocket_boots': { type: 'utility', name: 'Liquidity Boots', cost: 800, icon: '👢', stats: { spd: 2 }, desc: '增加移动速度' },
-      'comp_interest': { type: 'utility', name: 'Compound Int.', cost: 1500, icon: '📈', stats: {}, passive: 'income', desc: '【被动】每秒获得 5 GDP' },
-      'helicopter': { type: 'utility', name: 'Helicopter', cost: 3000, icon: '🚁', stats: { spd: 3 }, passive: 'trail', desc: '【被动】移动时留下伤害路径' }
+      'inf_sword': { type: 'attack', name: 'Infinity Ledger', cost: 1500, icon: '⚔️', stats: { dmg: 2, rate: 0.8 }, desc: '攻击力大幅提升，射速加快', passive: 'Multi-Shot' },
+      'hft_chip': { type: 'attack', name: 'HFT Chip', cost: 1200, icon: '💾', stats: { rate: 0.6 }, desc: '高频交易芯片，射速翻倍', passive: 'Rapid Fire' },
+      'bull_horn': { type: 'attack', name: 'Bull Horn', cost: 2000, icon: '🐂', stats: { dmg: 3 }, desc: '牛市之角，伤害极高', passive: 'Knockback' },
+      'invisible_hand': { type: 'attack', name: 'Invisible Hand', cost: 2500, icon: '🖐️', stats: { dmg: 1 }, desc: '【被动】子弹自动追踪敌人', passive: 'homing' },
+      
+      'gold_armor': { type: 'defense', name: 'Gold Reserve', cost: 1000, icon: '🥇', stats: { maxHp: 50 }, desc: '增加 50 点生命上限', passive: 'Armor' },
+      'fed_put': { type: 'defense', name: 'Fed Put', cost: 1800, icon: '📉', stats: { hpRegen: 0.2 }, desc: '美联储看跌期权，每秒回血', passive: 'hpRegen' },
+      'bretton_shield': { type: 'defense', name: 'Bretton Shield', cost: 2200, icon: '🛡️', stats: { maxHp: 30 }, desc: '【被动】每10秒生成一个抵挡伤害的护盾', passive: 'shield' },
+      
+      'rocket_boots': { type: 'utility', name: 'Liquidity Boots', cost: 800, icon: '👢', stats: { spd: 2 }, desc: '增加移动速度', passive: 'Speed' },
+      'comp_interest': { type: 'utility', name: 'Compound Int.', cost: 1500, icon: '📈', stats: {}, desc: '【被动】每秒获得 5 GDP', passive: 'income' },
+      'helicopter': { type: 'utility', name: 'Helicopter', cost: 3000, icon: '🚁', stats: { spd: 3 }, desc: '【被动】移动时留下伤害路径', passive: 'trail' }
     };
 
     /* ====== 核心变量 ====== */
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let width, height;
-    
-    let state = {
-      screen: 'menu', // menu -> char -> playing ...
-      score: 1000, 
-      frame: 0,
-      player: null,
-      bullets: [],
-      enemies: [],
-      particles: [],
-      texts: [],
-      inventory: [], 
-      selectedChar: 'powell'
-    };
+    let selectedCharId = 'powell';
+    let difficultyMultiplier = 1;
+    let state = { screen: 'menu', score: 0, frame: 0, player: null, bullets: [], enemies: [], particles: [], texts: [], inventory: [] };
+    const input = { mouse: {x:0,y:0}, mouseDown: false };
 
-    /* ====== 引擎初始化 ====== */
-    function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+    // 引擎初始化
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     window.addEventListener('resize', resize);
     resize();
 
+    // 游戏循环
     function gameLoop() {
       requestAnimationFrame(gameLoop);
       if (state.screen === 'playing') {
@@ -467,415 +443,327 @@
         render();
         state.frame++;
       } else if (state.screen === 'shop') {
-        render(); 
+        render(); // Keep rendering bg
       }
     }
 
-    /* ====== 逻辑更新 ====== */
-    function update() {
-      const p = state.player;
-      if(!p) return;
-
-      // 属性计算 (Base + Items)
-      let totalSpd = p.baseSpd;
-      let totalDmg = p.baseDmg;
-      let totalRate = p.baseRate;
-      let totalHpMax = p.baseMaxHp;
-      let passiveEffects = [];
-
-      state.inventory.forEach(itemId => {
-        const item = ITEMS[itemId];
-        if(item.stats.spd) totalSpd += item.stats.spd;
-        if(item.stats.dmg) totalDmg += item.stats.dmg;
-        if(item.stats.rate) totalRate *= item.stats.rate;
-        if(item.stats.maxHp) totalHpMax += item.stats.maxHp;
-        if(item.passive) passiveEffects.push(item.passive);
-      });
-      
-      p.maxHp = totalHpMax; 
-
-      // Passives Logic
-      if(state.frame % 60 === 0 && passiveEffects.includes('income')) {
-        state.score += 5; 
-        spawnFloatingText(p.x, p.y - 20, "+5 GDP", "#ffee00");
-      }
-      if(state.frame % 60 === 0 && passiveEffects.includes('hpRegen')) {
-        p.hp = Math.min(p.hp + 1, p.maxHp);
-      }
-      if(state.frame % 600 === 0 && passiveEffects.includes('shield')) {
-        p.shield = true; 
-        spawnFloatingText(p.x, p.y, "SHIELD UP", "#00ff9d");
-      }
-      
-      // Movement
-      if (p.moving) {
-        let dx = p.targetX - p.x;
-        let dy = p.targetY - p.y;
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < totalSpd) { p.x = p.targetX; p.y = p.targetY; p.moving = false; } 
-        else { p.x += (dx/dist) * totalSpd; p.y += (dy/dist) * totalSpd; }
-        
-        if(passiveEffects.includes('trail') && state.frame % 10 === 0) {
-           createParticles(p.x, p.y, '#ff9900', 3);
-        }
-      }
-      // Bounds
-      p.x = Math.max(20, Math.min(width-20, p.x));
-      p.y = Math.max(20, Math.min(height-20, p.y));
-
-      // Aim
-      p.angle = Math.atan2(input.mouse.y - p.y, input.mouse.x - p.x);
-
-      // Cooldowns
-      for(let k in p.cd) if(p.cd[k]>0) p.cd[k]--;
-      updateHUD();
-
-      // Attack
-      if(input.mouseDown && state.frame % Math.ceil(totalRate) === 0) {
-        shootBullet(p, totalDmg, passiveEffects.includes('homing'));
-      }
-
-      // Bullets
-      for(let i=state.bullets.length-1; i>=0; i--) {
-        let b = state.bullets[i];
-        // Homing logic
-        if(b.homing && state.enemies.length > 0) {
-           let nearest = state.enemies[0];
-           let minD = 9999;
-           state.enemies.forEach(e => {
-             let d = Math.hypot(e.x - b.x, e.y - b.y);
-             if(d < minD) { minD = d; nearest = e; }
-           });
-           let angle = Math.atan2(nearest.y - b.y, nearest.x - b.x);
-           b.vx = b.vx * 0.9 + Math.cos(angle) * 2; 
-           b.vy = b.vy * 0.9 + Math.sin(angle) * 2;
-        }
-
-        b.x += b.vx; b.y += b.vy; b.life--;
-        if(b.life <= 0) state.bullets.splice(i,1);
-      }
-
-      // Enemies
-      if(state.frame % 60 === 0) spawnEnemy();
-      
-      for(let i=state.enemies.length-1; i>=0; i--) {
-        let e = state.enemies[i];
-        let angle = Math.atan2(p.y - e.y, p.x - e.x);
-        e.x += Math.cos(angle) * e.speed; e.y += Math.sin(angle) * e.speed;
-
-        // Hit Player
-        if(Math.hypot(p.x-e.x, p.y-e.y) < p.r + e.r) {
-          if(p.shield) {
-             p.shield = false;
-             spawnFloatingText(p.x, p.y, "BLOCKED", "#fff");
-             e.x -= Math.cos(angle)*50; e.y -= Math.sin(angle)*50;
-          } else {
-             p.hp -= 10;
-             createParticles(p.x, p.y, '#ff0000', 10);
-             if(p.hp <= 0) gameOver();
-          }
-          state.enemies.splice(i,1);
-          continue;
-        }
-
-        // Hit by Bullet
-        for(let j=state.bullets.length-1; j>=0; j--) {
-          let b = state.bullets[j];
-          if(Math.hypot(b.x-e.x, b.y-e.y) < e.r + 5) {
-             e.hp -= b.dmg;
-             state.bullets.splice(j,1);
-             createParticles(e.x, e.y, '#fff', 2);
-             if(e.hp <= 0) {
-               state.score += e.val;
-               spawnFloatingText(e.x, e.y, `+$${e.val}`, "#00ff9d");
-               state.enemies.splice(i,1);
-               createParticles(e.x, e.y, e.color, 8);
-               break;
-             }
-          }
-        }
-      }
-      
-      updateParticles();
-    }
-
-    function render() {
-      ctx.fillStyle = 'rgba(5,5,10,0.3)'; ctx.fillRect(0,0,width,height);
-      
-      const p = state.player;
-      if(!p) return;
-
-      if(p.moving) {
-        ctx.strokeStyle = '#00ff00'; ctx.beginPath(); 
-        ctx.moveTo(p.targetX-5, p.targetY-5); ctx.lineTo(p.targetX+5, p.targetY+5);
-        ctx.moveTo(p.targetX+5, p.targetY-5); ctx.lineTo(p.targetX-5, p.targetY+5);
-        ctx.stroke();
-      }
-
-      ctx.save(); ctx.translate(p.x, p.y);
-      if(p.shield) { ctx.strokeStyle = '#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,25,0,Math.PI*2); ctx.stroke(); }
-      if(p.img && p.img.complete) {
-        ctx.save(); ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.clip();
-        ctx.drawImage(p.img, -20, -20, 40, 40); ctx.restore();
-        ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.stroke();
-      } else {
-        ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
-      }
-      ctx.fillStyle = "red"; ctx.fillRect(-20, 25, 40, 4);
-      ctx.fillStyle = "#00ff00"; ctx.fillRect(-20, 25, 40 * (Math.max(0,p.hp)/p.maxHp), 4);
-      ctx.restore();
-
-      state.enemies.forEach(e => { ctx.fillStyle = e.color; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2); ctx.fill(); });
-      state.bullets.forEach(b => { ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI*2); ctx.fill(); });
-      state.particles.forEach(pt => { ctx.fillStyle = pt.color; ctx.globalAlpha = pt.life/30; ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI*2); ctx.fill(); });
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = "#fff"; ctx.font = "bold 14px monospace";
-      state.texts.forEach(t => ctx.fillText(t.text, t.x, t.y));
-    }
-
-    /* ====== 辅助函数 ====== */
-    const input = { keys: {}, mouse: {x:0,y:0}, mouseDown: false };
-    window.onkeydown = e => {
-      if(e.key.toLowerCase() === 'a') input.mouseDown = true;
-      if(state.screen === 'playing') {
-         if('qwer'.includes(e.key.toLowerCase())) useSkill(e.key.toLowerCase());
-         if(e.key.toLowerCase() === 'b') toggleShop();
-         if(e.key === 'Escape' || e.key.toLowerCase() === 'p') togglePause();
-      } else if(state.screen === 'shop' && e.key.toLowerCase() === 'b') toggleShop();
-      else if(state.screen === 'paused' && (e.key === 'Escape' || e.key.toLowerCase() === 'p')) togglePause();
-    };
-    window.onkeyup = e => { if(e.key.toLowerCase() === 'a') input.mouseDown = false; };
-    window.onmousemove = e => { input.mouse.x = e.clientX; input.mouse.y = e.clientY; };
-    window.onmousedown = e => { if(e.button===0) input.mouseDown = true; if(e.button===2 && state.player) {
-      state.player.moving = true; state.player.targetX = e.clientX; state.player.targetY = e.clientY;
-    }};
-    window.onmouseup = () => input.mouseDown = false;
-    window.oncontextmenu = e => e.preventDefault();
-
-    function setDifficulty(val, el) {
-      difficultyMultiplier = val; // Not really used in this stripped down logic but structure is here
-      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
-    }
-
+    /* ====== 选人逻辑 (Fixed) ====== */
     function goToCharSelect() {
       document.getElementById('screen-rules').classList.add('hidden');
       document.getElementById('screen-char').classList.remove('hidden');
-      filterChars('banker'); 
-      updateCharDetail('powell');
+      filterChars('banker'); // Default
+      updateDetailPanel('powell');
     }
 
-    function startGame() {
-      const charData = CHARACTERS[state.selectedChar];
-      state.player = {
-        x: width/2, y: height/2,
-        baseHp: charData.hp * 20, hp: charData.hp * 20, maxHp: charData.hp * 20,
-        baseSpd: charData.spd * 0.8 + 2,
-        baseDmg: charData.atk * 0.8 + 1,
-        baseRate: Math.max(4, 40 - (charData.rate * 3)),
-        color: charData.color,
-        r: 20, angle: 0, moving: false, targetX: 0, targetY: 0,
-        cd: {q:0, w:0, e:0, r:0},
-        img: new Image()
-      };
-      state.player.img.src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${charData.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
-      
-      state.bullets = []; state.enemies = []; state.particles = []; state.texts = [];
-      state.screen = 'playing';
-      state.score = 1000; 
-      
-      document.getElementById('screen-char').classList.add('hidden');
-      document.getElementById('ui-layer').classList.remove('hidden');
-      gameLoop();
-    }
-
-    function shootBullet(p, dmg, homing) {
-      state.bullets.push({
-        x: p.x, y: p.y,
-        vx: Math.cos(p.angle) * 15, vy: Math.sin(p.angle) * 15,
-        life: 60, color: p.color, dmg: dmg, homing: homing
-      });
-    }
-
-    function spawnEnemy() {
-      let angle = Math.random() * Math.PI * 2;
-      let r = Math.max(width, height) / 2 + 50;
-      state.enemies.push({
-        x: width/2 + Math.cos(angle)*r, y: height/2 + Math.sin(angle)*r,
-        hp: 10, speed: 1.5 + Math.random(), r: 15, color: '#ff0055', val: 50
-      });
-    }
-
-    function useSkill(key) {
-      const p = state.player;
-      if(p.cd[key] > 0) return;
-      p.cd[key] = key==='q'?100:key==='w'?300:key==='e'?120:900; // Simple CD
-
-      if(key === 'e') { // Dash
-        p.x += Math.cos(p.angle)*200; p.y += Math.sin(p.angle)*200;
-        p.targetX = p.x;
-        createParticles(p.x, p.y, '#fff', 10);
-      } else if(key === 'q') { // Burst
-        for(let i=-0.5; i<=0.5; i+=0.2) shootBullet({...p, angle: p.angle+i}, p.baseDmg*1.5, false);
-      } else if(key === 'w') { // Shield/AoE
-        state.enemies.forEach(e => { if(Math.hypot(p.x-e.x, p.y-e.y)<200) { e.x -= Math.cos(Math.atan2(p.y-e.y, p.x-e.x))*150; } });
-        createParticles(p.x, p.y, '#00f3ff', 20);
-      } else if(key === 'r') { // Ult
-        state.enemies = [];
-        spawnFloatingText(width/2, height/2, "ULTIMATE!", "#ffee00");
-      }
-    }
-
-    /* ====== UI Functions ====== */
     function filterChars(cat) {
-      // Update visual tabs
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const tabs = document.querySelectorAll('.tab-btn');
+      tabs.forEach(t => t.classList.remove('active'));
       event.target.classList.add('active');
 
       const container = document.getElementById('char-list-container');
       container.innerHTML = '';
+      
       for (const [id, data] of Object.entries(CHARACTERS)) {
         if (data.cat === cat) {
           const div = document.createElement('div');
-          div.className = `char-mini-card ${id === state.selectedChar ? 'selected' : ''}`;
+          div.className = `char-mini-card ${id === selectedCharId ? 'selected' : ''}`;
           div.onclick = () => { 
-            state.selectedChar = id; 
-            filterChars(cat); 
-            updateCharDetail(id); 
+            selectedCharId = id;
+            // Update highlights
+            document.querySelectorAll('.char-mini-card').forEach(c => c.classList.remove('selected'));
+            div.classList.add('selected');
+            updateDetailPanel(id); 
           };
-          div.innerHTML = `<img src="https://api.dicebear.com/9.x/avataaars/svg?seed=${data.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9" class="mini-avatar"><div class="mini-name">${data.name}</div>`;
-          container.appendChild(div);
-        }
-      }
-    }
-    
-    function updateCharDetail(id) {
-      const data = CHARACTERS[id];
-      document.getElementById('detail-name').innerText = data.name;
-      document.getElementById('detail-title').innerText = data.title;
-      document.getElementById('detail-avatar').src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${data.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
-      
-      document.getElementById('bar-hp').style.width = (data.hp * 10) + '%';
-      document.getElementById('bar-atk').style.width = (data.atk * 10) + '%';
-      document.getElementById('bar-spd').style.width = (data.spd * 10) + '%';
-      document.getElementById('bar-rate').style.width = (data.rate * 8) + '%';
-      
-      document.getElementById('skill-q-name').innerText = data.q; document.getElementById('skill-q-desc').innerText = data.qDesc;
-      document.getElementById('skill-w-name').innerText = data.w; document.getElementById('skill-w-desc').innerText = data.wDesc;
-      document.getElementById('skill-r-name').innerText = data.r; document.getElementById('skill-r-desc').innerText = data.rDesc;
-    }
-
-    function updateHUD() {
-      const p = state.player;
-      document.getElementById('score-val').innerText = Math.floor(state.score);
-      document.getElementById('health-val').innerText = Math.floor(p.hp);
-      ['q','w','e','r'].forEach(k => {
-         let cd = p.cd[k];
-         let el = document.querySelector(`#skill-${k} .cooldown-overlay`);
-         let txt = el.querySelector('.cooldown-text');
-         if(cd > 0) { el.style.height = "100%"; txt.innerText = Math.ceil(cd/60); }
-         else { el.style.height = "0%"; txt.innerText = ""; }
-      });
-      
-      // Inventory
-      const slots = document.querySelectorAll('.item-slot');
-      state.inventory.forEach((itemId, idx) => {
-        if(slots[idx].classList.contains('empty')) {
-           const item = ITEMS[itemId];
-           slots[idx].innerText = item.icon;
-           slots[idx].classList.remove('empty');
-           slots[idx].onmouseenter = () => showItemTooltip(itemId);
-           slots[idx].onmouseleave = hideTooltip;
-        }
-      });
-    }
-
-    function toggleShop() {
-      if(state.screen === 'playing') {
-        state.screen = 'shop';
-        document.getElementById('shop-menu').classList.remove('hidden');
-        document.getElementById('shop-current-gdp').innerText = '$' + state.score;
-        filterShop('attack');
-      } else {
-        state.screen = 'playing';
-        document.getElementById('shop-menu').classList.add('hidden');
-      }
-    }
-
-    function filterShop(type) {
-      const container = document.getElementById('shop-items-container');
-      container.innerHTML = '';
-      document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
-      
-      for (const [id, item] of Object.entries(ITEMS)) {
-        if(item.type === type) {
-          const div = document.createElement('div');
-          div.className = 'shop-item-card';
-          div.onclick = () => buyItem(id);
           div.innerHTML = `
-            <div class="shop-item-icon">${item.icon}</div>
-            <div class="shop-item-name">${item.name}</div>
-            <div class="shop-item-cost">$${item.cost}</div>
-            <div class="shop-item-desc">${item.desc}</div>
-            <div class="shop-buy-btn btn">BUY</div>
+            <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=${data.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9" class="mini-avatar">
+            <div class="mini-name">${data.name}</div>
           `;
           container.appendChild(div);
         }
       }
     }
 
-    function buyItem(id) {
-      const item = ITEMS[id];
-      if(state.score >= item.cost) {
-        if(state.inventory.length < 6) {
-          state.score -= item.cost;
-          state.inventory.push(id);
-          document.getElementById('shop-current-gdp').innerText = '$' + state.score;
-          spawnFloatingText(width/2, height/2, "PURCHASED!", "#00ff9d");
-        } else { alert("Inventory Full!"); }
-      } else { alert("Not enough GDP!"); }
+    function updateDetailPanel(id) {
+      const d = CHARACTERS[id];
+      document.getElementById('detail-name').innerText = d.name;
+      document.getElementById('detail-title').innerText = d.title;
+      document.getElementById('detail-avatar').src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${d.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+      
+      document.getElementById('bar-hp').style.width = (d.hp * 10) + '%';
+      document.getElementById('bar-atk').style.width = (d.atk * 10) + '%';
+      document.getElementById('bar-spd').style.width = (d.spd * 10) + '%';
+      document.getElementById('bar-rate').style.width = (d.rate * 8) + '%';
+      
+      // Skills
+      document.getElementById('skill-q-name').innerText = d.q; document.getElementById('skill-q-desc').innerText = d.qDesc;
+      document.getElementById('skill-w-name').innerText = d.w; document.getElementById('skill-w-desc').innerText = d.wDesc;
+      document.getElementById('skill-e-name').innerText = d.e || '-'; document.getElementById('skill-e-desc').innerText = d.eDesc || '-';
+      document.getElementById('skill-r-name').innerText = d.r; document.getElementById('skill-r-desc').innerText = d.rDesc;
     }
 
-    function showSkillTooltip(key) {
-      const tt = document.getElementById('tooltip');
-      const char = CHARACTERS[state.selectedChar];
-      // ... simplified skill stats
-      document.getElementById('tt-title').innerText = key.toUpperCase() + " SKILL";
-      document.getElementById('tt-desc').innerText = "Special Ability";
+    function startGame() {
+      const d = CHARACTERS[selectedCharId];
+      state.player = {
+        x: canvas.width/2, y: canvas.height/2,
+        baseHp: d.hp*20, hp: d.hp*20, maxHp: d.hp*20,
+        baseSpd: d.spd*0.8+2, baseDmg: d.atk*0.8+1, baseRate: Math.max(4, 40 - (d.rate*3)),
+        color: d.color, r: 20, moving: false, targetX: 0, targetY: 0,
+        cd: {q:0, w:0, e:0, r:0},
+        img: new Image()
+      };
+      state.player.img.src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${d.name.replace(/ /g,'')}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+      
+      state.bullets = []; state.enemies = []; state.particles = []; state.texts = [];
+      state.score = 1000;
+      state.screen = 'playing';
+      
+      document.getElementById('screen-char').classList.add('hidden');
+      document.getElementById('ui-layer').classList.remove('hidden');
+      gameLoop();
+    }
+
+    /* ====== 游戏逻辑 ====== */
+    function update() {
+      const p = state.player;
+      if (!p || p.hp <= 0) return;
+
+      // 属性重算 (Base + Items)
+      let spd = p.baseSpd, dmg = p.baseDmg, rate = p.baseRate, hpMax = p.baseMaxHp;
+      let passives = [];
+      state.inventory.forEach(id => {
+        const it = ITEMS[id];
+        if(it.stats.spd) spd += it.stats.spd;
+        if(it.stats.dmg) dmg += it.stats.dmg;
+        if(it.stats.rate) rate *= it.stats.rate;
+        if(it.stats.maxHp) hpMax += it.stats.maxHp;
+        if(it.passive) passives.push(it.passive);
+      });
+      p.maxHp = hpMax;
+
+      // Passives
+      if(state.frame % 60 === 0 && passives.includes('income')) { state.score += 5; spawnFloatingText(p.x, p.y-20, "+5", "#ffee00"); }
+      if(state.frame % 60 === 0 && passives.includes('hpRegen')) p.hp = Math.min(p.hp+1, p.maxHp);
+      if(state.frame % 600 === 0 && passives.includes('shield')) { p.shield = true; spawnFloatingText(p.x, p.y, "SHIELD", "#00ff9d"); }
+
+      // Move
+      if (p.moving) {
+        let dx = p.targetX - p.x, dy = p.targetY - p.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < spd) { p.x = p.targetX; p.y = p.targetY; p.moving = false; }
+        else { p.x += (dx/dist)*spd; p.y += (dy/dist)*spd; }
+        if(passives.includes('trail') && state.frame % 10 === 0) createParticles(p.x, p.y, '#ff9900', 2);
+      }
+      // Bounds
+      p.x = Math.max(20, Math.min(canvas.width-20, p.x));
+      p.y = Math.max(20, Math.min(canvas.height-20, p.y));
+
+      // Cooldowns & HUD
+      p.angle = Math.atan2(input.mouse.y - p.y, input.mouse.x - p.x);
+      for(let k in p.cd) if(p.cd[k]>0) p.cd[k]--;
+      updateHUD();
+
+      // Attack
+      if(input.mouseDown && state.frame % Math.ceil(rate) === 0) {
+        shootBullet(p, dmg, passives.includes('homing'));
+      }
+
+      // Bullets
+      for(let i=state.bullets.length-1; i>=0; i--) {
+        let b = state.bullets[i];
+        if(b.homing && state.enemies.length>0) {
+           let target = state.enemies[0]; // Simple homing to first
+           let angle = Math.atan2(target.y-b.y, target.x-b.x);
+           b.vx = b.vx*0.9 + Math.cos(angle)*2; b.vy = b.vy*0.9 + Math.sin(angle)*2;
+        }
+        b.x += b.vx; b.y += b.vy; b.life--;
+        if(b.life<=0) state.bullets.splice(i,1);
+      }
+
+      // Enemies
+      if(state.frame % (60/difficultyMultiplier) === 0) spawnEnemy();
+      for(let i=state.enemies.length-1; i>=0; i--) {
+        let e = state.enemies[i];
+        let angle = Math.atan2(p.y - e.y, p.x - e.x);
+        e.x += Math.cos(angle)*e.speed; e.y += Math.sin(angle)*e.speed;
+
+        // Collision Player
+        if(Math.hypot(p.x-e.x, p.y-e.y) < p.r+e.r) {
+          if(p.shield) { p.shield = false; spawnFloatingText(p.x, p.y, "BLOCKED", "#fff"); e.x -= Math.cos(angle)*50; e.y -= Math.sin(angle)*50; }
+          else { p.hp -= 10; createParticles(p.x, p.y, '#ff0000', 10); if(p.hp<=0) gameOver(); }
+          state.enemies.splice(i,1); continue;
+        }
+        // Collision Bullet
+        for(let j=state.bullets.length-1; j>=0; j--) {
+          let b = state.bullets[j];
+          if(Math.hypot(b.x-e.x, b.y-e.y) < e.r+5) {
+            e.hp -= b.dmg; state.bullets.splice(j,1);
+            if(e.hp<=0) {
+               state.score += e.val; spawnFloatingText(e.x, e.y, `+$${e.val}`, "#00ff9d");
+               state.enemies.splice(i,1); createParticles(e.x, e.y, e.color, 8); break;
+            }
+          }
+        }
+      }
+      updateParticles();
+    }
+
+    function render() {
+      ctx.fillStyle = 'rgba(5,5,10,0.3)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      const p = state.player;
+      if(!p) return;
+
+      if(p.moving) {
+        ctx.strokeStyle='#00ff00'; ctx.beginPath();
+        ctx.moveTo(p.targetX-5, p.targetY-5); ctx.lineTo(p.targetX+5, p.targetY+5);
+        ctx.moveTo(p.targetX+5, p.targetY-5); ctx.lineTo(p.targetX-5, p.targetY+5);
+        ctx.stroke();
+      }
+
+      ctx.save(); ctx.translate(p.x, p.y);
+      if(p.shield) { ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,25,0,Math.PI*2); ctx.stroke(); }
+      if(p.img && p.img.complete) {
+        ctx.save(); ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.clip();
+        ctx.drawImage(p.img, -20, -20, 40, 40); ctx.restore();
+        ctx.strokeStyle=p.color; ctx.lineWidth=2; ctx.stroke();
+      } else {
+        ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+      }
+      // Health
+      ctx.fillStyle="red"; ctx.fillRect(-20, 25, 40, 4);
+      ctx.fillStyle="#00ff00"; ctx.fillRect(-20, 25, 40*(Math.max(0,p.hp)/p.maxHp), 4);
+      ctx.restore();
+
+      state.enemies.forEach(e=>{ ctx.fillStyle=e.color; ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill(); });
+      state.bullets.forEach(b=>{ ctx.fillStyle=b.color; ctx.beginPath(); ctx.arc(b.x,b.y,4,0,Math.PI*2); ctx.fill(); });
+      state.particles.forEach(pt=>{ ctx.fillStyle=pt.color; ctx.globalAlpha=pt.life/30; ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.size,0,Math.PI*2); ctx.fill(); });
+      ctx.globalAlpha=1;
+      ctx.fillStyle="#fff"; ctx.font="bold 14px monospace";
+      state.texts.forEach(t=>ctx.fillText(t.text, t.x, t.y));
+    }
+
+    /* ====== Helpers ====== */
+    function spawnEnemy() {
+      let angle = Math.random()*Math.PI*2;
+      let r = Math.max(width, height)/2 + 50;
+      state.enemies.push({
+        x: width/2+Math.cos(angle)*r, y: height/2+Math.sin(angle)*r,
+        hp: 10*difficultyMultiplier, speed: 2*difficultyMultiplier, r: 15, color: '#ff0055', val: 50
+      });
+    }
+    function shootBullet(p, dmg, homing) {
+      state.bullets.push({
+        x:p.x, y:p.y, vx:Math.cos(p.angle)*15, vy:Math.sin(p.angle)*15, life:60, color:p.color, dmg:dmg, homing:homing
+      });
+    }
+    function useSkill(key) {
+      const p = state.player;
+      if(p.cd[key]>0) return;
+      // Simple Skill Implementations
+      if(key==='e') { p.x+=Math.cos(p.angle)*200; p.y+=Math.sin(p.angle)*200; p.targetX=p.x; p.cd[key]=180; }
+      if(key==='q') { for(let i=-0.5;i<=0.5;i+=0.25) shootBullet({...p, angle:p.angle+i}, p.baseDmg*1.5, false); p.cd[key]=120; }
+      if(key==='w') { state.enemies.forEach(e=>{if(Math.hypot(p.x-e.x, p.y-e.y)<200) e.x-=100;}); p.cd[key]=300; }
+      if(key==='r') { state.enemies=[]; spawnFloatingText(width/2, height/2, "ULTIMATE!", "#ffee00"); p.cd[key]=900; }
+    }
+    function updateHUD() {
+      document.getElementById('score-val').innerText = Math.floor(state.score);
+      document.getElementById('health-val').innerText = Math.floor(state.player.hp);
+      ['q','w','e','r'].forEach(k => {
+         let cd = state.player.cd[k];
+         let el = document.querySelector(`#skill-${k} .cooldown-overlay`);
+         if(cd > 0) { el.style.height="100%"; el.querySelector('span').innerText = Math.ceil(cd/60); }
+         else { el.style.height="0%"; el.querySelector('span').innerText=""; }
+      });
+      const slots = document.querySelectorAll('.item-slot');
+      state.inventory.forEach((id, i) => {
+        if(slots[i].classList.contains('empty')) {
+           const item = ITEMS[id];
+           slots[i].innerHTML = item.icon;
+           slots[i].classList.remove('empty');
+           slots[i].onmouseenter = () => showTooltip(null, null, item); // Special handling for item tooltip
+           slots[i].onmouseleave = hideTooltip;
+        }
+      });
+    }
+    function toggleShop() {
+      if(state.screen==='playing'){ state.screen='shop'; document.getElementById('shop-menu').classList.remove('hidden'); filterShop('attack'); }
+      else if(state.screen==='shop'){ state.screen='playing'; document.getElementById('shop-menu').classList.add('hidden'); loop(); }
+    }
+    function filterShop(type) {
+      document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      const c = document.getElementById('shop-items-container'); c.innerHTML='';
+      for(const [id, it] of Object.entries(ITEMS)) {
+        if(it.type===type) {
+          c.innerHTML += `<div class="shop-item-card" onclick="buyItem('${id}')">
+            <div class="shop-item-icon">${it.icon}</div><div class="shop-item-name">${it.name}</div>
+            <div class="shop-item-cost">$${it.cost}</div><div class="shop-item-desc">${it.desc}</div>
+            <div class="shop-buy-btn btn">BUY</div></div>`;
+        }
+      }
+    }
+    function buyItem(id) {
+      const it = ITEMS[id];
+      if(state.score >= it.cost && state.inventory.length < 6) {
+        state.score -= it.cost; state.inventory.push(id);
+        document.getElementById('shop-current-gdp').innerText = '$'+state.score;
+        spawnFloatingText(width/2, height/2, "BOUGHT!", "#00ff9d");
+      } else alert("Not enough GDP or Full!");
+    }
+
+    /* Tooltip Logic */
+    function showSelectTooltip(el, key) {
+      const d = CHARACTERS[selectedCharId];
+      showTooltipBase(el, d[key]||key.toUpperCase(), d[key+'Desc'], d[key+'Info']);
+    }
+    function showGameTooltip(el, key) {
+      const d = CHARACTERS[selectedCharId];
+      showTooltipBase(el, d[key], d[key+'Desc'], d[key+'Info']);
+    }
+    function showTooltipBase(el, title, desc, info) {
+      const tt = document.getElementById('global-tooltip');
+      document.getElementById('tt-title').innerText = title;
+      document.getElementById('tt-desc').innerText = desc;
+      document.getElementById('tt-info').innerHTML = `<span>${info||''}</span>`;
+      const r = el.getBoundingClientRect();
+      tt.style.left = (r.left+20)+'px'; tt.style.top = (r.top-120)+'px';
       tt.style.display = 'block';
     }
+    function hideTooltip() { document.getElementById('global-tooltip').style.display = 'none'; }
     
-    function showItemTooltip(id) {
-      const tt = document.getElementById('tooltip');
-      const item = ITEMS[id];
-      document.getElementById('tt-title').innerText = item.name;
-      document.getElementById('tt-desc').innerText = item.desc;
-      tt.style.display = 'block';
+    /* Misc */
+    window.onkeydown = e => {
+      if(state.screen==='playing') {
+        if('qwer'.includes(e.key.toLowerCase())) useSkill(e.key.toLowerCase());
+        if(e.key.toLowerCase()==='b') toggleShop();
+        if(e.key.toLowerCase()==='a') input.mouseDown=true;
+        if(e.key==='Escape') togglePause();
+      } else if(state.screen==='shop' && e.key.toLowerCase()==='b') toggleShop();
     }
-    function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
-    
+    window.onkeyup = e => { if(e.key.toLowerCase()==='a') input.mouseDown=false; };
+    window.onmousemove = e => { input.mouse.x=e.clientX; input.mouse.y=e.clientY; };
+    window.onmousedown = e => { if(e.button===0) input.mouseDown=true; if(e.button===2 && state.player) {
+      state.player.moving=true; state.player.targetX=e.clientX; state.player.targetY=e.clientY;
+    }};
+    window.onmouseup = () => input.mouseDown=false;
+    window.oncontextmenu = e => e.preventDefault();
+
+    function setDifficulty(v, el) { difficultyMultiplier=v; document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active')); el.classList.add('active'); }
+    function togglePause() {
+      if(state.screen==='playing') { state.screen='paused'; document.getElementById('pause-menu').classList.remove('hidden'); }
+      else if(state.screen==='paused') { state.screen='playing'; document.getElementById('pause-menu').classList.add('hidden'); loop(); }
+    }
+    function gameOver() { state.screen='over'; document.getElementById('game-over').classList.remove('hidden'); document.getElementById('final-score').innerText=state.score; }
     function createParticles(x,y,c,n) { for(let i=0;i<n;i++) state.particles.push({x,y,vx:(Math.random()-.5)*10,vy:(Math.random()-.5)*10,life:30,color:c,size:Math.random()*3}); }
     function spawnFloatingText(x,y,t,c='#fff') { state.texts.push({x,y,text:t,color:c,life:60}); }
     function updateParticles() { 
       for(let i=state.particles.length-1;i>=0;i--){ let p=state.particles[i]; p.x+=p.vx; p.y+=p.vy; p.life--; if(p.life<=0) state.particles.splice(i,1); }
       for(let i=state.texts.length-1;i>=0;i--){ let t=state.texts[i]; t.y--; t.life--; if(t.life<=0) state.texts.splice(i,1); }
     }
-    function togglePause() {
-      if(state.screen === 'playing') { state.screen = 'paused'; document.getElementById('pause-menu').classList.remove('hidden'); }
-      else if(state.screen === 'paused') { state.screen = 'playing'; document.getElementById('pause-menu').classList.add('hidden'); loop(); }
-    }
-    function gameOver() {
-      state.screen = 'over';
-      document.getElementById('game-over').classList.remove('hidden');
-      document.getElementById('final-score').innerText = state.score;
-    }
-    
-    // Initial Render
-    // Wait for DOM
-    window.onload = () => {
-       // Already handled by inline scripts mostly, but good practice to check
-    };
+
+    // Init
+    // Start loop just to render bg
+    function loop() { requestAnimationFrame(loop); render(); }
+    loop();
   </script>
 </body>
 </html>
