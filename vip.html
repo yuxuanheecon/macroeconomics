@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VIP Nexus v2.3 | Earth Macro</title>
+  <title>VIP Nexus v2.4 | Earth Macro</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=JetBrains+Mono:wght@300;500;700&display=swap" rel="stylesheet">
   <!-- 引入 Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
@@ -15,7 +15,6 @@
       --gold-primary: #d4af37;
       --gold-dim: #8a7035;
       --gold-bright: #ffd700;
-      --neon-green: #00ff9d;
       --text-main: #e0e0e0;
       --glass-panel: rgba(20, 20, 20, 0.85);
       --glass-border: rgba(212, 175, 55, 0.3);
@@ -112,12 +111,15 @@
     }
     .dock-item:hover .dock-tooltip { opacity: 1; top: -50px; }
 
-    /* ====== 全屏时钟 ====== */
+    /* ====== 全屏时钟 (Updated with Blur) ====== */
     #full-clock {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
       z-index: 50; pointer-events: none; opacity: 0; transition: opacity 0.8s ease;
-      background: radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+      /* 核心更新：背景虚化 */
+      background: radial-gradient(circle at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
     body.clock-mode #full-clock { opacity: 1; pointer-events: auto; }
 
@@ -275,9 +277,9 @@
   </div>
 
   <!-- 主界面 UI 容器 -->
-  <div id="ui-container" style="opacity:0"> <!-- Initial hidden for intro -->
+  <div id="ui-container" style="opacity:0">
     <header>
-      <div class="vip-logo">VIP NEXUS v2.3</div>
+      <div class="vip-logo">VIP NEXUS v2.4</div>
       <a onclick="exitVip()" class="back-link">EXIT SECURE SPACE</a>
     </header>
 
@@ -418,7 +420,6 @@
       const grantedText = document.getElementById('granted-text');
       const ui = document.getElementById('ui-container');
       
-      // Sequence
       setTimeout(() => { introText.innerText = "VERIFYING BIOMETRICS..."; }, 800);
       setTimeout(() => { introText.innerText = "DECRYPTING SECURE CHANNEL..."; }, 1800);
       setTimeout(() => { 
@@ -428,10 +429,8 @@
       
       setTimeout(() => {
         introLayer.style.opacity = '0';
-        introLayer.style.pointerEvents = 'none'; // Allow clicks through
+        introLayer.style.pointerEvents = 'none';
         ui.style.opacity = '1';
-        
-        // Init background
         animateBg();
         updateClock();
       }, 3500);
@@ -517,7 +516,6 @@
       }
       const resStr = result.join(', ');
       display.innerText = resStr;
-      
       const div = document.createElement('div');
       div.className = 'history-item';
       div.innerHTML = `<span>${new Date().toLocaleTimeString()}</span> <span>${resStr}</span>`;
@@ -528,23 +526,21 @@
     /* ====== 5. Toys 3D (Rigged Physics) ====== */
     let toysScene, toysCamera, toysRenderer, toysAnimFrameId;
     let toyObjects = [];
+    let currentToyResults = null; // Store pending results
 
     function initToys3D() {
       const container = document.getElementById('toys-canvas-container');
       if(toysRenderer) { clearToys(); animateToys(); return; }
-      
       toysScene = new THREE.Scene();
       toysCamera = new THREE.PerspectiveCamera(50, container.offsetWidth/container.offsetHeight, 0.1, 1000);
       toysRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
       toysRenderer.setSize(container.offsetWidth, container.offsetHeight);
       container.innerHTML = ''; container.appendChild(toysRenderer.domElement);
-      
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
       toysScene.add(ambientLight);
       const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
       dirLight.position.set(5, 10, 7);
       toysScene.add(dirLight);
-      
       toysCamera.position.set(0, 10, 8);
       toysCamera.lookAt(0, 0, 0);
       animateToys();
@@ -554,6 +550,7 @@
       toyObjects.forEach(obj => toysScene.remove(obj.mesh));
       toyObjects = [];
       document.getElementById('toys-result').innerText = "";
+      currentToyResults = null;
     }
 
     function createCoinGeometry() {
@@ -578,12 +575,9 @@
     
     function createDiceGeometry() {
         const geo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-        const m1 = createDiceTexture(1, '#d00'); 
-        const m2 = createDiceTexture(2, '#00d'); 
-        const m3 = createDiceTexture(3, '#0d0'); 
-        const m4 = createDiceTexture(4, '#d0d'); 
-        const m5 = createDiceTexture(5, '#dd0'); 
-        const m6 = createDiceTexture(6, '#0dd'); 
+        const m1 = createDiceTexture(1, '#d00'); const m2 = createDiceTexture(2, '#00d'); 
+        const m3 = createDiceTexture(3, '#0d0'); const m4 = createDiceTexture(4, '#d0d'); 
+        const m5 = createDiceTexture(5, '#dd0'); const m6 = createDiceTexture(6, '#0dd'); 
         const materials = [m3, m4, m1, m6, m2, m5];
         return new THREE.Mesh(geo, materials);
     }
@@ -605,6 +599,9 @@
 
     function throwObjects(type) {
       clearToys();
+      // Clear text immediately on throw
+      document.getElementById('toys-result').innerText = "";
+      
       const qty = parseInt(document.getElementById(type + '-qty').value) || 1;
       let results = [];
       
@@ -637,17 +634,26 @@
           yVel: 0, yPos: mesh.position.y, settled: false
         });
       }
-      document.getElementById('toys-result').innerText = "RESULT: " + results.join(", ");
+      
+      // Store result for later
+      currentToyResults = "RESULT: " + results.join(", ");
     }
 
     function animateToys() {
       toysAnimFrameId = requestAnimationFrame(animateToys);
+      
+      let allSettled = true;
+      
       toyObjects.forEach(obj => {
         if (obj.settled) {
             obj.mesh.rotation.x += (obj.targetRot.x - obj.mesh.rotation.x) * 0.1;
             obj.mesh.rotation.z += (obj.targetRot.z - obj.mesh.rotation.z) * 0.1;
             return;
         }
+        
+        // If any object is not settled, flag false
+        allSettled = false;
+        
         obj.yVel -= 0.02; obj.yPos += obj.yVel;
         if(obj.yPos <= 0.7) {
           obj.yPos = 0.7; obj.yVel *= -0.5; obj.rotVel.multiplyScalar(0.8);
@@ -667,6 +673,13 @@
             obj.mesh.rotation.z += obj.rotVel.z;
         }
       });
+      
+      // Reveal results ONLY if all settled and we have pending results
+      if (allSettled && currentToyResults && toyObjects.length > 0) {
+          document.getElementById('toys-result').innerText = currentToyResults;
+          currentToyResults = null; // Clear pending
+      }
+      
       if(toysRenderer && toysScene && toysCamera) toysRenderer.render(toysScene, toysCamera);
     }
 
@@ -681,6 +694,7 @@
     function startTimer() { isRunning = true; document.getElementById('timer-btn').innerText = "PAUSE"; timerInterval = setInterval(() => { if(timeLeft > 0) { timeLeft--; updateTimerDisplay(); } else { stopTimer(); alert("Time is up!"); } }, 1000); }
     function stopTimer() { isRunning = false; document.getElementById('timer-btn').innerText = "START"; clearInterval(timerInterval); }
     function resetTimer() { stopTimer(); timeLeft = 1500; updateInputs(25, 0); updateTimerDisplay(); }
+
   </script>
 </body>
 </html>
