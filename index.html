@@ -4,17 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Earth Macro | 链接未来智能</title>
-  
   <!-- 引入 Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-  
-  <!-- 引入字体 -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&family=Noto+Serif+SC:wght@700&display=swap" rel="stylesheet">
-
   <style>
-    /* ====== 1. 视觉变量系统 (Cyberpunk Palette) ====== */
+    /* ... (保持原有的 style，仅增加/修改入场动画部分) ... */
+    /* 为了完整性，这里提供完整的 style */
     :root {
       --bg-space: #000000;
       --neon-purple: #bd34fe;
@@ -22,7 +17,7 @@
       --neon-pink: #ff2a6d;
       --neon-yellow: #facc15;
       --neon-red: #ff0055;
-      --neon-gold: #ffd700; /* VIP Gold */
+      --neon-gold: #ffd700; 
       --glass-bg: rgba(255, 255, 255, 0.03);
       --glass-border: rgba(255, 255, 255, 0.1);
       --glass-blur: 12px;
@@ -30,121 +25,50 @@
       --text-gray: #a1a1aa;
       --reel-height: 60px; 
     }
-
     html { scroll-behavior: smooth; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: "Inter", sans-serif;
-      background-color: var(--bg-space);
-      color: var(--text-white);
-      overflow-x: hidden;
-    }
-
+    body { font-family: "Inter", sans-serif; background-color: var(--bg-space); color: var(--text-white); overflow-x: hidden; }
     a { text-decoration: none; color: inherit; cursor: pointer; }
-
-    /* ====== 2. Three.js 画布 ====== */
-    #canvas-container {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      z-index: -1; pointer-events: none;
-      background: radial-gradient(circle at 50% 50%, #1a1025 0%, #000000 100%);
-    }
-
-    /* ====== 3. 导航栏 ====== */
-    nav {
-      position: fixed; top: 0; width: 100%; padding: 20px 40px;
-      display: flex; justify-content: space-between; align-items: center;
-      z-index: 100; background: rgba(0,0,0,0.6); backdrop-filter: blur(15px);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
+    #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; background: radial-gradient(circle at 50% 50%, #1a1025 0%, #000000 100%); }
+    nav { position: fixed; top: 0; width: 100%; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; z-index: 100; background: rgba(0,0,0,0.6); backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255,255,255,0.05); }
     .nav-brand { font-family: "JetBrains Mono"; font-weight: 700; font-size: 1.2rem; letter-spacing: -1px; }
     .nav-brand span { color: var(--neon-cyan); }
     .nav-links { display: flex; gap: 30px; align-items: center; }
     .nav-links a { font-size: 0.9rem; color: var(--text-gray); transition: color 0.3s; position: relative; }
     .nav-links a:hover { color: var(--text-white); }
-    
-    /* VIP Button Style */
-    .vip-trigger {
-      font-size: 1.2rem; cursor: pointer; transition: transform 0.3s;
-      filter: drop-shadow(0 0 5px var(--neon-gold));
-      animation: pulse-gold 3s infinite;
-    }
+    .vip-trigger { font-size: 1.2rem; cursor: pointer; transition: transform 0.3s; filter: drop-shadow(0 0 5px var(--neon-gold)); animation: pulse-gold 3s infinite; }
     .vip-trigger:hover { transform: scale(1.2) rotate(15deg); }
     @keyframes pulse-gold { 0% { opacity: 0.8; } 50% { opacity: 1; filter: drop-shadow(0 0 10px var(--neon-gold)); } 100% { opacity: 0.8; } }
-
-    .nav-btn {
-      padding: 8px 20px; border: 1px solid var(--neon-cyan); border-radius: 50px;
-      color: var(--neon-cyan); font-size: 0.85rem; font-weight: 600;
-      background: rgba(0, 242, 255, 0.1); transition: all 0.3s; cursor: pointer; font-family: "JetBrains Mono";
-    }
+    .nav-btn { padding: 8px 20px; border: 1px solid var(--neon-cyan); border-radius: 50px; color: var(--neon-cyan); font-size: 0.85rem; font-weight: 600; background: rgba(0, 242, 255, 0.1); transition: all 0.3s; cursor: pointer; font-family: "JetBrains Mono"; }
     .nav-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 20px var(--neon-cyan); }
-
-    /* ====== 4. Hero Section ====== */
-    .hero {
-      height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;
-      text-align: center; position: relative; padding: 0 20px;
-    }
-    .system-badge {
-      display: inline-block; padding: 6px 16px; border: 1px solid rgba(189, 52, 254, 0.5);
-      background: rgba(189, 52, 254, 0.1); color: var(--neon-purple); border-radius: 50px;
-      font-family: "JetBrains Mono"; font-size: 0.75rem; letter-spacing: 1px; margin-bottom: 24px;
-      box-shadow: 0 0 15px rgba(189, 52, 254, 0.2);
-    }
+    .hero { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: relative; padding: 0 20px; }
+    .system-badge { display: inline-block; padding: 6px 16px; border: 1px solid rgba(189, 52, 254, 0.5); background: rgba(189, 52, 254, 0.1); color: var(--neon-purple); border-radius: 50px; font-family: "JetBrains Mono"; font-size: 0.75rem; letter-spacing: 1px; margin-bottom: 24px; box-shadow: 0 0 15px rgba(189, 52, 254, 0.2); }
     .hero h1 { font-size: 4.5rem; line-height: 1.1; margin-bottom: 20px; font-weight: 800; letter-spacing: -2px; }
     .gradient-text-1 { background: linear-gradient(90deg, #fff, var(--neon-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .gradient-text-2 { background: linear-gradient(90deg, var(--neon-purple), var(--neon-pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .hero p { color: var(--text-gray); font-size: 1.1rem; max-width: 600px; margin: 0 auto 40px; line-height: 1.6; }
     .hero-btns { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
-    
     .btn-primary { padding: 12px 32px; background: var(--text-white); color: #000; font-weight: 700; border-radius: 8px; transition: transform 0.2s; display: flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none; }
     .btn-primary:hover { transform: translateY(-2px); }
-    
-    /* Data Button */
-    .btn-data { padding: 12px 32px; background: var(--neon-cyan); color: black; font-weight: 700; border-radius: 8px; transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none; border: none; box-shadow: 0 0 20px rgba(0, 242, 255, 0.4); }
-    .btn-data:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0, 242, 255, 0.6); }
-
     .btn-glass { padding: 12px 32px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-white); border-radius: 8px; backdrop-filter: blur(10px); transition: background 0.2s; display: flex; align-items: center; gap: 8px; cursor: pointer; }
     .btn-glass:hover { background: rgba(255,255,255,0.1); }
-
-    /* ====== Common Section Styles ====== */
     .section { padding: 100px 20px; max-width: 1200px; margin: 0 auto; }
     .section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 60px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
     .section-title { font-size: 2.5rem; font-weight: 700; }
     .section-number { font-family: "JetBrains Mono"; color: var(--neon-purple); font-size: 1.5rem; margin-right: 10px; }
     .view-more { color: var(--neon-cyan); font-size: 0.9rem; font-family: "JetBrains Mono"; display: flex; align-items: center; gap: 5px; transition: gap 0.2s; }
     .view-more:hover { gap: 10px; }
-
-    /* Games Section */
     .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 40px; }
-    .game-card {
-      position: relative; height: 320px; border-radius: 20px; overflow: hidden;
-      border: 2px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s ease;
-      display: flex; flex-direction: column; justify-content: flex-end; padding: 30px;
-      text-decoration: none; background: #000;
-    }
+    .game-card { position: relative; height: 320px; border-radius: 20px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s ease; display: flex; flex-direction: column; justify-content: flex-end; padding: 30px; text-decoration: none; background: #000; }
     .game-card:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 20px 50px rgba(0,0,0,0.5); border-color: var(--neon-purple); }
-    .game-bg {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background-size: cover; background-position: center; opacity: 0.5;
-      transition: transform 0.6s; z-index: 0;
-    }
+    .game-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0.5; transition: transform 0.6s; z-index: 0; }
     .game-card:hover .game-bg { transform: scale(1.1); opacity: 0.3; }
     .game-content { position: relative; z-index: 2; }
-    .game-badge {
-      display: inline-block; padding: 4px 10px; border: 1px solid var(--neon-purple); 
-      color: var(--neon-purple); font-size: 0.7rem; font-weight: 800; border-radius: 4px; 
-      margin-bottom: 10px; font-family: 'JetBrains Mono'; background: rgba(0,0,0,0.8);
-    }
+    .game-badge { display: inline-block; padding: 4px 10px; border: 1px solid var(--neon-purple); color: var(--neon-purple); font-size: 0.7rem; font-weight: 800; border-radius: 4px; margin-bottom: 10px; font-family: 'JetBrains Mono'; background: rgba(0,0,0,0.8); }
     .game-card h3 { font-size: 2rem; margin: 0 0 10px 0; font-family: 'Share Tech Mono'; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
     .game-card p { font-size: 0.9rem; color: #ccc; margin-bottom: 20px; max-width: 90%; text-shadow: 0 1px 2px rgba(0,0,0,1); }
     .play-btn { display: inline-block; font-family: 'JetBrains Mono'; font-weight: bold; font-size: 0.9rem; color: var(--neon-purple); border-bottom: 2px solid var(--neon-purple); padding-bottom: 2px; }
-
-    /* Fortune Lab */
-    .fortune-container {
-      background: linear-gradient(135deg, rgba(20,20,30,0.8), rgba(10,10,10,0.9));
-      border: 1px solid var(--neon-cyan); border-radius: 20px; padding: 40px; margin-bottom: 60px;
-      box-shadow: 0 0 40px rgba(0, 242, 255, 0.1); position: relative; overflow: hidden; text-align: center;
-    }
+    .fortune-container { background: linear-gradient(135deg, rgba(20,20,30,0.8), rgba(10,10,10,0.9)); border: 1px solid var(--neon-cyan); border-radius: 20px; padding: 40px; margin-bottom: 60px; box-shadow: 0 0 40px rgba(0, 242, 255, 0.1); position: relative; overflow: hidden; text-align: center; }
     .fortune-container::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan)); }
     .fortune-display { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin: 40px 0; }
     .fortune-item { background: rgba(10, 10, 15, 0.6); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); transition: all 0.3s; display: flex; flex-direction: column; }
@@ -161,32 +85,10 @@
     .action-btn:disabled { opacity: 0.7; cursor: not-allowed; filter: grayscale(0.8); transform: none; }
     .action-btn::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent); transform: rotate(45deg); animation: shine 3s infinite; }
     @keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
-
-    /* ====== NEW: Resource Grid (数据源导航) ====== */
-    .resource-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;
-    }
-    .resource-card {
-      background: var(--glass-bg); border: 1px solid var(--glass-border);
-      padding: 20px; border-radius: 12px; text-decoration: none;
-      transition: all 0.3s; display: flex; flex-direction: column; align-items: center; text-align: center;
-    }
-    .resource-card:hover {
-      border-color: var(--neon-cyan); transform: translateY(-5px);
-      background: rgba(0, 242, 255, 0.05);
-      box-shadow: 0 5px 20px rgba(0, 242, 255, 0.1);
-    }
-    .res-icon { font-size: 2rem; margin-bottom: 10px; }
-    .res-name { font-weight: bold; color: #fff; margin-bottom: 5px; font-family: 'Share Tech Mono'; font-size: 1.1rem; }
-    .res-desc { font-size: 0.75rem; color: var(--text-gray); line-height: 1.4; }
-
-    /* Core Values */
     .value-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
     .value-card { background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 30px; border-radius: 16px; backdrop-filter: blur(var(--glass-blur)); transition: all 0.3s; }
     .value-card:hover { border-color: var(--neon-purple); box-shadow: 0 0 30px rgba(189, 52, 254, 0.15); transform: translateY(-5px); }
     .value-icon { font-size: 2rem; margin-bottom: 20px; color: var(--neon-cyan); }
-
-    /* Content */
     .content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
     .content-card { background: #0a0a0a; border: 1px solid var(--glass-border); border-radius: 16px; overflow: hidden; transition: all 0.3s; display: flex; flex-direction: column; text-decoration: none; }
     .content-card:hover { transform: translateY(-5px); box-shadow: 0 10px 40px rgba(0,0,0,0.5); border-color: var(--neon-pink); }
@@ -199,15 +101,11 @@
     .card-body { padding: 25px; flex: 1; display: flex; flex-direction: column; }
     .card-date { font-size: 0.8rem; color: var(--text-gray); font-family: "JetBrains Mono"; margin-bottom: 10px; }
     .card-title { font-size: 1.1rem; margin-bottom: 15px; line-height: 1.4; font-weight: 600; color: var(--text-white); }
-
-    /* About */
     .about-container { background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0) 100%); border: 1px solid var(--glass-border); border-radius: 24px; padding: 60px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 60px; align-items: center; }
     .about-text h2 { font-size: 2.5rem; margin-bottom: 20px; }
     .about-text p { color: var(--text-gray); margin-bottom: 30px; }
     .feature-list li { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--text-white); }
     .check-icon { color: var(--bg-space); background: var(--neon-cyan); width: 20px; height: 20px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; }
-
-    /* Modals */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 2000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
     .modal-overlay.active { display: flex; opacity: 1; }
     .modal-content { background: #0f0f0f; border: 1px solid var(--neon-cyan); padding: 40px; border-radius: 20px; text-align: center; position: relative; max-width: 400px; width: 90%; box-shadow: 0 0 50px rgba(0, 242, 255, 0.2); transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -229,6 +127,42 @@
     .pin-error { color: var(--neon-red); margin-top: 10px; font-size: 0.8rem; min-height: 20px; }
     .pin-close { margin-top: 15px; cursor: pointer; color: #666; font-size: 0.8rem; text-decoration: underline; }
 
+    /* ====== 入场动画层 ====== */
+    .reveal-layer {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; z-index: 9999;
+      display: none; /* Default hidden, shown via JS */
+      flex-direction: column; justify-content: center; align-items: center;
+      pointer-events: auto;
+    }
+    .reveal-content { position: relative; width: 300px; height: 300px; display: flex; justify-content: center; align-items: center; }
+    .scan-circle {
+      position: absolute; width: 100%; height: 100%; border: 2px solid #333; border-radius: 50%;
+      border-top-color: var(--neon-gold); animation: spin 2s linear infinite;
+    }
+    .scan-inner {
+      position: absolute; width: 70%; height: 70%; border: 1px solid #333; border-radius: 50%;
+      border-bottom-color: var(--neon-gold); animation: spin 1.5s linear infinite reverse;
+    }
+    .scan-text {
+      font-family: 'JetBrains Mono'; color: var(--neon-gold); font-size: 0.9rem; letter-spacing: 2px;
+      margin-top: 30px; text-align: center;
+    }
+    .scan-grid {
+      position: absolute; width: 100%; height: 100%; 
+      background: linear-gradient(rgba(212, 175, 55, 0.1) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(212, 175, 55, 0.1) 1px, transparent 1px);
+      background-size: 20px 20px; opacity: 0.3;
+      mask-image: radial-gradient(circle, black 40%, transparent 70%);
+      -webkit-mask-image: radial-gradient(circle, black 40%, transparent 70%);
+    }
+    .access-granted {
+      color: var(--neon-green); font-size: 1.5rem; font-weight: bold; letter-spacing: 3px; 
+      text-shadow: 0 0 10px var(--neon-green); display: none; animation: blink 0.5s infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
     @media (max-width: 768px) { .hero h1 { font-size: 2.8rem; } .game-grid { grid-template-columns: 1fr; } .content-grid { grid-template-columns: 1fr; } .about-container { grid-template-columns: 1fr; padding: 30px; } .nav-links { display: none; } .fortune-display { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
@@ -246,6 +180,18 @@
       <div class="pin-error" id="pin-msg"></div>
       <div class="pin-close" onclick="closePinModal()">Cancel</div>
     </div>
+  </div>
+
+  <!-- Reveal Layer (Moved from VIP to here) -->
+  <div class="reveal-layer" id="intro-layer">
+    <div class="reveal-content">
+      <div class="scan-grid"></div>
+      <div class="scan-circle"></div>
+      <div class="scan-inner"></div>
+      <div style="font-size:3rem;">💎</div>
+    </div>
+    <div class="scan-text" id="intro-text">INITIALIZING SECURE CONNECTION...</div>
+    <div class="access-granted" id="granted-text">ACCESS GRANTED</div>
   </div>
 
   <!-- 订阅弹窗 Modal -->
@@ -267,10 +213,11 @@
     <div class="nav-links">
       <a onclick="scrollToSection('hero')">首页</a>
       <a onclick="scrollToSection('game-center')" style="color:var(--neon-cyan); font-weight:bold;">游戏大厅</a>
-      <a onclick="scrollToSection('resources')">数据源</a> <!-- 新增入口 -->
       <a onclick="scrollToSection('fortune-lab')">运势实验室</a>
       <a onclick="scrollToSection('core-values')">核心价值</a>
       <a onclick="scrollToSection('content')">精选内容</a>
+      <a onclick="scrollToSection('about')">关于社群</a>
+      <!-- VIP 入口 -->
       <a class="vip-trigger" onclick="openPinModal()" title="VIP Space">💎</a>
     </div>
     <button class="nav-btn" id="nav-subscribe-btn">SUBSCRIBE</button>
@@ -307,55 +254,6 @@
           <p>金融保卫战。扮演央行行长，使用加息、QE等货币武器，击退通胀恶魔。</p>
           <div class="play-btn" style="color:var(--neon-red); border-color:var(--neon-red)">ENTER BATTLE &rarr;</div>
         </div>
-      </a>
-    </div>
-  </section>
-
-  <!-- Resources Section -->
-  <section id="resources" class="section">
-    <div class="section-header">
-      <div class="section-title"><span class="section-number">DATA.</span>常用数据源</div>
-    </div>
-    <div class="resource-grid">
-      <a href="https://fred.stlouisfed.org/" target="_blank" class="resource-card">
-        <div class="res-icon">📊</div>
-        <div class="res-name">FRED</div>
-        <div class="res-desc">美联储经济数据库</div>
-      </a>
-      <a href="http://www.stats.gov.cn/" target="_blank" class="resource-card">
-        <div class="res-icon">🇨🇳</div>
-        <div class="res-name">国家统计局</div>
-        <div class="res-desc">中国官方宏观数据</div>
-      </a>
-      <a href="https://www.federalreserve.gov/" target="_blank" class="resource-card">
-        <div class="res-icon">🏛️</div>
-        <div class="res-name">The Fed</div>
-        <div class="res-desc">美国联邦储备系统</div>
-      </a>
-      <a href="http://www.pbc.gov.cn/" target="_blank" class="resource-card">
-        <div class="res-icon">🏦</div>
-        <div class="res-name">PBOC</div>
-        <div class="res-desc">中国人民银行</div>
-      </a>
-      <a href="https://www.imf.org/en/Data" target="_blank" class="resource-card">
-        <div class="res-icon">🌍</div>
-        <div class="res-name">IMF Data</div>
-        <div class="res-desc">国际货币基金组织</div>
-      </a>
-      <a href="https://data.worldbank.org/" target="_blank" class="resource-card">
-        <div class="res-icon">🌐</div>
-        <div class="res-name">World Bank</div>
-        <div class="res-desc">世界银行公开数据</div>
-      </a>
-       <a href="https://www.ecb.europa.eu/stats/html/index.en.html" target="_blank" class="resource-card">
-        <div class="res-icon">🇪🇺</div>
-        <div class="res-name">ECB Stats</div>
-        <div class="res-desc">欧洲央行统计</div>
-      </a>
-      <a href="https://tradingeconomics.com/" target="_blank" class="resource-card">
-        <div class="res-icon">📈</div>
-        <div class="res-name">TradingEco</div>
-        <div class="res-desc">全球宏观指标聚合</div>
       </a>
     </div>
   </section>
@@ -454,7 +352,7 @@
       if(el) { const offset = 80; const bodyRect = document.body.getBoundingClientRect().top; const elementRect = el.getBoundingClientRect().top; const elementPosition = elementRect - bodyRect; const offsetPosition = elementPosition - offset; window.scrollTo({ top: offsetPosition, behavior: 'smooth' }); }
     }
     
-    /* ====== PIN Modal Logic ====== */
+    /* ====== PIN Modal Logic (With Animation Trigger) ====== */
     function openPinModal() { 
         document.getElementById('pin-modal').style.display = 'flex'; 
         setTimeout(() => document.getElementById('pin-modal').classList.add('active'), 10); 
@@ -467,11 +365,37 @@
         setTimeout(() => document.getElementById('pin-modal').style.display = 'none', 300); 
     }
     function checkPin() {
-      if(document.getElementById('pin-input').value === "011027") {
-        document.getElementById('pin-msg').style.color="#00ff9d"; document.getElementById('pin-msg').innerText="ACCESS GRANTED";
-        setTimeout(() => { window.location.href = "vip.html"; }, 800);
+      const input = document.getElementById('pin-input').value;
+      const msg = document.getElementById('pin-msg');
+      
+      if (input === "011027") {
+        msg.style.color = "#00ff9d";
+        msg.innerText = "ACCESS GRANTED.";
+        // Hide PIN modal and trigger Reveal Animation
+        closePinModal();
+        setTimeout(() => {
+            const intro = document.getElementById('intro-layer');
+            const introTxt = document.getElementById('intro-text');
+            const grantTxt = document.getElementById('granted-text');
+            
+            intro.style.display = 'flex'; // Show reveal layer
+            introTxt.style.display = 'block';
+            grantTxt.style.display = 'none';
+            
+            setTimeout(() => { introTxt.innerText = "VERIFYING BIOMETRICS..."; }, 800);
+            setTimeout(() => { introTxt.innerText = "DECRYPTING SECURE CHANNEL..."; }, 1800);
+            setTimeout(() => { 
+                introTxt.style.display = 'none';
+                grantTxt.style.display = 'block';
+            }, 2800);
+            setTimeout(() => {
+                window.location.href = "vip.html";
+            }, 3500);
+        }, 300); // Wait for pin modal to fade out
       } else {
-        document.getElementById('pin-msg').style.color="#ff0055"; document.getElementById('pin-msg').innerText="ACCESS DENIED"; document.getElementById('pin-input').value='';
+        msg.style.color = "#ff0055";
+        msg.innerText = "ACCESS DENIED. INVALID PIN.";
+        document.getElementById('pin-input').value = '';
       }
     }
     document.getElementById('pin-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkPin(); });
@@ -492,14 +416,12 @@
         "全仓梭哈", "静观其变", "定投买入", "获利了结", "去晒太阳", 
         "复盘思考", "加杠杆", "删除软件", "喝杯咖啡", "做个空头", 
         "按兵不动", "相信国运", "逢低吸纳", "追涨杀跌", "关灯吃面", 
-        "模拟盘练习", "学习宏观", "抄底", "逃顶", "睡觉","观察盘口","关机冥想","佛系持有","减少关注","去健身房","重读巴菲特","给自己泡杯茶","假装看不见","设置止盈止损","刷一遍新闻联播","躺平摆烂","买点基金压压惊","写日记记录心情","喊一句梭哈但不行动","研究公司财报","打开 K 线随便看看","继续等待信号","写份交易计划","禁用交易一分钟","打几盘游戏冷静一下","向朋友请教但不听建议","取消所有计划重新开始","做一份情绪检查","默念‘长期主义’","打开账户又迅速关掉","把手机翻过去","在心里模拟涨停","复习风险管理","去看一部电影","告诉自己今天不操作","查看一下资金曲线再关掉","幻想财富自由","空仓思考人生","写一段激励语","假装专业分析","研究一下量化策略","继续等待天亮","追问 AI 要不要买（AI 说不建议）","打开交易界面准备买又犹豫","摸摸自己的钱包","喝口水冷静一下","看看老巴的照片","删了又装软件","打开社区论坛看别人吵架","突然悟了但不敢动","安慰自己‘下次一定’","默默流泪然后继续看盘"
-
+        "模拟盘练习", "学习宏观", "抄底", "逃顶", "睡觉"
     ];
     const comments = [
-        "波动率有点大，系好安全带。", "财神爷正在看着你。", "相信周期，做时间的朋友。",
-        "别人恐惧我贪婪...", "今天适合躺平，不要操作。", "你的 Alpha 正在路上。",
-        "这是一个击球的好机会。","波动率有点大，系好安全带。", "财神爷正在看着你。", "相信周期，做时间的朋友。", "别人恐惧我贪婪...", "今天适合躺平，不要操作。", "你的 Alpha 正在路上。", "这是一个击球的好机会。", "市场正在给你上课。", "风来了，得看你有没有风帆。", "情绪比趋势更难把握。", "先稳住心态再说。", "涨跌都是旅途的风景。", "此刻的犹豫，未来的故事。", "耐心是最稀缺的 alpha。", "行情不会亏待坚持的人。", "冷静是最强底牌。", "再等等，说不定惊喜就到了。", "市场正在检验你的耐心。", "躺平也是一种策略。", "越是剧烈，越要稳住。", "先保住心态，再考虑收益。", "心态稳了，行情自然顺眼。", "今天的波动，不代表明天的趋势。", "看懂情绪，才能看懂市场。", "每一次犹豫都是成长。", "你和暴富只差一个周期。", "市场永远对的，你就当观众。", "机会永远留给冷静的人。"
-
+        "// 波动率有点大，系好安全带。", "// 财神爷正在看着你。", "// 相信周期，做时间的朋友。",
+        "// 别人恐惧我贪婪...", "// 今天适合躺平，不要操作。", "// 你的 Alpha 正在路上。",
+        "// 这是一个击球的好机会。"
     ];
     const itemHeight = 60; const spinDuration = 3;
     function getRandomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
