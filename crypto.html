@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto War Room | Earth Macro</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <!-- 引入 Three.js 用于背景 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
+  <style>
+    /* ====== 1. 赛博朋克视觉系统 ====== */
+    :root {
+      --bg-core: #050505;
+      --panel-bg: rgba(12, 16, 20, 0.85);
+      --border: rgba(255, 255, 255, 0.1);
+      --neon-green: #00ff9d;
+      --neon-red: #ff0055;
+      --neon-blue: #00f3ff;
+      --neon-yellow: #ffee00;
+      --text-dim: #666;
+      --text-bright: #fff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg-core);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      overflow-x: hidden; min-height: 100vh;
+    }
+
+    /* 背景 */
+    #bg-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: -1; pointer-events: none;
+    }
+
+    /* 顶部导航 */
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 15px 30px; border-bottom: 1px solid var(--neon-blue);
+      background: rgba(0,0,0,0.9); position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    .brand { 
+      font-family: 'Share Tech Mono'; font-size: 1.5rem; color: var(--neon-blue); 
+      text-shadow: 0 0 10px var(--neon-blue); display: flex; align-items: center; gap: 10px;
+    }
+    .status-dot {
+      width: 10px; height: 10px; background: #333; border-radius: 50%;
+      box-shadow: 0 0 5px #333; transition: all 0.3s;
+    }
+    .status-dot.connected { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+    .back-link {
+      color: var(--text-dim); text-decoration: none; font-size: 0.8rem;
+      border: 1px solid #333; padding: 5px 15px; border-radius: 4px; transition: all 0.2s;
+    }
+    .back-link:hover { border-color: var(--neon-blue); color: #fff; }
+
+    /* 主布局 (Grid) */
+    .layout-container {
+      display: grid;
+      grid-template-columns: 3fr 1fr; /* 左侧主板，右侧交易流 */
+      gap: 20px; padding: 20px;
+      max-width: 1800px; margin: 0 auto;
+      height: calc(100vh - 70px);
+    }
+
+    /* 左侧：资产网格 */
+    .assets-area { overflow-y: auto; padding-right: 10px; }
+    
+    /* BTC 核心卡片 */
+    .hero-card {
+      background: linear-gradient(135deg, rgba(20,20,30,0.9), rgba(0,0,0,0.9));
+      border: 1px solid var(--neon-yellow);
+      border-radius: 12px; padding: 25px; margin-bottom: 30px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 0 30px rgba(255, 238, 0, 0.1);
+      position: relative; overflow: hidden;
+    }
+    .hero-symbol { font-size: 2.5rem; font-weight: 800; color: #fff; margin-bottom: 5px; }
+    .hero-price { font-size: 3.5rem; font-weight: 700; font-family: 'Share Tech Mono'; letter-spacing: -2px; transition: color 0.2s; }
+    .hero-details { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: right; }
+    .hero-stat label { display: block; font-size: 0.8rem; color: var(--text-dim); }
+    .hero-stat div { font-size: 1.2rem; font-weight: bold; }
+
+    /* 普通网格 */
+    .crypto-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 15px;
+    }
+    .ticker-card {
+      background: var(--panel-bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 15px; position: relative;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .ticker-card:hover { transform: translateY(-3px); border-color: var(--neon-blue); }
+    
+    /* 价格闪烁动画 */
+    .flash-up { animation: flashGreen 0.6s ease-out; }
+    .flash-down { animation: flashRed 0.6s ease-out; }
+    @keyframes flashGreen { 0% { background: rgba(0, 255, 157, 0.2); } 100% { background: var(--panel-bg); } }
+    @keyframes flashRed { 0% { background: rgba(255, 0, 85, 0.2); } 100% { background: var(--panel-bg); } }
+
+    .card-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .card-symbol { font-weight: 800; color: #fff; }
+    .card-change { font-size: 0.9rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); }
+    .card-price { font-size: 1.5rem; font-weight: 700; font-family: 'Share Tech Mono'; margin-bottom: 5px; transition: color 0.3s; }
+    
+    .card-stats { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim); margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; }
+    .vol-bar { height: 3px; background: #333; margin-top: 5px; border-radius: 2px; overflow: hidden; }
+    .vol-fill { height: 100%; background: var(--neon-blue); width: 0%; transition: width 1s; }
+
+    /* 右侧：实时交易流 (Trade Stream) */
+    .trade-feed {
+      background: rgba(0,0,0,0.6); border-left: 1px solid #333;
+      display: flex; flex-direction: column; overflow: hidden;
+      font-family: 'Share Tech Mono'; font-size: 0.8rem;
+    }
+    .feed-header {
+      padding: 10px; background: #111; color: var(--neon-blue); border-bottom: 1px solid #333;
+      font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .feed-list { flex: 1; overflow-y: hidden; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+    .trade-row { display: flex; justify-content: space-between; opacity: 0.8; animation: slideIn 0.2s; }
+    .trade-row.buy { color: var(--neon-green); }
+    .trade-row.sell { color: var(--neon-red); }
+    .trade-time { color: #555; margin-right: 10px; }
+    
+    @keyframes slideIn { from { transform: translateX(10px); opacity: 0; } to { transform: translateX(0); opacity: 0.8; } }
+
+    /* 颜色工具 */
+    .text-up { color: var(--neon-green); }
+    .text-down { color: var(--neon-red); }
+    .text-neutral { color: #888; }
+
+    /* 响应式 */
+    @media (max-width: 900px) {
+      .layout-container { grid-template-columns: 1fr; height: auto; }
+      .trade-feed { display: none; } /* 手机上隐藏交易流以节省性能 */
+      .hero-card { flex-direction: column; align-items: flex-start; }
+      .hero-details { width: 100%; margin-top: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+
+  <header>
+    <div class="brand">
+      <div class="status-dot" id="socket-status"></div>
+      CRYPTO WAR ROOM
+    </div>
+    <a href="index.html" class="back-link">DISCONNECT</a>
+  </header>
+
+  <div class="layout-container">
+    <!-- 左侧：资产面板 -->
+    <div class="assets-area">
+      
+      <!-- 1. BTC 核心展板 -->
+      <div class="hero-card" id="card-btcusdt">
+        <div>
+          <div class="hero-symbol">BITCOIN <span style="font-size:1rem; color:#666">/ USDT</span></div>
+          <div class="hero-price" id="price-btcusdt">Connecting...</div>
+        </div>
+        <div class="hero-details">
+          <div class="hero-stat"><label>24h Change</label><div id="change-btcusdt">--</div></div>
+          <div class="hero-stat"><label>24h High</label><div id="high-btcusdt">--</div></div>
+          <div class="hero-stat"><label>24h Low</label><div id="low-btcusdt">--</div></div>
+          <div class="hero-stat"><label>24h Vol (USDT)</label><div id="vol-btcusdt" style="color:var(--neon-yellow)">--</div></div>
+        </div>
+      </div>
+
+      <!-- 2. 市场网格 (ETH, SOL, BNB...) -->
+      <div class="crypto-grid" id="grid-container">
+        <!-- JS 自动生成 -->
+      </div>
+
+    </div>
+
+    <!-- 右侧：实时成交流 -->
+    <div class="trade-feed">
+      <div class="feed-header">>> BTC LIVE TRADES</div>
+      <div class="feed-list" id="trade-list">
+        <!-- 瀑布流 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ====== 1. Three.js 极简背景 ====== */
+    const bgScene = new THREE.Scene();
+    const bgCamera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const bgRenderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true });
+    bgRenderer.setSize(window.innerWidth, window.innerHeight);
+    
+    const gridHelper = new THREE.GridHelper(100, 40, 0x0033ff, 0x000820);
+    bgScene.add(gridHelper);
+    bgCamera.position.set(0, 10, 20); bgCamera.lookAt(0, 0, 0);
+
+    function animateBg() {
+      requestAnimationFrame(animateBg);
+      gridHelper.position.z = (Date.now() * 0.002) % 2; // 飞行效果
+      bgRenderer.render(bgScene, bgCamera);
+    }
+    animateBg();
+    window.addEventListener('resize', () => {
+      bgCamera.aspect = window.innerWidth/window.innerHeight; bgCamera.updateProjectionMatrix();
+      bgRenderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    /* ====== 2. Binance WebSocket 引擎 ====== */
+    
+    // 关注的资产列表 (必须小写)
+    const WATCHLIST = [
+      'ethusdt', 'solusdt', 'bnbusdt', 'dogeusdt', 'xrpusdt', 
+      'adausdt', 'linkusdt', 'dotusdt', 'shibusdt', 'avaxusdt', 
+      'ltcusdt', 'uniusdt', 'filusdt', 'nearusdt', 'aptusdt'
+    ];
+
+    // 生成网格卡片 HTML
+    const gridContainer = document.getElementById('grid-container');
+    WATCHLIST.forEach(symbol => {
+      const div = document.createElement('div');
+      div.className = 'ticker-card';
+      div.id = `card-${symbol}`;
+      div.innerHTML = `
+        <div class="card-header">
+          <span class="card-symbol">${symbol.toUpperCase().replace('USDT','')}</span>
+          <span class="card-change" id="change-${symbol}">--%</span>
+        </div>
+        <div class="card-price" id="price-${symbol}">Loading...</div>
+        <div class="card-stats">
+          <span>H: <span id="high-${symbol}">-</span></span>
+          <span>L: <span id="low-${symbol}">-</span></span>
+        </div>
+        <div class="vol-bar"><div class="vol-fill" id="volbar-${symbol}"></div></div>
+        <div style="text-align:right; font-size:0.6rem; color:#555; margin-top:2px;" id="vol-${symbol}">Vol: --</div>
+      `;
+      gridContainer.appendChild(div);
+    });
+
+    // 建立 WebSocket 连接
+    // 组合流 URL: 同时订阅 btcusdt 的 ticker 和 trade，以及列表币种的 ticker
+    const streams = [
+      'btcusdt@ticker', 
+      'btcusdt@trade', 
+      ...WATCHLIST.map(s => `${s}@ticker`)
+    ].join('/');
+    
+    const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+    const statusDot = document.getElementById('socket-status');
+
+    ws.onopen = () => {
+      statusDot.classList.add('connected');
+      console.log('Binance Uplink Established.');
+    };
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      const stream = msg.stream;  // e.g., "btcusdt@ticker"
+      const data = msg.data;
+
+      if (stream.includes('@ticker')) {
+        handleTicker(data);
+      } else if (stream.includes('@trade')) {
+        handleTrade(data);
+      }
+    };
+
+    ws.onclose = () => {
+      statusDot.classList.remove('connected');
+      alert("连接断开，请刷新页面重连。");
+    };
+
+    /* ====== 3. 数据处理逻辑 ====== */
+
+    // 处理 Ticker 数据 (24h统计)
+    function handleTicker(data) {
+      const symbol = data.s.toLowerCase();
+      const price = parseFloat(data.c);
+      const change = parseFloat(data.P); // Percent change
+      const high = parseFloat(data.h);
+      const low = parseFloat(data.l);
+      const volume = parseFloat(data.q); // Quote volume (USDT)
+
+      // 如果是 BTC，更新 Hero 卡片
+      if (symbol === 'btcusdt') {
+        updateElement('price-btcusdt', formatPrice(price), price > 0 ? '' : '');
+        updateElement('change-btcusdt', `${change > 0 ? '+' : ''}${change.toFixed(2)}%`, change >= 0 ? 'text-up' : 'text-down');
+        document.getElementById('high-btcusdt').innerText = formatPrice(high);
+        document.getElementById('low-btcusdt').innerText = formatPrice(low);
+        document.getElementById('vol-btcusdt').innerText = formatVolume(volume);
+        // Color logic for hero price
+        const heroPriceEl = document.getElementById('price-btcusdt');
+        heroPriceEl.style.color = change >= 0 ? 'var(--neon-green)' : 'var(--neon-red)';
+      } 
+      // 如果是网格中的币种
+      else if (WATCHLIST.includes(symbol)) {
+        const card = document.getElementById(`card-${symbol}`);
+        const priceEl = document.getElementById(`price-${symbol}`);
+        
+        // Flash animation
+        const oldPrice = parseFloat(priceEl.getAttribute('data-price')) || 0;
+        if (price > oldPrice) flashCard(card, 'flash-up');
+        if (price < oldPrice) flashCard(card, 'flash-down');
+        priceEl.setAttribute('data-price', price);
+
+        updateElement(`price-${symbol}`, formatPrice(price));
+        
+        const changeEl = document.getElementById(`change-${symbol}`);
+        changeEl.innerText = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
+        changeEl.style.color = change >= 0 ? 'var(--neon-green)' : 'var(--neon-red)';
+        changeEl.style.background = change >= 0 ? 'rgba(0,255,157,0.1)' : 'rgba(255,0,85,0.1)';
+
+        document.getElementById(`high-${symbol}`).innerText = formatPrice(high);
+        document.getElementById(`low-${symbol}`).innerText = formatPrice(low);
+        document.getElementById(`vol-${symbol}`).innerText = 'Vol: ' + formatVolume(volume);
+        
+        // Volume visual bar (Max assumption ~1B for bar scaling visual only)
+        const volPct = Math.min(100, (volume / 500000000) * 100);
+        document.getElementById(`volbar-${symbol}`).style.width = volPct + '%';
+      }
+    }
+
+    // 处理 Trade 数据 (实时成交)
+    function handleTrade(data) {
+      const price = parseFloat(data.p).toFixed(2);
+      const qty = parseFloat(data.q).toFixed(5);
+      const isBuyerMaker = data.m; // true = Sell, false = Buy (Active Taker)
+      const time = new Date(data.T).toLocaleTimeString('en-GB');
+
+      const row = document.createElement('div');
+      row.className = `trade-row ${isBuyerMaker ? 'sell' : 'buy'}`;
+      row.innerHTML = `
+        <span class="trade-time">${time}</span>
+        <span>${price}</span>
+        <span>${qty}</span>
+      `;
+
+      const list = document.getElementById('trade-list');
+      list.prepend(row);
+      
+      // Keep list short (Performance)
+      if (list.children.length > 30) {
+        list.removeChild(list.lastChild);
+      }
+    }
+
+    /* ====== 4. 辅助函数 ====== */
+    function updateElement(id, text, className) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.innerText = text;
+        if (className) el.className = className;
+      }
+    }
+
+    function flashCard(element, flashClass) {
+      element.classList.remove('flash-up', 'flash-down');
+      void element.offsetWidth; // Trigger reflow
+      element.classList.add(flashClass);
+    }
+
+    function formatPrice(num) {
+      return num < 1 ? num.toPrecision(4) : num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatVolume(num) {
+      if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
+      if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
+      return num.toFixed(0);
+    }
+
+  </script>
+</body>
+</html>
