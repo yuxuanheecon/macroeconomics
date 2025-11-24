@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CYBER XIANGQI | 红方双步</title>
 <!-- 引入科幻字体 -->
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Serif+SC:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Serif+SC:wght@700&display=swap" rel="stylesheet">
 <style>
     :root {
         --bg-color: #050505;
         --neon-red: #ff0055;
         --neon-cyan: #00f3ff;
         --neon-yellow: #ffee00;
+        --neon-green: #00ff9d;
         --grid-line: rgba(0, 243, 255, 0.15);
-        --glass-panel: rgba(10, 20, 30, 0.85);
     }
 
     body {
@@ -30,7 +30,7 @@
         user-select: none;
     }
 
-    /* 背景网格特效 */
+    /* 背景动态网格 */
     body::before {
         content: "";
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -43,46 +43,98 @@
         pointer-events: none;
         animation: scan 10s linear infinite;
     }
-
     @keyframes scan { from { background-position: 0 0; } to { background-position: 0 40px; } }
 
     /* 界面容器 */
     #game-wrapper {
         position: relative;
         width: 450px;
-        height: 600px;
+        height: 700px; /* 增加高度以容纳底部按钮 */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
+
+    /* 顶部 HUD */
+    .hud {
+        display: flex; justify-content: space-between; width: 100%;
+        margin-bottom: 15px;
+        font-family: "Noto Serif SC", serif;
+    }
+    .turn-indicator {
+        flex: 1;
+        text-align: center;
+        padding: 8px 0;
+        border: 1px solid #333;
+        border-radius: 4px;
+        font-size: 14px;
+        background: rgba(0,0,0,0.6);
+        transition: all 0.3s;
+        margin: 0 5px;
+        position: relative;
+        overflow: hidden;
+    }
+    .turn-indicator.active {
+        border-color: var(--neon-yellow);
+        box-shadow: 0 0 15px rgba(255, 238, 0, 0.3);
+        color: var(--neon-yellow);
+        font-weight: bold;
+    }
+    .turn-indicator.active::after {
+        content: ""; position: absolute; top:0; left:-100%; width:100%; height:100%;
+        background: linear-gradient(90deg, transparent, rgba(255,238,0,0.2), transparent);
+        animation: shine 1.5s infinite;
+    }
+    @keyframes shine { 0% { left:-100%; } 100% { left:100%; } }
 
     /* 棋盘 Canvas */
     canvas {
         border-radius: 4px;
-        box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+        box-shadow: 0 0 30px rgba(0, 243, 255, 0.15);
         background: rgba(0, 0, 0, 0.8);
         border: 1px solid #333;
+        z-index: 10;
     }
 
-    /* UI HUD */
-    .hud {
-        display: flex; justify-content: space-between; width: 100%;
-        margin-bottom: 10px;
-        font-family: "Noto Serif SC", serif;
-    }
-    .turn-indicator {
-        padding: 5px 15px;
-        border: 1px solid #333;
-        border-radius: 4px;
-        font-size: 14px;
-        background: rgba(0,0,0,0.5);
-        transition: all 0.3s;
-    }
-    .turn-indicator.active {
-        border-color: var(--neon-yellow);
-        box-shadow: 0 0 10px var(--neon-yellow);
-        color: var(--neon-yellow);
-        text-shadow: 0 0 5px var(--neon-yellow);
+    /* 底部控制栏 (移除了原来的右上角按钮) */
+    .controls-bottom {
+        margin-top: 15px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
     }
 
-    /* 开始菜单 / 规则页 */
+    /* 按钮样式 */
+    .cyber-btn {
+        background: transparent;
+        border: 1px solid var(--neon-cyan);
+        color: var(--neon-cyan);
+        padding: 10px 30px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    .cyber-btn:hover {
+        background: var(--neon-cyan);
+        color: #000;
+        box-shadow: 0 0 20px var(--neon-cyan);
+    }
+    .cyber-btn-red {
+        border-color: var(--neon-red);
+        color: var(--neon-red);
+    }
+    .cyber-btn-red:hover {
+        background: var(--neon-red);
+        color: #fff;
+        box-shadow: 0 0 20px var(--neon-red);
+    }
+
+    /* 开始菜单 */
     #start-screen {
         position: absolute;
         top: 0; left: 0; width: 100%; height: 100%;
@@ -98,111 +150,101 @@
     }
 
     h1 {
-        font-size: 2.5rem;
-        margin-bottom: 10px;
-        color: var(--neon-cyan);
-        text-shadow: 0 0 10px var(--neon-cyan);
-        letter-spacing: 2px;
+        font-size: 2.5rem; margin-bottom: 5px;
+        color: var(--neon-cyan); text-shadow: 0 0 15px var(--neon-cyan);
+        letter-spacing: 4px;
     }
-
+    
     .rules-box {
-        width: 80%;
-        text-align: left;
-        font-size: 0.9rem;
-        color: #ccc;
-        line-height: 1.6;
-        border-left: 3px solid var(--neon-red);
-        padding-left: 15px;
-        margin-bottom: 30px;
+        width: 85%; text-align: left; font-size: 0.9rem; color: #ccc;
+        line-height: 1.8; border-left: 3px solid var(--neon-red);
+        padding-left: 20px; margin-bottom: 40px;
+        background: linear-gradient(90deg, rgba(255,0,85,0.1), transparent);
     }
 
     .btn-group { display: flex; gap: 20px; }
 
-    button {
-        background: transparent;
-        border: 1px solid var(--neon-cyan);
-        color: var(--neon-cyan);
-        padding: 10px 25px;
-        font-family: 'Orbitron', sans-serif;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.2s;
-        position: relative;
-        overflow: hidden;
+    /* 胜利动画层 */
+    #victory-overlay {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: 50;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        opacity: 0; transition: opacity 0.5s;
     }
-    button:hover {
-        background: var(--neon-cyan);
-        color: #000;
-        box-shadow: 0 0 20px var(--neon-cyan);
+    #victory-text {
+        font-size: 4rem; font-weight: 900;
+        text-shadow: 0 0 20px currentColor;
+        transform: scale(0); transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    button::after {
-        content: ""; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-        transition: 0.5s;
+    .glitch { position: relative; }
+    .glitch::before, .glitch::after {
+        content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     }
-    button:hover::after { left: 100%; }
-
-    /* Toast 提示 */
-    #toast {
-        position: absolute;
-        bottom: 20px; left: 50%; transform: translateX(-50%);
-        background: var(--neon-red); color: #fff;
-        padding: 10px 20px;
-        border-radius: 2px;
-        opacity: 0; transition: opacity 0.3s;
-        pointer-events: none;
-        font-weight: bold;
-        box-shadow: 0 0 15px var(--neon-red);
-    }
-    #toast.show { opacity: 1; }
+    .glitch::before { left: 2px; text-shadow: -1px 0 red; clip: rect(24px, 550px, 90px, 0); animation: glitch-anim 2s infinite linear alternate-reverse; }
+    .glitch::after { left: -2px; text-shadow: -1px 0 blue; clip: rect(85px, 550px, 140px, 0); animation: glitch-anim 2s infinite linear alternate-reverse; }
     
-    /* 重开按钮 (右上角) */
-    #reset-btn {
-        position: absolute; top: 10px; right: 10px;
-        padding: 5px 10px; font-size: 12px;
-        border-color: #555; color: #555;
+    @keyframes glitch-anim {
+        0% { clip: rect(12px, 9999px, 55px, 0); }
+        20% { clip: rect(89px, 9999px, 100px, 0); }
+        40% { clip: rect(4px, 9999px, 86px, 0); }
+        60% { clip: rect(67px, 9999px, 22px, 0); }
+        80% { clip: rect(33px, 9999px, 11px, 0); }
+        100% { clip: rect(102px, 9999px, 85px, 0); }
     }
-    #reset-btn:hover { border-color: #fff; color: #fff; background: transparent; box-shadow: none; }
 
 </style>
 </head>
 <body>
 
 <div id="game-wrapper">
+    <!-- 顶部状态栏 -->
     <div class="hud">
-        <div id="indicator-red" class="turn-indicator active">RED UNIT<br><span id="moves-left">MOVES: 2</span></div>
-        <div id="indicator-black" class="turn-indicator">BLACK LEGION<br>DEFENDING</div>
+        <div id="indicator-red" class="turn-indicator active">
+            <div style="color:var(--neon-red); font-weight:bold;">RED UNIT</div>
+            <div style="font-size:0.8em; color:#aaa; margin-top:2px;">步数剩余: <span id="moves-left" style="color:#fff">2</span></div>
+        </div>
+        <div id="indicator-black" class="turn-indicator">
+            <div style="color:var(--neon-cyan); font-weight:bold;">BLACK LEGION</div>
+            <div style="font-size:0.8em; color:#aaa; margin-top:2px;">DEFENDING</div>
+        </div>
     </div>
 
+    <!-- 棋盘 -->
     <canvas id="chessBoard" width="450" height="500"></canvas>
+    
+    <!-- 胜利层 -->
+    <div id="victory-overlay">
+        <div id="victory-text" class="glitch" data-text="VICTORY">VICTORY</div>
+    </div>
 
-    <button id="reset-btn" onclick="showStartScreen()">SYSTEM RESET</button>
-    <div id="toast">CHECKMATE</div>
+    <!-- 底部按钮 -->
+    <div class="controls-bottom">
+        <button class="cyber-btn" onclick="showStartScreen()">SYSTEM REBOOT</button>
+    </div>
 
-    <!-- 开始屏幕 -->
+    <!-- 开始菜单 -->
     <div id="start-screen">
         <h1>CYBER XIANGQI</h1>
-        <div style="color:var(--neon-red); margin-bottom:20px; font-size:1.2rem;">// PROJECT: DOUBLE STEP //</div>
+        <div style="color:var(--neon-red); margin-bottom:20px; font-size:1rem; letter-spacing:2px;">// PROJECT: DOUBLE STEP //</div>
         
         <div class="rules-box">
-            <strong style="color:#fff">作战规则 (RULES):</strong><br>
-            1. <span style="color:var(--neon-red)">红方 (Red)</span>: 仅有一帅五兵，但拥有<strong>义体加速</strong>，每回合必须走 <strong>2 步</strong>。<br>
-            2. <span style="color:#aaa">黑方 (Black)</span>: 拥有全套传统武装，标准规则。<br>
-            3. <span style="color:var(--neon-yellow)">胜利条件</span>: 击杀对方将领。<br>
+            <strong style="color:#fff; font-size:1.1rem;">作战协议 (PROTOCOL):</strong><br><br>
+            1. <span style="color:var(--neon-red)">RED (红方)</span>: 装备了「时空加速引擎」，每回合必须执行 <strong>2 次移动</strong>。<br>
+            2. <span style="color:var(--neon-cyan)">BLACK (黑方)</span>: 标准防御阵型，虽然单步移动，但兵力是红方的数倍。<br>
+            3. <span style="color:var(--neon-yellow)">VICTORY (胜利)</span>: 击碎敌方将领 (King) 核心。<br>
             <br>
-            *红方第一步若吃将直接获胜。<br>
-            *避免“将帅照面”自杀。
+            <em style="font-size:0.8em; color:#666;">*注意：红方第一步吃将即刻获胜。禁止将帅照面。</em>
         </div>
 
         <div class="btn-group">
-            <button onclick="startGame('pvp')">PVP (人人)</button>
-            <button onclick="startGame('pve')">PVE (人机)</button>
+            <button class="cyber-btn cyber-btn-red" onclick="startGame('pvp')">PVP (人人)</button>
+            <button class="cyber-btn" onclick="startGame('pve')">PVE (人机)</button>
         </div>
     </div>
 </div>
 
 <script>
-/* --- 1. 常量与配置 --- */
+/* --- 1. 配置与常量 --- */
 const CANVAS_WIDTH = 450;
 const CANVAS_HEIGHT = 500;
 const GRID_SIZE = 50;
@@ -213,9 +255,8 @@ const RED = 1;
 const BLACK = -1;
 const EMPTY = 0;
 
-// 棋子定义
 const PIECES = {
-    1: { txt: "帅", color: "#ff0055" }, // King
+    1: { txt: "帅", color: "#ff0055" }, 
     2: { txt: "仕", color: "#ff0055" }, 
     3: { txt: "相", color: "#ff0055" }, 
     4: { txt: "马", color: "#ff0055" }, 
@@ -223,7 +264,6 @@ const PIECES = {
     6: { txt: "炮", color: "#ff0055" }, 
     7: { txt: "兵", color: "#ff0055" },
     
-    // Black variants (Negative types)
     [-1]: { txt: "将", color: "#00f3ff" },
     [-2]: { txt: "士", color: "#00f3ff" },
     [-3]: { txt: "象", color: "#00f3ff" },
@@ -233,82 +273,78 @@ const PIECES = {
     [-7]: { txt: "卒", color: "#00f3ff" }
 };
 
-/* --- 2. 游戏状态 --- */
+/* --- 2. 状态管理 --- */
 let board = []; 
-let visualBoard = []; // 用于动画插值的虚拟棋盘
+let visualBoard = []; 
 let currentTurn = RED;
 let redMovesLeft = 2;
 let selectedPiece = null;
 let gameMode = 'pvp';
 let gameOver = false;
 let lastMove = null;
-let particles = []; // 粒子特效
+let particles = []; 
 
 const canvas = document.getElementById('chessBoard');
 const ctx = canvas.getContext('2d');
 
-/* --- 3. 核心逻辑 --- */
+/* --- 3. 核心流程 --- */
 
 function showStartScreen() {
     document.getElementById('start-screen').style.display = 'flex';
+    document.getElementById('victory-overlay').style.opacity = 0;
+    gameOver = false;
 }
 
 function startGame(mode) {
     gameMode = mode;
     document.getElementById('start-screen').style.display = 'none';
     initBoard();
-    animate(); // 开始渲染循环
+    animate(); 
 }
 
 function initBoard() {
-    // 逻辑棋盘
     board = Array(10).fill(null).map(() => Array(9).fill(EMPTY));
     
-    // 黑方布局 (标准)
-    const blackRow0 = [-5, -4, -3, -2, -1, -2, -3, -4, -5];
-    const blackRow2 = [0, -6, 0, 0, 0, 0, 0, -6, 0];
-    const blackRow3 = [-7, 0, -7, 0, -7, 0, -7, 0, -7];
+    // 黑方 (标准)
+    const br0 = [-5, -4, -3, -2, -1, -2, -3, -4, -5];
+    const br2 = [0, -6, 0, 0, 0, 0, 0, -6, 0];
+    const br3 = [-7, 0, -7, 0, -7, 0, -7, 0, -7];
     
     for(let c=0; c<9; c++) {
-        board[0][c] = { type: blackRow0[c], color: BLACK };
-        if(blackRow2[c] !== 0) board[2][c] = { type: blackRow2[c], color: BLACK };
-        if(blackRow3[c] !== 0) board[3][c] = { type: blackRow3[c], color: BLACK };
+        board[0][c] = { type: br0[c], color: BLACK };
+        if(br2[c]!==0) board[2][c] = { type: br2[c], color: BLACK };
+        if(br3[c]!==0) board[3][c] = { type: br3[c], color: BLACK };
     }
 
-    // 红方布局 (变体: 帅+5兵)
-    board[9][4] = { type: 1, color: RED }; // 帅
-    [0, 2, 4, 6, 8].forEach(c => {
-        board[6][c] = { type: 7, color: RED }; // 兵
-    });
+    // 红方 (变体)
+    board[9][4] = { type: 1, color: RED };
+    [0, 2, 4, 6, 8].forEach(c => board[6][c] = { type: 7, color: RED });
 
-    // 初始化可视化棋盘 (用于动画)
+    // 可视化同步
     visualBoard = [];
     for(let r=0; r<10; r++) {
         for(let c=0; c<9; c++) {
             if(board[r][c] !== EMPTY) {
                 visualBoard.push({
-                    r: r, c: c, // 逻辑坐标
-                    x: c * GRID_SIZE, y: r * GRID_SIZE, // 像素坐标
-                    targetX: c * GRID_SIZE, targetY: r * GRID_SIZE,
-                    data: board[r][c],
-                    dead: false
+                    r:r, c:c, x: c*GRID_SIZE, y: r*GRID_SIZE,
+                    targetX: c*GRID_SIZE, targetY: r*GRID_SIZE,
+                    data: board[r][c], dead: false
                 });
             }
         }
     }
     
-    currentTurn = RED;
-    redMovesLeft = 2;
-    gameOver = false;
-    lastMove = null;
+    currentTurn = RED; redMovesLeft = 2; gameOver = false; lastMove = null;
+    document.getElementById('victory-overlay').style.opacity = 0;
+    document.getElementById('victory-text').style.transform = 'scale(0)';
     updateStatus();
 }
 
-/* --- 4. 渲染系统 (Loop) --- */
+/* --- 4. 渲染循环 --- */
 function animate() {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
-    drawGrid();
+    drawBoardBase();
     drawLastMove();
     drawSelection();
     updateAndDrawPieces();
@@ -317,196 +353,133 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-function drawGrid() {
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = "rgba(0, 243, 255, 0.5)";
-    ctx.strokeStyle = "rgba(0, 243, 255, 0.3)";
-    ctx.lineWidth = 2;
-
+function drawBoardBase() {
+    // Grid
+    ctx.shadowBlur = 10; ctx.shadowColor = "rgba(0, 243, 255, 0.3)";
+    ctx.strokeStyle = "rgba(0, 243, 255, 0.2)"; ctx.lineWidth = 2;
     ctx.beginPath();
-    // 横线
-    for (let i = 0; i < 10; i++) {
-        ctx.moveTo(OFFSET_X, OFFSET_Y + i * GRID_SIZE);
-        ctx.lineTo(OFFSET_X + 8 * GRID_SIZE, OFFSET_Y + i * GRID_SIZE);
-    }
-    // 竖线
-    for (let i = 0; i < 9; i++) {
-        ctx.moveTo(OFFSET_X + i * GRID_SIZE, OFFSET_Y);
-        if (i===0 || i===8) {
-            ctx.lineTo(OFFSET_X + i * GRID_SIZE, OFFSET_Y + 9 * GRID_SIZE);
-        } else {
-            ctx.lineTo(OFFSET_X + i * GRID_SIZE, OFFSET_Y + 4 * GRID_SIZE);
-            ctx.moveTo(OFFSET_X + i * GRID_SIZE, OFFSET_Y + 5 * GRID_SIZE);
-            ctx.lineTo(OFFSET_X + i * GRID_SIZE, OFFSET_Y + 9 * GRID_SIZE);
+    for (let i=0; i<10; i++) { ctx.moveTo(OFFSET_X, OFFSET_Y+i*GRID_SIZE); ctx.lineTo(OFFSET_X+8*GRID_SIZE, OFFSET_Y+i*GRID_SIZE); }
+    for (let i=0; i<9; i++) {
+        ctx.moveTo(OFFSET_X+i*GRID_SIZE, OFFSET_Y);
+        if (i===0 || i===8) ctx.lineTo(OFFSET_X+i*GRID_SIZE, OFFSET_Y+9*GRID_SIZE);
+        else {
+            ctx.lineTo(OFFSET_X+i*GRID_SIZE, OFFSET_Y+4*GRID_SIZE);
+            ctx.moveTo(OFFSET_X+i*GRID_SIZE, OFFSET_Y+5*GRID_SIZE);
+            ctx.lineTo(OFFSET_X+i*GRID_SIZE, OFFSET_Y+9*GRID_SIZE);
         }
     }
-    // 九宫格
-    const palaces = [[0,3], [0,5], [2,5], [2,3], [7,3], [7,5], [9,5], [9,3]];
-    const centers = [[1,4], [8,4]]; // Not used for lines but logic
-    
-    // Black Palace X
+    // Palaces
     ctx.moveTo(OFFSET_X+3*GRID_SIZE, OFFSET_Y); ctx.lineTo(OFFSET_X+5*GRID_SIZE, OFFSET_Y+2*GRID_SIZE);
     ctx.moveTo(OFFSET_X+5*GRID_SIZE, OFFSET_Y); ctx.lineTo(OFFSET_X+3*GRID_SIZE, OFFSET_Y+2*GRID_SIZE);
-    // Red Palace X
     ctx.moveTo(OFFSET_X+3*GRID_SIZE, OFFSET_Y+7*GRID_SIZE); ctx.lineTo(OFFSET_X+5*GRID_SIZE, OFFSET_Y+9*GRID_SIZE);
     ctx.moveTo(OFFSET_X+5*GRID_SIZE, OFFSET_Y+7*GRID_SIZE); ctx.lineTo(OFFSET_X+3*GRID_SIZE, OFFSET_Y+9*GRID_SIZE);
-    
-    ctx.stroke();
-    ctx.shadowBlur = 0;
+    ctx.stroke(); ctx.shadowBlur = 0;
 
-    // River
-    ctx.font = "italic 20px Orbitron";
-    ctx.fillStyle = "rgba(0, 243, 255, 0.5)";
-    ctx.textAlign = "center";
-    ctx.fillText("CYBER RIVER", OFFSET_X + 4 * GRID_SIZE, OFFSET_Y + 4.65 * GRID_SIZE);
+    // River Text
+    ctx.font = "italic 24px Orbitron"; ctx.fillStyle = "rgba(0, 243, 255, 0.2)";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("CYBER RIVER", OFFSET_X+4*GRID_SIZE, OFFSET_Y+4.5*GRID_SIZE);
 }
 
 function updateAndDrawPieces() {
-    // Lerp speed
-    const speed = 0.2;
-
     visualBoard.forEach(p => {
-        if (p.dead) return; // Skip dead pieces
+        if (p.dead) return;
+        // Lerp
+        p.x += (p.targetX - p.x) * 0.2;
+        p.y += (p.targetY - p.y) * 0.2;
 
-        // Interpolate position
-        p.x += (p.targetX - p.x) * speed;
-        p.y += (p.targetY - p.y) * speed;
-
-        const screenX = OFFSET_X + p.x;
-        const screenY = OFFSET_Y + p.y;
-
+        const sx = OFFSET_X + p.x; const sy = OFFSET_Y + p.y;
         const def = PIECES[p.data.type];
-        const color = def.color;
+        
+        // Outer Glow
+        ctx.shadowBlur = 20; ctx.shadowColor = def.color;
+        ctx.beginPath(); ctx.arc(sx, sy, 22, 0, 2*Math.PI);
+        ctx.strokeStyle = def.color; ctx.lineWidth = 2; ctx.stroke();
 
-        // Glow effect
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = color;
-
-        // Outer Ring
-        ctx.beginPath();
-        ctx.arc(screenX, screenY, 22, 0, 2 * Math.PI);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Inner Fill
-        ctx.beginPath();
-        ctx.arc(screenX, screenY, 18, 0, 2 * Math.PI);
-        ctx.fillStyle = "rgba(0,0,0,0.8)";
-        ctx.fill();
+        // Inner Dark
+        ctx.beginPath(); ctx.arc(sx, sy, 18, 0, 2*Math.PI);
+        ctx.fillStyle = "rgba(10,10,15,0.9)"; ctx.fill();
 
         // Text
-        ctx.fillStyle = color;
-        ctx.font = "bold 20px 'Noto Serif SC'";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(def.txt, screenX, screenY + 2);
-        
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = 0; ctx.fillStyle = def.color;
+        ctx.font = "bold 22px 'Noto Serif SC'"; ctx.textAlign = "center";
+        ctx.fillText(def.txt, sx, sy+2);
     });
-
-    // Remove dead pieces after animation if needed, 
-    // but here we just hide them or filter them out for simplicity.
-    // In a real engine we'd garbage collect.
 }
 
 function drawSelection() {
     if (selectedPiece) {
         const x = OFFSET_X + selectedPiece.c * GRID_SIZE;
         const y = OFFSET_Y + selectedPiece.r * GRID_SIZE;
-        
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 5]);
-        ctx.strokeRect(x - 24, y - 24, 48, 48);
-        ctx.setLineDash([]);
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+        ctx.strokeRect(x-23, y-23, 46, 46); ctx.setLineDash([]);
 
-        // Draw valid moves
         const moves = getValidMoves(selectedPiece.r, selectedPiece.c, board);
-        ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
+        ctx.fillStyle = "rgba(0, 255, 157, 0.5)";
         moves.forEach(m => {
-            ctx.beginPath();
-            ctx.arc(OFFSET_X + m.c * GRID_SIZE, OFFSET_Y + m.r * GRID_SIZE, 6, 0, 2 * Math.PI);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(OFFSET_X+m.c*GRID_SIZE, OFFSET_Y+m.r*GRID_SIZE, 6, 0, 2*Math.PI); ctx.fill();
         });
     }
 }
 
 function drawLastMove() {
     if (lastMove) {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-        ctx.fillRect(OFFSET_X + lastMove.fromC * GRID_SIZE - 25, OFFSET_Y + lastMove.fromR * GRID_SIZE - 25, 50, 50);
-        ctx.fillRect(OFFSET_X + lastMove.toC * GRID_SIZE - 25, OFFSET_Y + lastMove.toR * GRID_SIZE - 25, 50, 50);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+        const x1 = OFFSET_X + lastMove.fromC * GRID_SIZE - 25; const y1 = OFFSET_Y + lastMove.fromR * GRID_SIZE - 25;
+        const x2 = OFFSET_X + lastMove.toC * GRID_SIZE - 25; const y2 = OFFSET_Y + lastMove.toR * GRID_SIZE - 25;
+        ctx.fillRect(x1, y1, 50, 50); ctx.fillRect(x2, y2, 50, 50);
     }
 }
 
-/* --- 5. 交互逻辑 --- */
+/* --- 5. 游戏交互 --- */
 canvas.addEventListener('pointerdown', e => {
     if (gameOver) return;
-    // AI Turn Block
     if (gameMode === 'pve' && currentTurn === BLACK) return;
 
     const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-    
-    const c = Math.round((clickX - OFFSET_X) / GRID_SIZE);
-    const r = Math.round((clickY - OFFSET_Y) / GRID_SIZE);
+    const c = Math.round((e.clientX - rect.left - OFFSET_X) / GRID_SIZE);
+    const r = Math.round((e.clientY - rect.top - OFFSET_Y) / GRID_SIZE);
     
     if (c < 0 || c > 8 || r < 0 || r > 9) return;
 
-    const clickedCell = board[r][c];
-    const clickedPiece = (clickedCell !== EMPTY) ? clickedCell : null;
+    const piece = board[r][c];
 
-    // 1. Select Own Piece
-    if (clickedPiece && clickedPiece.color === currentTurn) {
-        selectedPiece = {r, c};
-        return;
-    }
-
-    // 2. Move to Target
-    if (selectedPiece) {
+    if (piece !== EMPTY && piece.color === currentTurn) {
+        selectedPiece = {r, c}; // Select
+    } else if (selectedPiece) {
         const moves = getValidMoves(selectedPiece.r, selectedPiece.c, board);
-        const validMove = moves.find(m => m.r === r && m.c === c);
-        
-        if (validMove) {
-            executeMove(selectedPiece, {r, c});
-        }
+        const move = moves.find(m => m.r === r && m.c === c);
+        if (move) executeMove(selectedPiece, move);
     }
 });
 
 function executeMove(from, to) {
-    const targetCell = board[to.r][to.c];
+    const target = board[to.r][to.c];
     
-    // Kill Particle Effect
-    if (targetCell !== EMPTY) {
-        createExplosion(OFFSET_X + to.c * GRID_SIZE, OFFSET_Y + to.r * GRID_SIZE, PIECES[targetCell.type].color);
-        // Mark visual piece as dead
+    // Kill Effect
+    if (target !== EMPTY) {
         const vTarget = visualBoard.find(p => p.r === to.r && p.c === to.c && !p.dead);
         if(vTarget) vTarget.dead = true;
+        spawnParticles(OFFSET_X+to.c*GRID_SIZE, OFFSET_Y+to.r*GRID_SIZE, PIECES[target.type].color);
     }
 
-    // Update Logical Board
-    const movingPieceData = board[from.r][from.c];
-    board[to.r][to.c] = movingPieceData;
+    // Update Logic
+    board[to.r][to.c] = board[from.r][from.c];
     board[from.r][from.c] = EMPTY;
-
-    // Update Visual Board (Animation)
+    
+    // Update Visual
     const vPiece = visualBoard.find(p => p.r === from.r && p.c === from.c && !p.dead);
     if (vPiece) {
-        vPiece.r = to.r;
-        vPiece.c = to.c;
-        vPiece.targetX = to.c * GRID_SIZE;
-        vPiece.targetY = to.r * GRID_SIZE;
+        vPiece.r = to.r; vPiece.c = to.c;
+        vPiece.targetX = to.c * GRID_SIZE; vPiece.targetY = to.r * GRID_SIZE;
     }
-
-    lastMove = { fromR: from.r, fromC: from.c, toR: to.r, toC: to.c };
+    
+    lastMove = { fromR:from.r, fromC:from.c, toR:to.r, toC:to.c };
     selectedPiece = null;
 
     // Win Check
-    if (targetCell && Math.abs(targetCell.type) === 1) {
-        gameOver = true;
-        showToast(`${currentTurn === RED ? "RED" : "BLACK"} WINS!`);
+    if (target && Math.abs(target.type) === 1) {
+        triggerVictory(currentTurn);
         return;
     }
 
@@ -514,255 +487,199 @@ function executeMove(from, to) {
     if (currentTurn === RED) {
         redMovesLeft--;
         if (redMovesLeft === 0) {
-            if (checkFacingGenerals()) return; // Check rule
+            if (checkFlyingGeneral()) return;
             currentTurn = BLACK;
             updateStatus();
             if (gameMode === 'pve') setTimeout(aiMove, 600);
         } else {
-            updateStatus(); // Still Red's turn
+            updateStatus();
         }
     } else {
-        if (checkFacingGenerals()) return;
-        currentTurn = RED;
-        redMovesLeft = 2;
+        if (checkFlyingGeneral()) return;
+        currentTurn = RED; redMovesLeft = 2;
         updateStatus();
     }
 }
 
-function checkFacingGenerals() {
-    // 简化版对将判断：如果这步棋导致对将，直接判负（或者胜，视规则而定）
-    // 这里的规则：走完这步后，如果将帅照面，则当前走棋方直接判负（自杀）
-    // 或者更严谨：如果对方由于你的移动而照面，判你赢。
-    // 为了游戏性简单处理：如果该回合结束时将帅照面，判定刚走的一方输。
-    let redK, blackK;
-    for(let r=0; r<10; r++) {
-        for(let c=0; c<9; c++) {
-            const p = board[r][c];
-            if(p !== EMPTY && Math.abs(p.type) === 1) {
-                if(p.color === RED) redK = {r,c}; else blackK = {r,c};
-            }
-        }
-    }
-    if (!redK || !blackK) return false; 
-    if (redK.c !== blackK.c) return false;
+function triggerVictory(winner) {
+    gameOver = true;
+    const overlay = document.getElementById('victory-overlay');
+    const text = document.getElementById('victory-text');
     
-    // Check obstacles
-    let obstacle = false;
-    for (let i = Math.min(redK.r, blackK.r) + 1; i < Math.max(redK.r, blackK.r); i++) {
-        if (board[i][redK.c] !== EMPTY) obstacle = true;
-    }
+    overlay.style.opacity = 1;
+    overlay.style.pointerEvents = 'auto';
+    text.style.transform = 'scale(1)';
     
-    if (!obstacle) {
-        gameOver = true;
-        showToast("FLYING GENERAL! GAME OVER.");
-        return true;
-    }
-    return false;
+    const winColor = winner === RED ? '#ff0055' : '#00f3ff';
+    text.style.color = winColor;
+    text.setAttribute('data-text', winner === RED ? "RED WINS" : "BLACK WINS");
+    text.innerText = winner === RED ? "RED WINS" : "BLACK WINS";
+    
+    spawnFireworks(winColor);
 }
 
-/* --- 6. 简单的 AI --- */
-function aiMove() {
-    if (gameOver) return;
-
-    // Collect pieces
-    let pieces = [];
-    for(let r=0; r<10; r++) {
-        for(let c=0; c<9; c++) {
-            if (board[r][c] !== EMPTY && board[r][c].color === BLACK) {
-                pieces.push({r,c});
-            }
-        }
-    }
-
-    // Scores
-    const values = { 1: 10000, 5: 90, 6: 45, 4: 40, 3: 20, 2: 20, 7: 10 };
-
-    let bestMove = null;
-    let maxScore = -99999;
-
-    // Shuffle to randomize equal moves
-    pieces.sort(() => Math.random() - 0.5);
-
-    for (let p of pieces) {
-        const moves = getValidMoves(p.r, p.c, board);
-        for (let m of moves) {
-            let score = 0;
-            const target = board[m.r][m.c];
-            
-            // Capture score
-            if (target !== EMPTY) score += values[target.type] * 10;
-            
-            // Threat Red King
-            if (target !== EMPTY && target.type === 1) score += 999999;
-
-            // Simple safety: don't move to where Red pawn can eat you (approx)
-            // ... (AI logic simplified for demo)
-
-            if (score > maxScore) {
-                maxScore = score;
-                bestMove = { from: p, to: m };
-            }
-        }
-    }
-
-    if (bestMove) {
-        executeMove(bestMove.from, bestMove.to);
-    } else {
-        gameOver = true;
-        showToast("STALEMATE. RED WINS.");
-    }
-}
-
-/* --- 7. 规则与移动生成 --- */
-function getValidMoves(r, c, bd) {
-    const p = bd[r][c];
-    if(p===EMPTY) return [];
-    const type = Math.abs(p.type);
-    const color = p.color;
-    let moves = [];
-    const isValid = (nr, nc) => {
-        if (nr<0||nr>9||nc<0||nc>8) return false;
-        const t = bd[nr][nc];
-        return t === EMPTY || t.color !== color;
-    };
-
-    if (type === 1) { // King
-        [[0,1],[0,-1],[1,0],[-1,0]].forEach(d=>{
-            const nr=r+d[0], nc=c+d[1];
-            if (nc>=3 && nc<=5) {
-                if ((color===RED && nr>=7) || (color===BLACK && nr<=2)) {
-                    if (isValid(nr,nc)) moves.push({r:nr,c:nc});
-                }
-            }
-        });
-    } else if (type === 7) { // Pawn
-        const forward = color===RED ? -1 : 1;
-        if(isValid(r+forward, c)) moves.push({r:r+forward, c:c});
-        // Side
-        const crossed = (color===RED && r<=4) || (color===BLACK && r>=5);
-        if (crossed) {
-            if(isValid(r,c-1)) moves.push({r:r,c:c-1});
-            if(isValid(r,c+1)) moves.push({r:r,c:c+1});
-        }
-    } else if (type === 5) { // Rook
-        [[0,1],[0,-1],[1,0],[-1,0]].forEach(d=>{
-            let k=1;
-            while(true){
-                const nr=r+d[0]*k, nc=c+d[1]*k;
-                if(!isValid(nr,nc) && (nr<0||nr>9||nc<0||nc>8)) break; // OOB
-                const t = bd[nr][nc];
-                if (t===EMPTY) moves.push({r:nr,c:nc});
-                else {
-                    if(t.color!==color) moves.push({r:nr,c:nc});
-                    break;
-                }
-                k++;
-            }
-        });
-    }
-    // ... Simplified rules for other pieces for brevity in this artifact, 
-    // full rules can be added similarly (Horse, Elephant, Advisor, Cannon)
-    // For this specific demo, I'll ensure Pawn, King, and Rook work perfectly, 
-    // and add simple offsets for others.
-    else if (type === 4) { // Horse
-        [[-2,-1],[-2,1],[2,-1],[2,1],[-1,-2],[-1,2],[1,-2],[1,2]].forEach(m=>{
-            const nr=r+m[0], nc=c+m[1];
-            const lr=r+(Math.abs(m[0])===2?Math.sign(m[0]):0);
-            const lc=c+(Math.abs(m[1])===2?Math.sign(m[1]):0);
-            if(nr>=0&&nr<=9&&nc>=0&&nc<=8 && bd[lr][lc]===EMPTY && isValid(nr,nc)) moves.push({r:nr,c:nc});
-        });
-    }
-    else if (type === 6) { // Cannon
-        [[0,1],[0,-1],[1,0],[-1,0]].forEach(d=>{
-            let k=1; let jump=false;
-            while(true){
-                const nr=r+d[0]*k, nc=c+d[1]*k;
-                if(nr<0||nr>9||nc<0||nc>8) break;
-                const t=bd[nr][nc];
-                if(!jump) {
-                    if(t===EMPTY) moves.push({r:nr,c:nc});
-                    else jump=true;
-                } else {
-                    if(t!==EMPTY) {
-                        if(t.color!==color) moves.push({r:nr,c:nc});
-                        break;
-                    }
-                }
-                k++;
-            }
-        });
-    }
-    // Add Advisor/Elephant logic here if needed for full compliance
-    else if (type === 2) { // Advisor
-        [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(d=>{
-            const nr=r+d[0], nc=c+d[1];
-            if(nc>=3 && nc<=5 && ((color===RED && nr>=7)||(color===BLACK && nr<=2))) {
-                if(isValid(nr,nc)) moves.push({r:nr,c:nc});
-            }
-        });
-    }
-    else if (type === 3) { // Elephant
-        [[2,2],[2,-2],[-2,2],[-2,-2]].forEach(d=>{
-            const nr=r+d[0], nc=c+d[1];
-            if(nr>=0&&nr<=9&&nc>=0&&nc<=8) {
-                if((color===BLACK && nr<=4)||(color===RED && nr>=5)) {
-                    if(bd[r+d[0]/2][c+d[1]/2]===EMPTY && isValid(nr,nc)) moves.push({r:nr,c:nc});
-                }
-            }
-        });
-    }
-
-    return moves;
-}
-
-/* --- 8. 特效系统 --- */
-function createExplosion(x, y, color) {
+function spawnParticles(x, y, color) {
     for(let i=0; i<15; i++) {
         particles.push({
-            x: x, y: y,
-            vx: (Math.random()-0.5)*8,
-            vy: (Math.random()-0.5)*8,
-            life: 1.0,
-            color: color
+            x, y, vx:(Math.random()-0.5)*8, vy:(Math.random()-0.5)*8,
+            color, life: 1.0
         });
     }
+}
+
+function spawnFireworks(color) {
+    // Center Explosion
+    spawnParticles(CANVAS_WIDTH/2, CANVAS_HEIGHT/2, color);
+    // Loop
+    let fwLoop = setInterval(() => {
+        if(!gameOver) clearInterval(fwLoop);
+        spawnParticles(Math.random()*CANVAS_WIDTH, Math.random()*CANVAS_HEIGHT, color);
+    }, 300);
 }
 
 function updateAndDrawParticles() {
     for(let i=particles.length-1; i>=0; i--) {
         let p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.life -= 0.05;
-        
-        ctx.globalAlpha = p.life;
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
-        ctx.fill();
-        ctx.globalAlpha = 1.0;
-        
-        if(p.life <= 0) particles.splice(i, 1);
+        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+        ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
+        if(p.life <= 0) particles.splice(i,1);
     }
+    ctx.globalAlpha = 1.0;
 }
 
 function updateStatus() {
     document.getElementById('indicator-red').classList.toggle('active', currentTurn === RED);
     document.getElementById('indicator-black').classList.toggle('active', currentTurn === BLACK);
-    
-    if (currentTurn === RED) {
-        document.getElementById('moves-left').innerText = `MOVES: ${redMovesLeft}`;
-    } else {
-        document.getElementById('moves-left').innerText = `WAITING`;
-    }
+    document.getElementById('moves-left').innerText = currentTurn === RED ? `MOVES: ${redMovesLeft}` : "WAITING";
 }
 
-function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.innerText = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
+/* --- 6. AI & Rules (Simplified) --- */
+function checkFlyingGeneral() {
+    let rK, bK;
+    for(let r=0; r<10; r++) for(let c=0; c<9; c++) {
+        const p = board[r][c];
+        if(p!==EMPTY && Math.abs(p.type)===1) { if(p.color===RED) rK={r,c}; else bK={r,c}; }
+    }
+    if(!rK || !bK || rK.c !== bK.c) return false;
+    for(let i=Math.min(rK.r,bK.r)+1; i<Math.max(rK.r,bK.r); i++) if(board[i][rK.c]!==EMPTY) return false;
+    
+    // Facing! Current mover loses instantly.
+    triggerVictory(currentTurn === RED ? BLACK : RED); // Opponent wins
+    return true;
 }
+
+function aiMove() {
+    if(gameOver) return;
+    // Simple Greedy AI
+    let moves = [];
+    for(let r=0; r<10; r++) for(let c=0; c<9; c++) {
+        if(board[r][c]!==EMPTY && board[r][c].color===BLACK) {
+            getValidMoves(r,c,board).forEach(m => moves.push({from:{r,c}, to:m}));
+        }
+    }
+    // Eval
+    const vals = {1:10000, 5:90, 6:45, 4:40, 3:20, 2:20, 7:10};
+    let best = null; let maxScore = -9999;
+    moves.sort(()=>Math.random()-0.5);
+    
+    for(let m of moves) {
+        let score = 0;
+        const target = board[m.to.r][m.to.c];
+        if(target!==EMPTY) score += vals[target.type]*10;
+        if(target!==EMPTY && target.type===1) score += 99999;
+        
+        // Simulate to check flying general suicide
+        const bak = board[m.to.r][m.to.c];
+        board[m.to.r][m.to.c] = board[m.from.r][m.from.c];
+        board[m.from.r][m.from.c] = EMPTY;
+        
+        // Flying general check (Self check) - if I expose myself, bad
+        // But wait, checkFlyingGeneral function triggers GAME OVER.
+        // Here we just want to know if it happens.
+        // Let's reuse logic manually
+        let rK, bK, obstacle=false;
+        for(let rr=0; rr<10; rr++) for(let cc=0; cc<9; cc++) {
+           const pp = board[rr][cc];
+           if(pp!==EMPTY && Math.abs(pp.type)===1) { if(pp.color===RED) rK={r:rr,c:cc}; else bK={r:rr,c:cc}; }
+        }
+        if(rK && bK && rK.c===bK.c) {
+            for(let i=Math.min(rK.r,bK.r)+1; i<Math.max(rK.r,bK.r); i++) if(board[i][rK.c]!==EMPTY) obstacle=true;
+            if(!obstacle) score -= 100000; // Suicide move
+        }
+
+        // Restore
+        board[m.from.r][m.from.c] = board[m.to.r][m.to.c];
+        board[m.to.r][m.to.c] = bak;
+
+        if(score > maxScore) { maxScore = score; best = m; }
+    }
+    
+    if(best) executeMove(best.from, best.to);
+    else triggerVictory(RED);
+}
+
+function getValidMoves(r, c, bd) {
+    const p = bd[r][c]; if(p===EMPTY) return [];
+    const type = Math.abs(p.type); const col = p.color;
+    let m = [];
+    const ok = (nr,nc) => nr>=0&&nr<=9&&nc>=0&&nc<=8 && (bd[nr][nc]===EMPTY || bd[nr][nc].color!==col);
+
+    if(type===1) { // King
+        [[0,1],[0,-1],[1,0],[-1,0]].forEach(d=>{
+            let nr=r+d[0], nc=c+d[1];
+            if(nc>=3&&nc<=5 && ((col===RED&&nr>=7)||(col===BLACK&&nr<=2)) && ok(nr,nc)) m.push({r:nr,c:nc});
+        });
+    } else if(type===7) { // Pawn
+        let fwd = col===RED?-1:1;
+        if(ok(r+fwd,c)) m.push({r:r+fwd,c:c});
+        if((col===RED&&r<=4)||(col===BLACK&&r>=5)) {
+            if(ok(r,c-1)) m.push({r:r,c:c-1}); if(ok(r,c+1)) m.push({r:r,c:c+1});
+        }
+    } else if(type===5) { // Rook
+        [[0,1],[0,-1],[1,0],[-1,0]].forEach(d=>{
+            let k=1; while(true){
+                let nr=r+d[0]*k, nc=c+d[1]*k;
+                if(nr<0||nr>9||nc<0||nc>8) break;
+                if(bd[nr][nc]===EMPTY) m.push({r:nr,c:nc});
+                else { if(bd[nr][nc].color!==col) m.push({r:nr,c:nc}); break; }
+                k++;
+            }
+        });
+    } else if(type===4) { // Horse
+        [[-2,-1],[-2,1],[2,-1],[2,1],[-1,-2],[-1,2],[1,-2],[1,2]].forEach(o=>{
+            let nr=r+o[0], nc=c+o[1], lr=r+(Math.abs(o[0])===2?Math.sign(o[0]):0), lc=c+(Math.abs(o[1])===2?Math.sign(o[1]):0);
+            if(nr>=0&&nr<=9&&nc>=0&&nc<=8 && bd[lr][lc]===EMPTY && ok(nr,nc)) m.push({r:nr,c:nc});
+        });
+    } else if(type===6) { // Cannon
+        [[0,1],[0,-1],[1,0],[-1,0]].forEach(d=>{
+            let k=1, jump=false; while(true){
+                let nr=r+d[0]*k, nc=c+d[1]*k;
+                if(nr<0||nr>9||nc<0||nc>8) break;
+                if(!jump) {
+                    if(bd[nr][nc]===EMPTY) m.push({r:nr,c:nc}); else jump=true;
+                } else {
+                    if(bd[nr][nc]!==EMPTY) { if(bd[nr][nc].color!==col) m.push({r:nr,c:nc}); break; }
+                }
+                k++;
+            }
+        });
+    } else if(type===3) { // Elephant
+        [[2,2],[2,-2],[-2,2],[-2,-2]].forEach(o=>{
+            let nr=r+o[0], nc=c+o[1], er=r+o[0]/2, ec=c+o[1]/2;
+            if(nr>=0&&nr<=9&&nc>=0&&nc<=8 && ((col===RED&&nr>=5)||(col===BLACK&&nr<=4)) && bd[er][ec]===EMPTY && ok(nr,nc)) m.push({r:nr,c:nc});
+        });
+    } else if(type===2) { // Advisor
+        [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(o=>{
+            let nr=r+o[0], nc=c+o[1];
+            if(nc>=3&&nc<=5 && ((col===RED&&nr>=7)||(col===BLACK&&nr<=2)) && ok(nr,nc)) m.push({r:nr,c:nc});
+        });
+    }
+    return m;
+}
+
+// Init
+showStartScreen();
 </script>
 </body>
 </html>
