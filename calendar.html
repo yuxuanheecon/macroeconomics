@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026 Sports Calendar | Earth Macro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
+  <style>
+    :root {
+      --bg-core: #050505;
+      --neon-blue: #00f3ff;
+      --neon-purple: #bd34fe;
+      --neon-pink: #ff0055;
+      --neon-yellow: #ffee00;
+      --neon-green: #00ff9d;
+      --text-main: #ffffff;
+      --text-dim: #888888;
+      --card-bg: rgba(20, 25, 30, 0.8);
+      --border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg-core);
+      color: var(--text-main);
+      font-family: 'Noto Sans SC', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* 背景 */
+    #bg-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: -1; pointer-events: none;
+    }
+
+    /* 头部 */
+    header {
+      padding: 30px 20px;
+      text-align: center;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+      border-bottom: 1px solid var(--border-color);
+      position: relative; z-index: 10;
+    }
+    
+    .logo {
+      font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 900;
+      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      letter-spacing: 2px; margin-bottom: 10px;
+    }
+    
+    .countdown {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--neon-yellow);
+      margin-bottom: 20px;
+    }
+
+    .back-btn {
+      position: absolute; top: 30px; left: 30px;
+      color: var(--text-dim); text-decoration: none; font-size: 0.9rem;
+      border: 1px solid var(--border-color); padding: 5px 15px; border-radius: 20px;
+      transition: all 0.3s;
+    }
+    .back-btn:hover { color: #fff; border-color: var(--neon-blue); background: rgba(0, 243, 255, 0.1); }
+
+    /* 筛选器 */
+    .filter-container {
+      display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+      margin: 20px auto; max-width: 900px; padding: 0 20px;
+    }
+
+    .filter-btn {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);
+      color: #aaa; padding: 8px 16px; border-radius: 4px; cursor: pointer;
+      font-family: 'Orbitron', sans-serif; font-size: 0.8rem; transition: all 0.2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .filter-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .filter-btn.active {
+      border-color: var(--active-color); color: var(--active-color);
+      background: rgba(0,0,0,0.5); box-shadow: 0 0 10px var(--active-color-dim);
+    }
+
+    /* 主内容区 */
+    main { max-width: 1200px; margin: 0 auto; padding: 20px; z-index: 5; position: relative; }
+
+    /* 月份区块 */
+    .month-section { margin-bottom: 40px; }
+    
+    .month-header {
+      display: flex; align-items: center; cursor: pointer;
+      margin-bottom: 15px; padding: 10px; border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .month-header:hover { background: rgba(255,255,255,0.05); }
+    
+    .month-title {
+      font-family: 'Orbitron'; font-size: 1.5rem; font-weight: bold; color: #fff;
+      margin-right: 15px; min-width: 150px;
+    }
+    .month-line { flex: 1; height: 1px; background: var(--border-color); }
+    .toggle-icon { margin-left: 15px; color: var(--text-dim); transition: transform 0.3s; }
+    .month-header.collapsed .toggle-icon { transform: rotate(-90deg); }
+
+    /* 事件网格 */
+    .events-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px;
+      transition: max-height 0.5s ease-out; overflow: hidden;
+    }
+    .month-section.collapsed .events-grid { display: none; }
+
+    /* 事件卡片 */
+    .event-card {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-left: 3px solid var(--category-color);
+      border-radius: 6px; padding: 20px; position: relative;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex; flex-direction: column; justify-content: space-between;
+      backdrop-filter: blur(5px); min-height: 120px;
+    }
+    .event-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      border-color: var(--category-color);
+    }
+
+    .event-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
+    .event-rank { 
+        font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; 
+        background: rgba(255,255,255,0.1); color: #ccc; margin-right: 5px;
+    }
+    
+    .event-date { font-family: 'JetBrains Mono'; font-size: 0.8rem; color: var(--category-color); margin-bottom: 5px; }
+    .event-name { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; line-height: 1.3; color: #fff; }
+    .event-meta { display: flex; align-items: center; font-size: 0.8rem; color: var(--text-dim); margin-top: auto; padding-top: 10px; }
+    .event-location { margin-left: auto; display: flex; align-items: center; gap: 5px; }
+    
+    .category-icon {
+      position: absolute; top: 15px; right: 15px;
+      font-size: 1.2rem; color: rgba(255,255,255,0.1);
+    }
+    .event-card:hover .category-icon { color: var(--category-color); opacity: 0.5; }
+
+    /* 动画 */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .event-card { animation: fadeIn 0.5s ease forwards; }
+
+    /* 响应式 */
+    @media (max-width: 600px) {
+      .back-btn { position: relative; top: 0; left: 0; display: inline-block; margin-bottom: 15px; }
+      .month-title { font-size: 1.2rem; min-width: auto; }
+      .events-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+
+  <header>
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> BACK</a>
+    <div class="logo">2026 GLOBAL SPORTS</div>
+    <div class="countdown" id="wc-countdown">COUNTDOWN TO WORLD CUP 2026: --D --H --M</div>
+  </header>
+
+  <div class="filter-container">
+    <button class="filter-btn active" data-filter="all" style="--active-color: #fff; --active-color-dim: rgba(255,255,255,0.2)">ALL EVENTS</button>
+    <button class="filter-btn" data-filter="football" style="--active-color: #00ff9d; --active-color-dim: rgba(0,255,157,0.2)"><i class="fas fa-futbol"></i> 足球</button>
+    <button class="filter-btn" data-filter="basketball" style="--active-color: #ff0055; --active-color-dim: rgba(255,0,85,0.2)"><i class="fas fa-basketball-ball"></i> 篮球</button>
+    <button class="filter-btn" data-filter="tennis" style="--active-color: #ffee00; --active-color-dim: rgba(255,238,0,0.2)"><i class="fas fa-table-tennis"></i> 网球</button>
+    <button class="filter-btn" data-filter="esports" style="--active-color: #00f3ff; --active-color-dim: rgba(0,243,255,0.2)"><i class="fas fa-gamepad"></i> 电竞</button>
+    <button class="filter-btn" data-filter="go" style="--active-color: #bd34fe; --active-color-dim: rgba(189,52,254,0.2)"><i class="fas fa-chess-board"></i> 围棋</button>
+  </div>
+
+  <main id="calendar-container">
+    <!-- JS 将自动生成内容 -->
+  </main>
+
+  <script>
+    /* ====== 1. 数据源 (2026 Enhanced Data) ====== */
+    // 足球: UCL R16 -> Final, World Cup
+    // 网球: ATP 500+, Grand Slams
+    // 篮球: NBA Playoffs R1 -> Finals
+    // 电竞: S16, KPL
+    // 围棋: Major Internationals
+    
+    const EVENTS = [
+      // === JANUARY ===
+      { id: 101, name: "澳网 (Australian Open)", category: "tennis", date: "2026-01-18", end: "2026-02-01", location: "Melbourne, AU", rank: "Grand Slam", desc: "硬地大满贯，新赛季揭幕战。" },
+      
+      // === FEBRUARY ===
+      { id: 201, name: "ATP 500 鹿特丹公开赛", category: "tennis", date: "2026-02-09", location: "Rotterdam, NL", rank: "ATP 500", desc: "欧洲室内硬地赛季核心站。" },
+      { id: 202, name: "NBA 全明星周末", category: "basketball", date: "2026-02-13", end: "2026-02-15", location: "Los Angeles, US", desc: "全球篮球盛宴，扣篮大赛与全明星赛。" },
+      { id: 203, name: "欧冠 1/8 决赛 (首回合)", category: "football", date: "2026-02-17", end: "2026-02-25", location: "Europe", rank: "UCL R16", desc: "欧陆豪强淘汰赛开启。" },
+      { id: 204, name: "ATP 500 迪拜免税店赛", category: "tennis", date: "2026-02-23", location: "Dubai, UAE", rank: "ATP 500", desc: "中东硬地顶级赛事。" },
+      { id: 205, name: "LG杯世界围棋棋王战决赛", category: "go", date: "2026-02-20", location: "Seoul, KR", desc: "中韩顶尖棋手巅峰对决。" },
+
+      // === MARCH ===
+      { id: 301, name: "印第安维尔斯大师赛", category: "tennis", date: "2026-03-04", end: "2026-03-15", location: "California, US", rank: "ATP 1000", desc: "阳光双赛之一，'第五大满贯'。" },
+      { id: 302, name: "欧冠 1/8 决赛 (次回合)", category: "football", date: "2026-03-10", end: "2026-03-18", location: "Europe", rank: "UCL R16", desc: "决出欧冠八强。" },
+      { id: 303, name: "迈阿密大师赛", category: "tennis", date: "2026-03-18", end: "2026-03-29", location: "Miami, US", rank: "ATP 1000", desc: "阳光双赛之二，硬地狂欢。" },
+
+      // === APRIL ===
+      { id: 401, name: "欧冠 1/4 决赛", category: "football", date: "2026-04-07", end: "2026-04-15", location: "Europe", rank: "UCL QF", desc: "两回合激战，争夺四强席位。" },
+      { id: 402, name: "蒙特卡洛大师赛", category: "tennis", date: "2026-04-12", location: "Monte-Carlo, MC", rank: "ATP 1000", desc: "红土赛季揭幕，最美网球场。" },
+      { id: 403, name: "NBA 附加赛 (Play-In)", category: "basketball", date: "2026-04-14", end: "2026-04-17", location: "USA", desc: "争夺季后赛最后门票。" },
+      { id: 404, name: "NBA 季后赛首轮 (Round 1)", category: "basketball", date: "2026-04-18", location: "USA / Canada", rank: "Playoffs", desc: "季后赛正赛开打，16支球队角逐。" },
+      { id: 405, name: "ATP 500 巴塞罗那公开赛", category: "tennis", date: "2026-04-20", location: "Barcelona, ES", rank: "ATP 500", desc: "红土名将必争之地。" },
+      { id: 406, name: "马德里大师赛", category: "tennis", date: "2026-04-26", location: "Madrid, ES", rank: "ATP 1000", desc: "高原红土，球速更快的挑战。" },
+      { id: 407, name: "应氏杯世界围棋锦标赛", category: "go", date: "2026-04-20", location: "Shanghai, CN", desc: "围棋界的奥运会，四年一届。" },
+      { id: 408, name: "欧冠 半决赛 (首回合)", category: "football", date: "2026-04-28", location: "Europe", rank: "UCL SF", desc: "通往决赛的最后一道坎。" },
+
+      // === MAY ===
+      { id: 501, name: "欧冠 半决赛 (次回合)", category: "football", date: "2026-05-05", location: "Europe", rank: "UCL SF", desc: "决出欧冠决赛队伍。" },
+      { id: 502, name: "NBA 分区半决赛 (Conf. Semis)", category: "basketball", date: "2026-05-04", location: "USA", rank: "Playoffs", desc: "东西部四强对决。" },
+      { id: 503, name: "罗马大师赛", category: "tennis", date: "2026-05-10", location: "Rome, IT", rank: "ATP 1000", desc: "法网前最重要的热身大师赛。" },
+      { id: 504, name: "英雄联盟 MSI 季中冠军赛", category: "esports", date: "2026-05-01", end: "2026-05-19", location: "TBD", desc: "各赛区春季冠军的较量。" },
+      { id: 505, name: "NBA 分区决赛 (Conf. Finals)", category: "basketball", date: "2026-05-19", location: "USA", rank: "Playoffs", desc: "东西部冠军争夺战。" },
+      { id: 506, name: "法网 (Roland Garros)", category: "tennis", date: "2026-05-24", end: "2026-06-07", location: "Paris, FR", rank: "Grand Slam", desc: "红土之巅，火枪手杯。" },
+      { id: 507, name: "王者荣耀 KPL 春季总决赛", category: "esports", date: "2026-05-15", location: "Chengdu, CN", desc: "国内顶尖移动电竞对决。" },
+      { id: 508, name: "欧冠决赛 (UCL Final)", category: "football", date: "2026-05-30", location: "Budapest, HU", rank: "Final", desc: "欧洲俱乐部最高荣誉之战。", highlight: true },
+
+      // === JUNE ===
+      { id: 601, name: "NBA 总决赛 (The Finals)", category: "basketball", date: "2026-06-04", location: "TBD", rank: "Finals", desc: "七局四胜，决出世界冠军。", highlight: true },
+      { id: 602, name: "2026 世界杯小组赛", category: "football", date: "2026-06-11", end: "2026-06-27", location: "USA/MEX/CAN", rank: "World Cup", desc: "48支球队，美加墨三国联合举办。", highlight: true },
+      { id: 603, name: "ATP 500 哈雷/女王杯", category: "tennis", date: "2026-06-15", location: "Germany/UK", rank: "ATP 500", desc: "草地赛季开始。" },
+      { id: 604, name: "温网 (Wimbledon)", category: "tennis", date: "2026-06-29", end: "2026-07-12", location: "London, UK", rank: "Grand Slam", desc: "全英俱乐部，草地网球的圣殿。" },
+      { id: 605, name: "世界杯 32强淘汰赛", category: "football", date: "2026-06-28", end: "2026-07-03", location: "North America", rank: "WC R32", desc: "残酷的单场淘汰制开始。" },
+
+      // === JULY ===
+      { id: 701, name: "世界杯 1/8 决赛", category: "football", date: "2026-07-04", end: "2026-07-07", location: "North America", rank: "WC R16", desc: "十六强激战。" },
+      { id: 702, name: "世界杯 1/4 决赛", category: "football", date: "2026-07-10", end: "2026-07-11", location: "North America", rank: "WC QF", desc: "八强争夺半决赛席位。" },
+      { id: 703, name: "世界杯 半决赛", category: "football", date: "2026-07-14", end: "2026-07-15", location: "USA", rank: "WC SF", desc: "通往决赛之路。" },
+      { id: 704, name: "世界杯 决赛", category: "football", date: "2026-07-19", location: "New York/NJ, US", rank: "WC Final", desc: "全球瞩目，大力神杯归属。", highlight: true },
+
+      // === AUGUST ===
+      { id: 801, name: "加拿大公开赛 (Rogers Cup)", category: "tennis", date: "2026-08-03", location: "Montreal/Toronto", rank: "ATP 1000", desc: "北美硬地赛季开启。" },
+      { id: 802, name: "辛辛那提大师赛", category: "tennis", date: "2026-08-10", location: "Cincinnati, US", rank: "ATP 1000", desc: "美网前最后的大考。" },
+      { id: 803, name: "美网 (US Open)", category: "tennis", date: "2026-08-31", end: "2026-09-13", location: "New York, US", rank: "Grand Slam", desc: "阿瑟·阿什球场，年度收官大满贯。" },
+
+      // === SEPTEMBER ===
+      { id: 901, name: "烂柯杯世界围棋公开赛", category: "go", date: "2026-09-10", location: "Quzhou, CN", desc: "烂柯仙地，巅峰对弈。" },
+      { id: 902, name: "ATP 500 中国网球公开赛", category: "tennis", date: "2026-09-28", location: "Beijing, CN", rank: "ATP 500", desc: "亚洲赛季重磅赛事，钻石球场。" },
+
+      // === OCTOBER ===
+      { id: 1001, name: "上海大师赛", category: "tennis", date: "2026-10-04", end: "2026-10-15", location: "Shanghai, CN", rank: "ATP 1000", desc: "亚洲唯一大师赛，旗忠网球中心。" },
+      { id: 1002, name: "英雄联盟 S16 全球总决赛 (入围/小组)", category: "esports", date: "2026-10-05", location: "China (Est)", desc: "年度电竞最高荣誉征程开始。" },
+      { id: 1003, name: "ATP 500 东京/维也纳/巴塞尔", category: "tennis", date: "2026-10-19", location: "Global", rank: "ATP 500", desc: "室内硬地赛季冲刺。" },
+      { id: 1004, name: "巴黎大师赛", category: "tennis", date: "2026-10-26", location: "Paris, FR", rank: "ATP 1000", desc: "年度最后一站大师赛。" },
+
+      // === NOVEMBER ===
+      { id: 1101, name: "英雄联盟 S16 冠亚军决赛", category: "esports", date: "2026-11-07", location: "Beijing, CN", desc: "召唤师杯决战。", highlight: true },
+      { id: 1102, name: "ATP 年终总决赛", category: "tennis", date: "2026-11-15", location: "Turin, IT", rank: "ATP Finals", desc: "年度八强，王中王之战。" },
+
+      // === DECEMBER ===
+      { id: 1201, name: "三星杯世界围棋大师赛决赛", category: "go", date: "2026-12-05", location: "Goyang, KR", desc: "年度围棋收官大戏。" },
+      { id: 1202, name: "王者荣耀世界冠军杯 (KIC)", category: "esports", date: "2026-12-20", location: "Riyadh, SA", desc: "全球移动电竞最高奖金赛事。" }
+    ];
+
+    const CATEGORY_CONFIG = {
+      'football': { color: '#00ff9d', icon: 'fa-futbol', name: '足球' },
+      'basketball': { color: '#ff0055', icon: 'fa-basketball-ball', name: '篮球' },
+      'tennis': { color: '#ffee00', icon: 'fa-table-tennis', name: '网球' },
+      'esports': { color: '#00f3ff', icon: 'fa-gamepad', name: '电竞' },
+      'go': { color: '#bd34fe', icon: 'fa-chess-board', name: '围棋' }
+    };
+
+    /* ====== 2. 渲染逻辑 ====== */
+    
+    function renderCalendar(filter = 'all') {
+      const container = document.getElementById('calendar-container');
+      container.innerHTML = '';
+
+      // Group by Month
+      const months = {};
+      for(let i=1; i<=12; i++) months[i] = [];
+
+      EVENTS.forEach(event => {
+        if (filter !== 'all' && event.category !== filter) return;
+        const m = parseInt(event.date.split('-')[1]);
+        months[m].push(event);
+      });
+
+      // Render Sections
+      for(let i=1; i<=12; i++) {
+        if (months[i].length === 0 && filter !== 'all') continue;
+        
+        months[i].sort((a,b) => new Date(a.date) - new Date(b.date));
+
+        const section = document.createElement('div');
+        section.className = 'month-section';
+        // 默认展开: 6月(世界杯), 11月(S赛), 1月(澳网/初始). 其他收起
+        const isImportant = [1, 6, 10, 11].includes(i); 
+        if (!isImportant && filter === 'all') section.classList.add('collapsed'); 
+
+        const monthName = new Date(2026, i-1).toLocaleString('en-US', { month: 'long' }).toUpperCase();
+        section.innerHTML = `
+          <div class="month-header ${!isImportant && filter === 'all' ? 'collapsed' : ''}" onclick="toggleSection(this)">
+            <div class="month-title">${i.toString().padStart(2,'0')} / ${monthName}</div>
+            <div class="month-line"></div>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+          </div>
+          <div class="events-grid">
+            ${months[i].map(ev => createEventCard(ev)).join('')}
+          </div>
+        `;
+        container.appendChild(section);
+      }
+    }
+
+    function createEventCard(ev) {
+      const conf = CATEGORY_CONFIG[ev.category];
+      const highlightStyle = ev.highlight ? `box-shadow: 0 0 20px ${conf.color}40; border-color: ${conf.color};` : '';
+      const rankBadge = ev.rank ? `<span class="event-rank" style="border:1px solid ${conf.color}; color:${conf.color}">${ev.rank}</span>` : '';
+
+      return `
+        <div class="event-card" style="--category-color: ${conf.color}; ${highlightStyle}">
+          <i class="fas ${conf.icon} category-icon"></i>
+          <div>
+            <div class="event-header">
+                <div class="event-date">${ev.date} ${ev.end ? '➔ ' + ev.end.slice(5) : ''}</div>
+            </div>
+            <div class="event-name" style="${ev.highlight ? 'font-size:1.2rem; color:'+conf.color : ''}">
+                ${rankBadge}${ev.name}
+            </div>
+            <div style="font-size:0.85rem; color:#ccc; margin-top:8px; line-height:1.5;">${ev.desc}</div>
+          </div>
+          <div class="event-meta">
+            <div class="event-location"><i class="fas fa-map-marker-alt"></i> ${ev.location}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ====== 3. 交互逻辑 ====== */
+    function toggleSection(header) {
+      header.classList.toggle('collapsed');
+      header.parentElement.classList.toggle('collapsed');
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+        renderCalendar(e.currentTarget.dataset.filter);
+      });
+    });
+
+    /* ====== 4. 倒计时 & 背景 ====== */
+    const targetDate = new Date('2026-06-11T00:00:00').getTime();
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const distance = targetDate - now;
+      if (distance < 0) { document.getElementById('wc-countdown').innerText = "WORLD CUP 2026 HAS STARTED"; return; }
+      const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      document.getElementById('wc-countdown').innerText = `COUNTDOWN TO WORLD CUP 2026: ${d}D ${h}H ${m}M`;
+    }
+    setInterval(updateCountdown, 60000); updateCountdown();
+
+    // Three.js Particles
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    const geo = new THREE.BufferGeometry();
+    const count = 800; const pos = new Float32Array(count*3);
+    for(let i=0; i<count*3; i++) pos[i] = (Math.random()-0.5)*150;
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({size: 0.2, color: 0x00f3ff, transparent: true, opacity: 0.5});
+    const stars = new THREE.Points(geo, mat); scene.add(stars);
+    camera.position.z = 30;
+    function animate() { requestAnimationFrame(animate); stars.rotation.y+=0.0005; renderer.render(scene, camera); }
+    animate();
+    window.addEventListener('resize', () => { camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+    // Init
+    renderCalendar('all');
+  </script>
+</body>
+</html>
