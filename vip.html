@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VIP Nexus v3.2 | Earth Macro</title>
+  <title>VIP Nexus v3.3 | Earth Macro</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=JetBrains+Mono:wght@300;500;700&display=swap" rel="stylesheet">
   <!-- 引入 Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
@@ -16,6 +16,8 @@
       --gold-dim: #8a7035;
       --gold-bright: #ffd700;
       --neon-red: #ff0055;
+      --neon-green: #00ff9d;
+      --neon-cyan: #00f3ff;
       --text-main: #e0e0e0;
       --glass-panel: rgba(20, 20, 20, 0.85);
       --glass-border: rgba(212, 175, 55, 0.3);
@@ -89,15 +91,12 @@
     .locked-card:hover { border-color: var(--gold-dim); color: var(--gold-dim); }
     .lock-icon { font-size: 1.5rem; margin-bottom: 10px; opacity: 0.5; }
     
-    /* 可点击的特殊卡片 (如象棋) */
+    /* 可点击的特殊卡片 */
     .locked-card.unlocked {
-      border-style: solid; border-color: var(--neon-red); color: var(--neon-red); cursor: pointer;
-      background: rgba(255, 0, 85, 0.05);
+      border-style: solid; cursor: pointer;
     }
-    .locked-card.unlocked:hover {
-      background: rgba(255, 0, 85, 0.1); box-shadow: 0 0 20px rgba(255, 0, 85, 0.2); transform: translateY(-3px);
-    }
-    .locked-card.unlocked .lock-icon { opacity: 1; color: var(--neon-red); }
+    .locked-card.unlocked:hover { transform: translateY(-3px); }
+    .locked-card.unlocked .lock-icon { opacity: 1; }
 
     /* Insight Stream */
     .insight-ticker {
@@ -238,9 +237,22 @@
     /* Calc */
     .calc-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.8rem; }
     .calc-res-big { font-size: 1.5rem; color: var(--gold-bright); text-align: center; margin: 15px 0; font-weight: bold; }
+
+    /* 离场黑屏 */
+    .exit-layer {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; z-index: 9998; opacity: 0; pointer-events: none;
+      transition: opacity 1s ease; display: flex; justify-content: center; align-items: center;
+      color: #444; font-family: 'JetBrains Mono'; letter-spacing: 3px;
+    }
+    .exit-layer.active { opacity: 1; pointer-events: auto; }
+
   </style>
 </head>
 <body>
+
+  <!-- 离场动画层 -->
+  <div class="exit-layer" id="outro-layer">TERMINATING SESSION...</div>
 
   <!-- 全局背景 Three.js Canvas -->
   <canvas id="bg-canvas"></canvas>
@@ -252,10 +264,10 @@
     <div class="clock-hint">CLICK ANYWHERE TO EXIT</div>
   </div>
 
-  <!-- 主界面 UI 容器 -->
+  <!-- 主界面 UI 容器 (直接显示) -->
   <div id="ui-container">
     <header>
-      <div class="vip-logo">VIP NEXUS v3.2</div>
+      <div class="vip-logo">VIP NEXUS v3.3</div>
       <a onclick="exitVip()" class="back-link">EXIT SECURE SPACE</a>
     </header>
 
@@ -263,6 +275,7 @@
       <section>
         <h2><span style="color:var(--gold-primary)">01.</span> KNOWLEDGE VAULT</h2>
         <div class="grid-vault">
+          <!-- 重磅文章 -->
           <div class="vault-card" style="border-color: var(--gold-bright); background: rgba(255, 215, 0, 0.05);" onclick="window.open('习近平和他的情人们（重置版）.pdf', '_blank')">
             <div class="vault-icon">🔥</div>
             <div class="vault-title">习近平和他的情人们（重置版）</div>
@@ -292,13 +305,19 @@
         <h2><span style="color:var(--gold-primary)">02.</span> CLASSIFIED & APPS</h2>
         <div class="encrypted-grid">
           <!-- 赛博象棋入口 -->
+          <div class="locked-card unlocked" onclick="location.href='cyber_chess_2.html'" style="border-color:var(--neon-cyan); background:rgba(0,243,255,0.05);">
+            <div class="lock-icon" style="color:var(--neon-cyan); opacity:1;">🌫️</div>
+            <div class="lock-text" style="color:var(--neon-cyan)">ZEN GO</div>
+            <div style="font-size:0.7rem; color:var(--neon-cyan); margin-top:5px;">MODE: INK & VOID</div>
+          </div>
+
+          <!-- 赛博象棋入口 -->
           <div class="locked-card unlocked" onclick="location.href='cyber_chess.html'">
             <div class="lock-icon">♟️</div>
             <div class="lock-text" style="color:var(--neon-red)">CYBER XIANGQI</div>
-            <div style="font-size:0.7rem; color:var(--neon-red); margin-top:5px;">PROJECT: DOUBLE STEP</div>
+            <div style="font-size:0.7rem; color:var(--neon-red); margin-top:5px;">MODE: RED STEP</div>
           </div>
 
-          <div class="locked-card"><div class="lock-icon">🔒</div><div class="lock-text">QUANT_V1</div></div>
           <div class="locked-card"><div class="lock-icon">🔒</div><div class="lock-text">DARK_POOL</div></div>
         </div>
       </section>
@@ -429,13 +448,14 @@
   </div>
 
   <script>
-    /* ====== 0. Init ====== */
+    /* ====== 0. Init (Simplified, no intro) ====== */
     window.onload = () => {
       animateBg(); updateClock(); updateWorldClocks();
     };
     function exitVip() {
-      // Assuming index.html exists
-      window.location.href = 'index.html';
+      const outro = document.getElementById('outro-layer');
+      outro.classList.add('active');
+      setTimeout(() => { window.location.href = 'index.html'; }, 1500);
     }
 
     /* ====== 1. BG ====== */
@@ -665,6 +685,7 @@
     function startTimer() { isRunning = true; document.getElementById('timer-btn').innerText = "PAUSE"; timerInterval = setInterval(() => { if(timeLeft > 0) { timeLeft--; updateTimerDisplay(); } else { stopTimer(); alert("Time is up!"); } }, 1000); }
     function stopTimer() { isRunning = false; document.getElementById('timer-btn').innerText = "START"; clearInterval(timerInterval); }
     function resetTimer() { stopTimer(); timeLeft = 1500; updateInputs(25, 0); updateTimerDisplay(); }
+
   </script>
 </body>
 </html>
