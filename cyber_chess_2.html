@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CYBER XIANGQI | 量子暗战</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Serif+SC:wght@700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg-color: #050505;
+        --neon-red: #ff0055;
+        --neon-cyan: #00f3ff;
+        --neon-yellow: #ffee00;
+        --neon-green: #00ff9d;
+        --panel-bg: rgba(10, 15, 20, 0.8);
+        --border-color: rgba(0, 243, 255, 0.3);
+    }
+
+    body {
+        margin: 0;
+        background-color: var(--bg-color);
+        color: #fff;
+        font-family: 'Orbitron', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+        user-select: none;
+    }
+
+    /* 背景动态网格 */
+    body::before {
+        content: "";
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: 
+            linear-gradient(transparent 95%, var(--neon-cyan) 100%),
+            linear-gradient(90deg, transparent 95%, var(--neon-cyan) 100%);
+        background-size: 40px 40px;
+        opacity: 0.05;
+        z-index: -1;
+        pointer-events: none;
+        animation: scan 10s linear infinite;
+    }
+    @keyframes scan { from { background-position: 0 0; } to { background-position: 0 40px; } }
+
+    /* 主布局容器 */
+    #main-layout {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        position: relative;
+        z-index: 10;
+    }
+
+    /* 侧边栏 (墓地) */
+    .side-panel {
+        width: 120px;
+        height: 500px;
+        background: var(--panel-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        transition: all 0.3s;
+    }
+    .side-panel.active {
+        border-color: var(--neon-yellow);
+        box-shadow: 0 0 20px rgba(255, 238, 0, 0.15);
+    }
+    
+    .player-title {
+        font-size: 1.2rem; font-weight: 900; text-align: center; 
+        padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-bottom: 10px; text-shadow: 0 0 10px currentColor;
+    }
+    .red-title { color: var(--neon-red); }
+    .black-title { color: var(--neon-cyan); }
+    
+    .graveyard-label { font-size: 0.7rem; color: #666; text-align: center; margin-bottom: 10px; }
+
+    .graveyard-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .dead-piece {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: #000;
+        border: 2px solid;
+        display: flex; justify-content: center; align-items: center;
+        font-family: "Noto Serif SC"; font-weight: bold; font-size: 18px;
+        box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .dead-red { border-color: var(--neon-red); color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
+    .dead-black { border-color: var(--neon-cyan); color: var(--neon-cyan); text-shadow: 0 0 5px var(--neon-cyan); }
+
+    /* 中间游戏区 */
+    #game-center {
+        display: flex; flex-direction: column; align-items: center;
+    }
+
+    /* 顶部 HUD */
+    .hud-bar {
+        display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px;
+        background: var(--panel-bg); border: 1px solid var(--border-color);
+        padding: 5px 15px; border-radius: 4px; font-size: 0.9rem; color: #aaa;
+    }
+    .status-text { color: #fff; font-weight: bold; }
+
+    /* 棋盘 Canvas */
+    canvas {
+        border-radius: 4px;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.9);
+        border: 1px solid #444;
+    }
+
+    /* 底部按钮组 */
+    .controls {
+        margin-top: 15px;
+        display: flex; gap: 15px; width: 100%; justify-content: center;
+    }
+    
+    .cyber-btn {
+        background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan);
+        padding: 8px 20px; font-family: 'Orbitron'; font-size: 0.85rem; cursor: pointer;
+        transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .cyber-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
+    
+    .btn-red { border-color: var(--neon-red); color: var(--neon-red); }
+    .btn-red:hover { background: var(--neon-red); color: #fff; box-shadow: 0 0 15px var(--neon-red); }
+
+    /* 胜利结算层 (Victory Layer) */
+    #victory-layer {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+        z-index: 200; display: none; flex-direction: column;
+        align-items: center; justify-content: center; opacity: 0; transition: opacity 0.5s;
+    }
+    #victory-layer.show { display: flex; opacity: 1; }
+    
+    .victory-card {
+        border: 2px solid #fff; padding: 40px 60px; text-align: center;
+        background: rgba(10,10,10,0.9); box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #victory-layer.show .victory-card { transform: scale(1); }
+
+    .vic-title { font-size: 4rem; font-weight: 900; margin-bottom: 10px; text-shadow: 0 0 20px currentColor; }
+    .vic-reason { font-size: 1.2rem; color: #ccc; margin-bottom: 30px; font-family: "Noto Serif SC"; }
+    
+    /* 开始菜单 */
+    #start-menu {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(5, 5, 10, 0.98); z-index: 150; display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+    }
+    .menu-box {
+        border: 2px solid var(--neon-cyan); padding: 40px; text-align: center; max-width: 550px;
+        box-shadow: 0 0 40px rgba(5, 217, 232, 0.15);
+    }
+    .rules-list {
+        text-align: left; font-family: "Noto Serif SC"; color: #ccc; font-size: 0.95rem;
+        margin: 30px 0; line-height: 1.8; border-left: 3px solid var(--neon-red); padding-left: 20px;
+    }
+
+    /* 粒子动画 */
+    @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* 响应式调整 */
+    @media (max-width: 800px) {
+        #main-layout { flex-direction: column; gap: 10px; }
+        .side-panel { width: 100%; height: 80px; flex-direction: row; align-items: center; padding: 5px 15px; }
+        .graveyard-grid { display: flex; gap: 5px; overflow-x: auto; overflow-y: hidden; height: 100%; align-items: center; }
+        .player-title { border-bottom: none; border-right: 1px solid #333; padding-right: 10px; margin-right: 10px; margin-bottom: 0; width: 60px; font-size: 0.9rem; display:flex; align-items:center; justify-content:center; }
+        .graveyard-label { display: none; }
+        .dead-piece { width: 30px; height: 30px; font-size: 14px; flex-shrink: 0; }
+        #game-center { order: -1; } /* 棋盘置顶 */
+        canvas { width: 340px; height: 380px; } /* 缩小棋盘 */
+    }
+</style>
+</head>
+<body>
+
+<!-- 主布局 -->
+<div id="main-layout">
+    
+    <!-- 左侧：红方战利品 (捕获的黑子) -->
+    <div class="side-panel" id="panel-red">
+        <div class="player-title red-title">RED</div>
+        <div class="graveyard-label">CAPTURED (战利品)</div>
+        <div class="graveyard-grid" id="graveyard-red">
+            <!-- JS 填充 -->
+        </div>
+    </div>
+
+    <!-- 中间：棋盘与控制 -->
+    <div id="game-center">
+        <div class="hud-bar">
+            <div>TURN: <span class="status-text" id="turn-text">RED</span></div>
+            <div>STATUS: <span class="status-text" id="status-text">ACTIVE</span></div>
+        </div>
+        
+        <canvas id="chessBoard" width="450" height="500"></canvas>
+        
+        <div class="controls">
+            <button class="cyber-btn btn-red" onclick="resign()">SURRENDER (认输)</button>
+            <button class="cyber-btn" onclick="showMenu()">MENU (菜单)</button>
+        </div>
+    </div>
+
+    <!-- 右侧：黑方战利品 (捕获的红子) -->
+    <div class="side-panel" id="panel-black">
+        <div class="player-title black-title">BLACK</div>
+        <div class="graveyard-label">CAPTURED (战利品)</div>
+        <div class="graveyard-grid" id="graveyard-black">
+            <!-- JS 填充 -->
+        </div>
+    </div>
+
+</div>
+
+<!-- 胜利结算弹窗 -->
+<div id="victory-layer">
+    <div class="victory-card" id="vic-card">
+        <div class="vic-title" id="vic-title">RED WINS</div>
+        <div class="vic-reason" id="vic-reason">DECAPITATION STRIKE (斩首行动)</div>
+        <button class="cyber-btn" onclick="initGame()" style="font-size:1.2rem; padding:15px 40px;">PLAY AGAIN</button>
+    </div>
+</div>
+
+<!-- 开始菜单 -->
+<div id="start-menu">
+    <div class="menu-box">
+        <h1 style="color:var(--neon-blue); margin:0 0 5px 0; font-size:2.5rem; text-shadow:0 0 15px var(--neon-blue);">QUANTUM XIANGQI</h1>
+        <div style="color:var(--neon-gold); letter-spacing:4px; margin-bottom:20px; font-size:1rem;">PROJECT: DARK FOG v2.1</div>
+        
+        <div class="rules-list">
+            <strong>量子规则 (Protocol):</strong><br>
+            1. <strong>混沌开局</strong>: 除将帅外，所有棋子随机打乱并处于【加密状态】。<br>
+            2. <strong>伪装协议</strong>: 暗棋拥有该位置【初始棋子】的走法。<br>
+            3. <strong>限制解除</strong>: 象与士 <span style="color:var(--neon-gold)">可过河，无九宫格限制</span>。<br>
+            4. <strong>波函数坍缩</strong>: 移动或吃子后，棋子解密露出真身。<br>
+            5. <strong>捕获显示</strong>: 被吃掉的棋子会在两侧墓地显示真身。
+        </div>
+        
+        <button class="cyber-btn" onclick="initGame()" style="width:100%; font-size:1.2rem; padding:15px;">INITIALIZE SYSTEM</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('chessBoard');
+    const ctx = canvas.getContext('2d');
+
+    /* --- 常量定义 --- */
+    const WIDTH = 450, HEIGHT = 500;
+    const GRID = 50, OFF_X = 25, OFF_Y = 25;
+    const RED = 1, BLACK = -1;
+    
+    // 棋子类型
+    const KING=1, ADVISOR=2, ELEPHANT=3, HORSE=4, ROOK=5, CANNON=6, PAWN=7;
+    const LABELS = { 1:'帅', 2:'仕', 3:'相', 4:'马', 5:'车', 6:'炮', 7:'兵' };
+    const LABELS_B = { 1:'将', 2:'士', 3:'象', 4:'马', 5:'车', 6:'炮', 7:'卒' };
+
+    // 固有属性布局 (决定暗棋走法)
+    const SLOT_LAYOUT = Array(10).fill(null).map(()=>Array(9).fill(null));
+
+    /* --- 游戏状态 --- */
+    let board = []; 
+    let turn = RED;
+    let selected = null;
+    let gameOver = false;
+    let lastMove = null;
+    let particles = [];
+    // 墓地 (Graveyards)
+    let capturedByRed = []; // 红方捕获的列表
+    let capturedByBlack = []; // 黑方捕获的列表
+
+    /* --- 初始化 --- */
+    function initSlots() {
+        const setup = [
+            {r:9,c:0,t:ROOK}, {r:9,c:1,t:HORSE}, {r:9,c:2,t:ELEPHANT}, {r:9,c:3,t:ADVISOR}, {r:9,c:4,t:KING}, {r:9,c:5,t:ADVISOR}, {r:9,c:6,t:ELEPHANT}, {r:9,c:7,t:HORSE}, {r:9,c:8,t:ROOK},
+            {r:7,c:1,t:CANNON}, {r:7,c:7,t:CANNON},
+            {r:6,c:0,t:PAWN}, {r:6,c:2,t:PAWN}, {r:6,c:4,t:PAWN}, {r:6,c:6,t:PAWN}, {r:6,c:8,t:PAWN}
+        ];
+        for(let r=0; r<10; r++) for(let c=0; c<9; c++) SLOT_LAYOUT[r][c] = null;
+        setup.forEach(p => {
+            SLOT_LAYOUT[p.r][p.c] = { type: p.t, owner: RED };
+            SLOT_LAYOUT[9-p.r][p.c] = { type: p.t, owner: BLACK };
+        });
+    }
+
+    function initGame() {
+        initSlots();
+        document.getElementById('start-menu').style.display = 'none';
+        document.getElementById('victory-layer').classList.remove('show');
+        
+        // 1. 准备棋子池
+        let pool = [];
+        const add = (t, c, n) => { for(let i=0;i<n;i++) pool.push({type:t, color:c}); };
+        [RED, BLACK].forEach(col => {
+            add(ADVISOR, col, 2); add(ELEPHANT, col, 2); add(HORSE, col, 2);
+            add(ROOK, col, 2); add(CANNON, col, 2); add(PAWN, col, 5);
+        });
+        // Shuffle
+        for(let i=pool.length-1; i>0; i--) {
+            const j = Math.floor(Math.random() * (i+1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+
+        // 2. 填充棋盘
+        board = Array(10).fill(null).map(()=>Array(9).fill(null));
+        board[0][4] = { type: KING, color: BLACK, hidden: false };
+        board[9][4] = { type: KING, color: RED, hidden: false };
+
+        let poolIdx = 0;
+        for(let r=0; r<10; r++) {
+            for(let c=0; c<9; c++) {
+                const slot = SLOT_LAYOUT[r][c];
+                if(slot && slot.type !== KING) {
+                    const secret = pool[poolIdx++];
+                    board[r][c] = {
+                        type: slot.type, // Fake type
+                        color: slot.owner,
+                        hidden: true,
+                        trueType: secret.type, // Real type
+                        trueColor: secret.color
+                    };
+                }
+            }
+        }
+
+        // 重置状态
+        turn = RED;
+        gameOver = false;
+        lastMove = null;
+        particles = [];
+        capturedByRed = [];
+        capturedByBlack = [];
+        updateUI();
+        renderGraveyard();
+        animate();
+    }
+
+    /* --- 渲染循环 --- */
+    function animate() {
+        drawBoard();
+        updateParticles();
+        if(!gameOver) requestAnimationFrame(animate);
+    }
+
+    function drawBoard() {
+        ctx.clearRect(0, 0, WIDTH, HEIGHT);
+        
+        // 网格
+        ctx.lineWidth = 1; ctx.strokeStyle = "rgba(0, 243, 255, 0.2)";
+        ctx.beginPath();
+        for(let i=0; i<10; i++) { ctx.moveTo(OFF_X, OFF_Y+i*GRID); ctx.lineTo(OFF_X+8*GRID, OFF_Y+i*GRID); }
+        for(let i=0; i<9; i++) { 
+            ctx.moveTo(OFF_X+i*GRID, OFF_Y); 
+            if(i===0||i===8) ctx.lineTo(OFF_X+i*GRID, OFF_Y+9*GRID);
+            else { ctx.lineTo(OFF_X+i*GRID, OFF_Y+4*GRID); ctx.moveTo(OFF_X+i*GRID, OFF_Y+5*GRID); ctx.lineTo(OFF_X+i*GRID, OFF_Y+9*GRID); }
+        }
+        [[0,3,2,5],[0,5,2,3],[9,3,7,5],[9,5,7,3]].forEach(p => { ctx.moveTo(OFF_X+p[1]*GRID, OFF_Y+p[0]*GRID); ctx.lineTo(OFF_X+p[3]*GRID, OFF_Y+p[2]*GRID); });
+        ctx.stroke();
+
+        // River
+        ctx.fillStyle = "rgba(0, 243, 255, 0.05)"; ctx.fillRect(OFF_X, OFF_Y+4*GRID, 8*GRID, GRID);
+        ctx.font = "italic 20px Orbitron"; ctx.fillStyle = "rgba(0, 243, 255, 0.4)";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("QUANTUM FIELD", OFF_X+4*GRID, OFF_Y+4.5*GRID);
+
+        // Last Move
+        if(lastMove) {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+            ctx.fillRect(OFF_X+lastMove.fc*GRID-25, OFF_Y+lastMove.fr*GRID-25, 50, 50);
+            ctx.fillRect(OFF_X+lastMove.tc*GRID-25, OFF_Y+lastMove.tr*GRID-25, 50, 50);
+        }
+
+        // Pieces
+        for(let r=0; r<10; r++) for(let c=0; c<9; c++) if(board[r][c]) drawPiece(r, c, board[r][c]);
+
+        // Selection
+        if(selected) {
+            const x = OFF_X + selected.c * GRID; const y = OFF_Y + selected.r * GRID;
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.strokeRect(x-23, y-23, 46, 46);
+            const moves = getMoves(selected.r, selected.c);
+            ctx.fillStyle = "rgba(0, 255, 157, 0.6)";
+            moves.forEach(m => { ctx.beginPath(); ctx.arc(OFF_X+m.c*GRID, OFF_Y+m.r*GRID, 6, 0, Math.PI*2); ctx.fill(); });
+        }
+        
+        drawParticles();
+    }
+
+    function drawPiece(r, c, p) {
+        const x = OFF_X + c * GRID; const y = OFF_Y + r * GRID;
+        const isRed = p.color === RED;
+        const colorHex = p.hidden ? "#586f7c" : (isRed ? "#ff2a6d" : "#05d9e8");
+
+        ctx.beginPath(); ctx.arc(x, y, 21, 0, Math.PI*2); ctx.fillStyle = "#000"; ctx.fill();
+        ctx.strokeStyle = colorHex; ctx.lineWidth = 2;
+        if (!p.hidden) { ctx.shadowBlur = 10; ctx.shadowColor = colorHex; }
+        ctx.stroke(); ctx.shadowBlur = 0;
+
+        ctx.font = "bold 22px 'Noto Serif SC'"; ctx.fillStyle = colorHex;
+        let txt = isRed ? LABELS[p.type] : LABELS_B[p.type];
+        
+        if(p.hidden) {
+            ctx.globalAlpha = 0.4; ctx.fillText(txt, x, y+4); ctx.globalAlpha = 1.0;
+            ctx.font = "bold 12px Orbitron"; ctx.fillStyle = "#fff"; ctx.fillText("?", x+10, y-10);
+        } else {
+            ctx.fillText(txt, x, y+4);
+        }
+    }
+
+    /* --- 交互 --- */
+    canvas.addEventListener('pointerdown', e => {
+        if(gameOver) return;
+        const rect = canvas.getBoundingClientRect();
+        const c = Math.round((e.clientX - rect.left - OFF_X) / GRID);
+        const r = Math.round((e.clientY - rect.top - OFF_Y) / GRID);
+        if(c<0||c>8||r<0||r>9) return;
+
+        const p = board[r][c];
+        if(p && p.color === turn) {
+            selected = {r, c}; drawBoard();
+        } else if(selected) {
+            const moves = getMoves(selected.r, selected.c);
+            const move = moves.find(m => m.r===r && m.c===c);
+            if(move) executeMove(selected, move);
+        }
+    });
+
+    function executeMove(from, to) {
+        const p = board[from.r][from.c];
+        const target = board[to.r][to.c];
+
+        // ★★★ 墓地逻辑 ★★★
+        if(target) {
+            // 获取被吃子真实身份
+            const deadData = {
+                type: target.hidden ? target.trueType : target.type,
+                color: target.hidden ? target.trueColor : target.color
+            };
+            
+            spawnParticles(to.c*GRID+OFF_X, to.r*GRID+OFF_Y, deadData.color===RED?"#ff2a6d":"#05d9e8");
+
+            // 加入捕获者墓地 (红方吃了子 -> 放入红方墓地展示)
+            if (turn === RED) capturedByRed.push(deadData);
+            else capturedByBlack.push(deadData);
+            
+            renderGraveyard();
+
+            if(target.type === KING) { endGame(turn, "DECAPITATION (斩首)"); return; }
+        }
+
+        // 移动
+        board[to.r][to.c] = p;
+        board[from.r][from.c] = null;
+        
+        // 量子坍缩
+        if(p.hidden) {
+            p.hidden = false;
+            p.type = p.trueType;
+            p.color = p.trueColor;
+            spawnParticles(to.c*GRID+OFF_X, to.r*GRID+OFF_Y, "#ffffff");
+        }
+
+        lastMove = { fr:from.r, fc:from.c, tr:to.r, tc:to.c };
+        selected = null;
+        turn = (turn === RED) ? BLACK : RED;
+        updateUI();
+    }
+
+    /* --- 走法生成 (士象过河) --- */
+    function getMoves(r, c) {
+        const p = board[r][c]; if(!p) return [];
+        const moves = []; const type = p.type; const color = p.color; 
+        const addIfValid = (tr, tc) => {
+            if(tr<0||tr>9||tc<0||tc>8) return;
+            const t = board[tr][tc];
+            if(!t || t.color !== color) moves.push({r:tr, c:tc});
+        };
+
+        if(type===ROOK) {
+            [[0,1],[0,-1],[1,0],[-1,0]].forEach(d=>{
+                let k=1; while(true){
+                    const tr=r+d[0]*k, tc=c+d[1]*k;
+                    if(tr<0||tr>9||tc<0||tc>8) break;
+                    const t=board[tr][tc];
+                    if(!t) moves.push({r:tr,c:tc});
+                    else { if(t.color!==color) moves.push({r:tr,c:tc}); break; }
+                    k++;
+                }
+            });
+        } else if(type===HORSE) {
+            [[-2,-1],[-2,1],[2,-1],[2,1],[-1,-2],[-1,2],[1,-2],[1,2]].forEach(d=>{
+                const tr=r+d[0], tc=c+d[1];
+                const lr=r+(Math.abs(d[0])===2?Math.sign(d[0]):0), lc=c+(Math.abs(d[1])===2?Math.sign(d[1]):0);
+                if(tr>=0&&tr<=9&&tc>=0&&tc<=8 && !board[lr][lc]) addIfValid(tr, tc);
+            });
+        } else if(type===CANNON) {
+            [[0,1],[0,-1],[1,0],[-1,0]].forEach(d=>{
+                let k=1, jump=false; while(true){
+                    const tr=r+d[0]*k, tc=c+d[1]*k;
+                    if(tr<0||tr>9||tc<0||tc>8) break;
+                    const t=board[tr][tc];
+                    if(!jump) { if(!t) moves.push({r:tr,c:tc}); else jump=true; } 
+                    else { if(t) { if(t.color!==color) moves.push({r:tr,c:tc}); break; } }
+                    k++;
+                }
+            });
+        } else if(type===ELEPHANT) {
+            [[2,2],[2,-2],[-2,2],[-2,-2]].forEach(d=>{
+                const tr=r+d[0], tc=c+d[1], er=r+d[0]/2, ec=c+d[1]/2;
+                if(tr>=0&&tr<=9&&tc>=0&&tc<=8 && !board[er][ec]) addIfValid(tr, tc);
+            });
+        } else if(type===ADVISOR) {
+            [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(d=>{ addIfValid(r+d[0], c+d[1]); });
+        } else if(type===KING) {
+            [[0,1],[0,-1],[1,0],[-1,0]].forEach(d=>{
+                const tr=r+d[0], tc=c+d[1];
+                if(tc>=3 && tc<=5 && ((color===RED&&tr>=7)||(color===BLACK&&tr<=2))) addIfValid(tr, tc);
+            });
+        } else if(type===PAWN) {
+            const fwd = color===RED ? -1 : 1;
+            addIfValid(r+fwd, c);
+            const crossed = (color===RED && r<=4) || (color===BLACK && r>=5);
+            if(crossed) { addIfValid(r, c-1); addIfValid(r, c+1); }
+        }
+        return moves;
+    }
+
+    /* --- UI & FX --- */
+    function updateUI() {
+        document.getElementById('panel-red').className = `side-panel ${turn===RED?'active':''}`;
+        document.getElementById('panel-black').className = `side-panel ${turn===BLACK?'active':''}`;
+        document.getElementById('turn-text').innerText = turn===RED?"RED":"BLACK";
+        document.getElementById('turn-text').style.color = turn===RED?"var(--neon-red)":"var(--neon-cyan)";
+    }
+
+    function renderGraveyard() {
+        const rList = document.getElementById('graveyard-red');
+        const bList = document.getElementById('graveyard-black');
+        rList.innerHTML = ''; bList.innerHTML = '';
+
+        // 渲染红方战利品 (显示它吃掉的子)
+        capturedByRed.forEach(p => {
+            const el = document.createElement('div');
+            // 被吃的是黑子(或变节红子)，按真实颜色显示
+            el.className = `dead-piece ${p.color===RED?'dead-red':'dead-black'}`;
+            el.innerText = p.color===RED ? LABELS[p.type] : LABELS_B[p.type];
+            rList.appendChild(el);
+        });
+
+        // 渲染黑方战利品
+        capturedByBlack.forEach(p => {
+            const el = document.createElement('div');
+            el.className = `dead-piece ${p.color===RED?'dead-red':'dead-black'}`;
+            el.innerText = p.color===RED ? LABELS[p.type] : LABELS_B[p.type];
+            bList.appendChild(el);
+        });
+    }
+
+    function resign() {
+        endGame(turn === RED ? BLACK : RED, "RESIGNATION (认输)");
+    }
+
+    function endGame(winner, reason) {
+        gameOver = true;
+        const layer = document.getElementById('victory-layer');
+        layer.classList.add('show');
+        
+        const color = winner===RED ? "var(--neon-red)" : "var(--neon-cyan)";
+        document.getElementById('vic-card').style.borderColor = color;
+        document.getElementById('vic-title').innerText = winner===RED ? "RED WINS" : "BLACK WINS";
+        document.getElementById('vic-title').style.color = color;
+        document.getElementById('vic-reason').innerText = reason;
+    }
+
+    function showMenu() { document.getElementById('start-menu').style.display = 'flex'; }
+
+    function spawnParticles(x, y, color) {
+        for(let i=0; i<20; i++) {
+            particles.push({ x, y, vx:(Math.random()-0.5)*10, vy:(Math.random()-0.5)*10, life:1.0, color });
+        }
+    }
+
+    function updateParticles() {
+        for(let i=particles.length-1; i>=0; i--) {
+            let p = particles[i];
+            p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+            ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, 4, 4);
+            if(p.life <= 0) particles.splice(i, 1);
+        }
+        ctx.globalAlpha = 1.0;
+    }
+    function drawParticles() {} // Handled in update
+
+</script>
+</body>
+</html>
